@@ -1,1 +1,1 @@
-# Academic_Advisor_RAG
+# CSE 5320 - TA2: Academic_Advisor_RAG
