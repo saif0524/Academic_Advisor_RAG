@@ -18,6 +18,6 @@ jobs:
 
       - name: Run AI Script
         env:
-          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          OLLAMA_API_KEY: ${{secrets.OLLAMA_API_KEY}}
         run: | 
           python ./src/main/AI_Assistant.py
