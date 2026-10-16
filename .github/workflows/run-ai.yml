@@ -8,7 +8,7 @@ jobs:
   run-ai:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout 
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -19,5 +19,5 @@ jobs:
       - name: Run AI Script
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
-        run: |
-          python /workspaces/Academic_Advisor_RAG/src/main/AI_Assistant.py
+        run: | 
+          python ./src/main/AI_Assistant.py
