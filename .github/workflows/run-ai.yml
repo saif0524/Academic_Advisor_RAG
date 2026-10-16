@@ -1,0 +1,23 @@
+name: Run Ollama Cloud Script
+
+on:
+  push:
+  workflow_dispatch: # Allows manual triggers from the GitHub Actions tab
+
+jobs:
+  run-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run AI Script
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+        run: |
+          python AI_Assistant.py

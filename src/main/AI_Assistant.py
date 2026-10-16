@@ -2,6 +2,7 @@ import json
 import re
 import urllib.request
 import urllib.error
+import os
 
 # Building Blocks Layer: Prompt Template implementation 
 # inspired by LangChain's PromptTemplate for dynamic variable formatting.
@@ -21,25 +22,39 @@ class PromptTemplate:
 
 
 # Models Layer / LLM Model Adapter: Interfaces with the raw local LLM.
-class OllamaAIService:
-    def __init__(self, model_name: str, base_url: str):
+import os
+import json
+import urllib.request
+import urllib.error
+import re
+
+class OllamaCloudAIService:
+    def __init__(self, model_name: str = "gemma4:31b-cloud", api_key: str = None, base_url: str = "https://api.ollama.com"):
         self.model_name = model_name
         self.base_url = base_url
+        # Automatically read OLLAMA_API_KEY from environment variables if not passed explicitly
+        self.api_key = api_key or os.getenv("OLLAMA_API_KEY")
 
     def generate_response(self, prompt: str) -> str:
+        if not self.api_key:
+            return "Error: OLLAMA_API_KEY is missing. Please set it as an environment variable."
+        
         try:
-            escaped_prompt = (prompt
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r"))
-
-            json_body = f'{{"model": "{self.model_name}", "prompt": "{escaped_prompt}", "stream": false}}'
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": False
+            }
+            json_body = json.dumps(payload)
 
             req = urllib.request.Request(
-                self.base_url + "/api/generate",
+                f"{self.base_url}/api/generate",
                 data=json_body.encode('utf-8'),
-                headers={'Content-Type': 'application/json'},
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {self.api_key}',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Python-urllib'
+                },
                 method='POST'
             )
 
@@ -48,12 +63,23 @@ class OllamaAIService:
                     body = response.read().decode('utf-8')
                     return self._extract_response_field(body)
                 else:
-                    return f"Error from Ollama API: Status code {response.status}"
+                    return f"Error from Ollama Cloud API: Status code {response.status}"
+                    
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8') if e.fp else str(e)
+            return f"HTTP Error connecting to Ollama Cloud ({e.code}): {error_body}"
         except Exception as e:
-            return (f"Error: Could not connect to local Ollama instance. "
-                    f"Make sure Ollama is running (`ollama serve`). Details: {str(e)}")
+            return f"Error: Could not connect to Ollama Cloud. Details: {str(e)}"
 
     def _extract_response_field(self, json_str: str) -> str:
+        try:
+            data = json.loads(json_str)
+            if "response" in data:
+                return data["response"]
+        except Exception:
+            pass
+            
+        # Fallback regex extraction if standard JSON parsing fails
         try:
             pattern = re.compile(r'"response"\s*:\s*"((?:\\.|[^"\\])*)"')
             match = pattern.search(json_str)
@@ -66,7 +92,6 @@ class OllamaAIService:
         except Exception:
             pass
         return json_str
-
 
 # ==========================================
 # Requirement 1: User Interface
@@ -112,15 +137,14 @@ class Requirement1_UI:
 
             formatted_prompt = prompt_template.format(variables)
 
-            # 4. Models Layer: Generate response via LLM model adapter
-            ollama_service = OllamaAIService("phi3", "http://localhost:11434")
+            # 4. Models Layer: Generate response via Ollama Cloud adapter using glm-4.6:cloud
+            ollama_service = OllamaCloudAIService(model_name="glm-4.6:cloud")
             response = ollama_service.generate_response(formatted_prompt)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
             print(f"\nAI Advisor:\n{response}\n")
 
         return response
-
 
 # ==========================================
 # Requirement 2: Multi-Year Degree Plan Generation
