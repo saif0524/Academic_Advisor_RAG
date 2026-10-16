@@ -137,8 +137,8 @@ class Requirement1_UI:
 
             formatted_prompt = prompt_template.format(variables)
 
-            # 4. Models Layer: Generate response via Ollama Cloud adapter using glm-4.6:cloud
-            ollama_service = OllamaCloudAIService(model_name="glm-4.6:cloud")
+            # 4. Models Layer: Generate response via Ollama Cloud adapter 
+            ollama_service = OllamaCloudAIService()
             response = ollama_service.generate_response(formatted_prompt)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
