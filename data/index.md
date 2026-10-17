@@ -8,5 +8,7 @@ description: "Curated curriculum, course catalog, and degree requirements for Co
 
 Explore the curriculum and program rules:
 
-* [Degree Requirements](data/CSE-requirements-BCS.md)
+* [CS Degree Requirements](data/CS-requirements-BCS.md)
 * [Course Catalog](data/course-desc.md)
+* [SE Degree Requirements](data/SE-requirements-BSE.md)
+* [AI Certification Requirements](data/AICertification.md)

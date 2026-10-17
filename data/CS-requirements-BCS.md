@@ -1,3 +1,12 @@
+---
+type: DegreeRequirement
+degree_id: "BS-CS"
+major_name: "BS in Computer Science"
+total_credits_required: 120
+max_semester_credits: 18
+---
+
+
 ## Degree Requirements & Course List
 
 ### Mathematics
