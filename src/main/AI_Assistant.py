@@ -411,10 +411,54 @@ def _load_jsonl_context(self, file_path: str) -> str:
                 print(f"Warning: Could not read JSONL file: {e}")
         return "\n".join(additional_context)
 
+
+# ==========================================
+# Open Knowledge Format (OKF) Manager
+# ==========================================
+class OpenKnowledgeFormatManager:
+    def __init__(self, kb_root_dir: str = "data"):
+        self.kb_root_dir = kb_root_dir
+
+    def scan_knowledge_base(self) -> str:
+        """Scans the OKF directory structure, reading markdown files, frontmatter, and content."""
+        okf_chunks = []
+        if not os.path.exists(self.kb_root_dir):
+            return ""
+
+        for root, dirs, files in os.walk(self.kb_root_dir):
+            for file in files:
+                if file.endswith(".md"):
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                            # Format each OKF document chunk clearly for the AI context window
+                            okf_chunks.append(f"--- OKF Source: {file} ---\n{content}\n")
+                    except Exception as e:
+                        print(f"Warning: Could not read OKF file {file}: {e}")
+                        
+        return "\n".join(okf_chunks)
+
 class Requirement1_UI:
     def __init__(self, query_router, chat_history):
         self.query_router = query_router
         self.chat_history = chat_history
+        # Initialize the OKF manager pointing to your knowledge base folder
+        self.okf_manager = OpenKnowledgeFormatManager("data")
+
+    def _load_jsonl_context(self, file_path: str) -> str:
+        additional_context = []
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            data = json.loads(line)
+                            additional_context.append(json.dumps(data))
+            except Exception as e:
+                print(f"Warning: Could not read JSONL file: {e}")
+        return "\n".join(additional_context)
 
     def start_command_line_interface(self, student_id: str) -> str:
         print("=== Academic AI Advisor Initialized (LangChain Flow) ===")
@@ -439,9 +483,20 @@ class Requirement1_UI:
 
             self.chat_history.add_message(student_id, "User", user_input)
 
+            # 1. Retrieve standard RAG query context
             retrieved_context = self.query_router.route_and_execute(student_id, user_input)
-            retrieved_context += _load_jsonl_context(self, "data/course-desc.jsonl")
-            #add md variable scanning here
+            
+            # # 2. Append existing JSONL file context
+            # jsonl_context = self._load_jsonl_context("data/course-desc.jsonl")
+            # if jsonl_context:
+            #     retrieved_context += "\n\nCourse descriptions (JSONL):\n" + jsonl_context
+
+            # 3. Scan and inject Open Knowledge Format (OKF) markdown files
+            okf_scanned_content = self.okf_manager.scan_knowledge_base()
+            if okf_scanned_content:
+                retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
+
+            # 4. Format Prompt dynamically with combined context
             variables = {
                 "domain": "University Course Registration and Degree Planning",
                 "context": retrieved_context,
@@ -450,6 +505,7 @@ class Requirement1_UI:
 
             formatted_prompt = prompt_template.format(variables)
 
+            # 5. Generate response via Ollama Cloud adapter
             ollama_service = OllamaCloudAIService()
             response = ollama_service.generate_response(formatted_prompt)
 
