@@ -1,0 +1,6 @@
+{
+  "architectModel": "ollama/glm-5.3-flash:cloud",
+  "workerModel": "ollama/gemma4:31b-cloud",
+  "testerModel": "ollama/gemma4:31b-cloud",
+  "docsModel": "ollama/glm-5.3-flash:cloud"
+}

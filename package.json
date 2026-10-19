@@ -1,0 +1,11 @@
+{
+  "name": "academic-advisor-rag",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RAG-based academic advising platform (React, LangChain, SQLite, Chroma)",
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.87.1",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.6.0"
+  }
+}
