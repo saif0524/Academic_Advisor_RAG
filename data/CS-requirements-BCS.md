@@ -1,0 +1,45 @@
+---
+type: DegreeRequirement
+degree_id: "BS-CS"
+major_name: "BS in Computer Science"
+total_credits_required: 120
+max_semester_credits: 18
+---
+
+
+## Degree Requirements & Course List
+
+### Mathematics
+
+* **MATH 1426** - CALCULUS I (4 Credit Hours)
+* **MATH 2425** - CALCULUS II (4 Credit Hours)
+* **MATH 3330** - LINEAR ALGEBRA (3 Credit Hours)
+* **MATH 3345** - DIFFERENTIAL EQUATIONS WITH LINEAR ALGEBRA (3 Credit Hours)
+
+### Science
+
+* **BIOL 1441** - CELL AND MOLECULAR BIOLOGY (4 Credit Hours)
+* **BIOL 1442** - EVOLUTION AND ECOLOGY (4 Credit Hours)
+* **CHEM 1441** - GENERAL CHEMISTRY I (4 Credit Hours)
+* **CHEM 1442** - GENERAL CHEMISTRY II (4 Credit Hours)
+* **PHYS 1443** - GENERAL TECHNICAL PHYSICS I (4 Credit Hours)
+* **PHYS 1444** - GENERAL TECHNICAL PHYSICS II (4 Credit Hours)
+
+### Computer Science Core
+
+* **CSE 1105** - INTRODUCTION TO COMPUTER SCIENCE AND ENGINEERING (1 Credit Hour)
+* **CSE 1310** - INTRODUCTION TO COMPUTERS AND PROGRAMMING (3 Credit Hours)
+* **CSE 1320** - INTERMEDIATE PROGRAMMING (3 Credit Hours)
+* **CSE 1325** - OBJECT-ORIENTED PROGRAMMING (3 Credit Hours)
+* **CSE 2315** - DISCRETE STRUCTURES (3 Credit Hours)
+* **CSE 2320** - ALGORITHMS AND DATA STRUCTURES (3 Credit Hours)
+* **CSE 2381** - SOFTWARE ENGINEERING I (3 Credit Hours)
+* **CSE 3315** - THEORETICAL COMPUTER SCIENCE (3 Credit Hours)
+* **CSE 3320** - OPERATING SYSTEMS (3 Credit Hours)
+* **CSE 3330** - DATABASE SYSTEMS AND FILE STRUCTURES (3 Credit Hours)
+* **CSE 3442** - EMBEDDED SYSTEMS I (4 Credit Hours)
+* **CSE 4310** - FUNDAMENTALS OF ARTIFICIAL INTELLIGENCE (3 Credit Hours)
+* **CSE 4342** - COMPUTER NETWORKS (3 Credit Hours)
+* **CSE 4381** - INFORMATION SECURITY (3 Credit Hours)
+* **CSE 4391** - SENIOR DESIGN I (3 Credit Hours)
+* **CSE 4392** - SENIOR DESIGN II (3 Credit Hours)
