@@ -1,0 +1,6 @@
+{
+  "architectModel": "glm-5.3-flash",
+  "workerModel": "gemma4:31b",
+  "testerModel": "gemma4:31b",
+  "docsModel": "gemma4:31b"
+}
