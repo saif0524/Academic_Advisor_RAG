@@ -5,8 +5,8 @@ argument-hint: "<feature description>"
 Propose an implementation plan for this feature: $@
 
 Ground the plan in the project docs before proposing anything:
-1. Read `docs/functional-requirements.md` and identify every FC this feature touches; cite the IDs explicitly.
-2. Read `docs/ai_advisor_domain_model.md` and map the feature onto the existing classes (`Student`, `Course`, `CourseSection`, `DegreePlan`, `CourseRecommendationValidator`, `DegreePlanGenerator`, `AIAdvisorAgent`, DB managers, UI). Note any new classes versus new methods/attributes on existing ones.
+1. Read `docs/2026-10-18-functional-requirements.md` and identify every FC this feature touches; cite the IDs explicitly.
+2. Read `docs/2026-10-18-ai-advisor-domain-model.md` and map the feature onto the existing classes (`Student`, `Course`, `CourseSection`, `DegreePlan`, `CourseRecommendationValidator`, `DegreePlanGenerator`, `AIAdvisorAgent`, DB managers, UI). Note any new classes versus new methods/attributes on existing ones.
 3. Follow the architecture rules in `AGENTS.md` (deterministic engine first, data routing, grounded answers).
 4. If the feature recommends or schedules courses, list exactly which validator checks (FC29–FC32) apply and confirm none can be bypassed by the LLM path.
 

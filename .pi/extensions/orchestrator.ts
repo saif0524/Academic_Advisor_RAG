@@ -217,7 +217,7 @@ function topoOrder(tasks: Task[]): Task[] {
 
 const PLANNER_PROMPT = (feature: string) => `
 You are the planning phase of an automated build pipeline for the Academic AI Advisor repo.
-FIRST read: AGENTS.md, docs/functional-requirements.md, docs/ai_advisor_domain_model.md — plus any
+FIRST read: AGENTS.md, docs/2026-10-18-functional-requirements.md, docs/2026-10-18-ai-advisor-domain-model.md — plus any
 docs/ files relevant to the feature. Then decompose the feature below into tasks.
 
 Repo rules (apply them): deterministic engine first (constraint checks FC29-FC32 and plan
@@ -235,7 +235,7 @@ Output ONLY a JSON object, no prose, no markdown fences:
       "title": "short imperative title",
       "description": "what ONE worker session must do, including FC IDs",
       "files": ["src/main/AI_Assistant.py"],
-      "context_files": ["docs/ai_advisor_domain_model.md"],
+      "context_files": ["docs/2026-10-18-ai-advisor-domain-model.md"],
       "fc_ids": ["FC13"],
       "depends_on": [],
       "skill": "optional advisor-domain reference"
@@ -261,7 +261,7 @@ ${task.description}
 Files you may create/modify: ${task.files.join(", ") || "(none)"}
 ${task.skill ? `Skill to consult: ${task.skill}` : ""}
 
-First read AGENTS.md, .pi/APPEND_SYSTEM.md, and: ${[...new Set(["docs/functional-requirements.md", ...task.context_files])].join(" ")}.
+First read AGENTS.md, .pi/APPEND_SYSTEM.md, and: ${[...new Set(["docs/2026-10-18-functional-requirements.md", ...task.context_files])].join(" ")}.
 Repo rules: deterministic engine first; never fabricate academic data; cite FC IDs in code comments
 where a requirement is implemented; follow existing code style; do not run destructive commands;
 do NOT invoke /build; do not git-commit. Implement ONLY this task.
@@ -280,7 +280,7 @@ Your job (read + bash only, you CANNOT edit files):
 1. Run the project's tests / type checks / linters as appropriate via bash. If no test setup exists,
    write nothing permanent; instead verify the changed files compile/parse and their structure is sane.
 2. Audit the implementation against the rules in AGENTS.md, especially: constraint checks live in
-   deterministic code (FC29-FC32 ownership in docs/ai_advisor_domain_model.md §2); the LLM path must
+   deterministic code (FC29-FC32 ownership in docs/2026-10-18-ai-advisor-domain-model.md §2); the LLM path must
    not bypass CourseRecommendationValidator or DegreePlanGenerator; no fabricated academic data.
 3. Report faithfully. A failing audit is more valuable than a passing pipeline.
 
@@ -297,7 +297,7 @@ Verification result: ${testSummary}
 
 Update ONLY docs/implementation-log.md (create it with a "# Implementation Log" header if missing):
 append today's date and entries for this feature — what was implemented, files touched, FC IDs
-implemented, and test outcome. Do NOT modify docs/functional-requirements.md, docs/ai_advisor_domain_model.md,
+implemented, and test outcome. Do NOT modify docs/2026-10-18-functional-requirements.md, docs/2026-10-18-ai-advisor-domain-model.md,
 AGENTS.md, or any source file. If the feature implies a domain-model class gap, note it in the log
 entry instead of editing the model doc.
 `.trim();

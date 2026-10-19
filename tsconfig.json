@@ -8,7 +8,10 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "noUncheckedIndexedAccess": false
+    "noUncheckedIndexedAccess": false,
+    "paths": {
+      "@earendil-works/pi-tui": ["./node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui"]
+    }
   },
   "include": [".pi/extensions/**/*.ts"]
 }
