@@ -1,0 +1,5 @@
+{
+  "defaultProvider": "ollama-cloud",
+  "defaultModel": "gemma4:31b",
+  "enableSkillCommands": true
+}
