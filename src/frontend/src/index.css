@@ -1,0 +1,31 @@
+/* Global styles & design tokens only (react-component skill) —
+   every component keeps its own <Component>.css. */
+
+:root {
+  --color-primary: #0b3d97;
+  --color-primary-soft: #e8eef9;
+  --color-text: #1f2430;
+  --color-text-muted: #5a6472;
+  --color-background: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-border: #d9dee6;
+  --color-danger: #b3261e;
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --radius: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-background);
+}

@@ -18,6 +18,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `data/course-desc.jsonl` — seed RAG corpus: 75 lines, one JSON object per line `{"id", "title", "description"}` (4-digit course IDs).
 - `data/cse_undergrad_courses.pdf` — CSE undergraduate degree requirements; source for degree requirement records.
 - `src/main/` — backend entry (`AI_Assistant.py`; the `.java` file is an early-design leftover).
+- `src/frontend/` — React app scaffold (Vite + Storybook 10, own toolchain/npm). One folder per component with required Storybook story; domain groups `components/{chat,planner,degrees,classes,shared}` + `pages/` composition roots + `api/client.js` (single HTTP wrapper) + `state/SessionContext.jsx` (built-in state only). Conventions: `.pi/skills/react-component/SKILL.md`; structure: `docs/2026-10-19-src-monorepo-structure.md`.
 
 ## Core architecture rules
 

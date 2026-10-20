@@ -1,6 +1,6 @@
 # Proposal: Layered `src/` monorepo structure
 
-*Date: 2026-10-19 · Status: proposed (pre-implementation)*
+*Date: 2026-10-19 · Status: proposed (pre-implementation) · Progress: implementation outline step 5 done — `src/frontend/` scaffolded (Vite + React JS + Storybook 10.6 + Vitest story tests; demo app/stories removed; config in `.storybook/main.ts`, vitest browser wiring in `frontend/vite.config.js`; no MSW — no API endpoints exist yet, stories get data via props).*
 
 ## Summary
 

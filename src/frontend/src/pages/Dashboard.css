@@ -1,0 +1,14 @@
+.dashboard {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: var(--space-3);
+}
+
+.dashboard-title {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.dashboard-empty {
+  color: var(--color-text-muted);
+}
