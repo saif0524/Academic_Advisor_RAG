@@ -126,7 +126,6 @@ class CourseSection(Course):
         self.enrolled_count = enrolled_count
 
     def has_time_conflict(self, other_section: 'CourseSection') -> bool:
-        # Simple overlap check on meeting days and times
         if not set(self.meeting_days).intersection(set(other_section.meeting_days)):
             return False
         return self.start_time == other_section.start_time
@@ -311,10 +310,22 @@ class Requirement4_CourseVerifier(CourseRecommendationValidator):
 # Requirement 5: Plan Modifications & Switching
 # ==========================================
 class Requirement5_PlanModifier:
-    def evaluate_major_change(self, current_major: str, target_major: str) -> str:
+    def __init__(self, ai_caller):
+        self.ai_caller = ai_caller
+
+    def evaluate_major_change(self, student_id: str, current_major: str, target_major: str) -> str:
+        # Use the current print statement/context description as the base prompt for the AI
         print(f"Analyzing transition from {current_major} to {target_major}...")
-        return ("Advantages: Better alignment with cybersecurity careers.\n"
-                "Disadvantages: Requires 2 additional foundational math courses (MATH 250 & STAT 310).")
+        
+        prompt = (
+            f"Analyze the academic and career transition from {current_major} to {target_major}. "
+            "Provide a detailed breakdown of the advantages (such as career alignment) "
+            "and disadvantages (such as required additional foundational or prerequisite courses)."
+        )
+        
+        # Call the global AI caller service and return its response
+        response = self.ai_caller.CallAI(student_id, user_input=prompt)
+        return response
 
     def generate_plan_comparison(self, old_plan: DegreePlan, new_plan: DegreePlan):
         print("=== Degree Plan Comparison Report ===")
@@ -390,6 +401,8 @@ class VectorDatabaseManager(DatabaseManager):
 
     def similarity_search(self, query: str) -> str:
         return f"Retrieved course catalog context matching: [{query}] using {self.backend_type} backend."
+
+
 # ==========================================
 # Open Knowledge Format (OKF) Manager
 # ==========================================
@@ -398,7 +411,6 @@ class OpenKnowledgeFormatManager:
         self.kb_root_dir = kb_root_dir
 
     def scan_knowledge_base(self) -> str:
-        """Scans the OKF directory structure, reading markdown files, frontmatter, and content."""
         okf_chunks = []
         if not os.path.exists(self.kb_root_dir):
             return ""
@@ -410,7 +422,6 @@ class OpenKnowledgeFormatManager:
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             content = f.read()
-                            # Format each OKF document chunk clearly for the AI context window
                             okf_chunks.append(f"--- OKF Source: {file} ---\n{content}\n")
                     except Exception as e:
                         print(f"Warning: Could not read OKF file {file}: {e}")
@@ -419,36 +430,17 @@ class OpenKnowledgeFormatManager:
 
 
 # ==========================================
-# Requirement 1: User Interface
+# Global AI Call Service
 # ==========================================
-
-def _load_jsonl_context(self, file_path: str) -> str:
-        additional_context = []
-        if os.path.exists(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            data = json.loads(line)
-                            # Convert each JSON object line into a readable string representation
-                            additional_context.append(json.dumps(data))
-            except Exception as e:
-                print(f"Warning: Could not read JSONL file: {e}")
-        return "\n".join(additional_context)
-
 class AICall:
-    def __init__(self, query_router, student_id: str):
+    def __init__(self, query_router):
         self.query_router = query_router
-        self.student_id = student_id
-        # Initialize the OKF manager pointing to your knowledge base folder
         self.okf_manager = OpenKnowledgeFormatManager("data")
 
-    def CallAI(self, user_input: str = None) -> str:
-        # If user_input isn't passed directly, prompt for it in the terminal
+    def CallAI(self, student_id: str, user_input: str = None) -> str:
         if user_input is None:
             try:
-                user_input = input(f"Student ({self.student_id}): ")
+                user_input = input(f"Student ({student_id}): ")
             except EOFError:
                 print("Failed AI State")
                 return ""
@@ -460,15 +452,12 @@ class AICall:
             "Student Query: {input}"
         )
         
-        # 1. Retrieve standard RAG query context
-        retrieved_context = self.query_router.route_and_execute(self.student_id, user_input)
+        retrieved_context = self.query_router.route_and_execute(student_id, user_input)
 
-        # 3. Scan and inject Open Knowledge Format (OKF) markdown files
         okf_scanned_content = self.okf_manager.scan_knowledge_base()
         if okf_scanned_content:
             retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
 
-        # 4. Format Prompt dynamically with combined context
         variables = {
             "domain": "University Course Registration and Degree Planning",
             "context": retrieved_context,
@@ -477,24 +466,23 @@ class AICall:
 
         formatted_prompt = prompt_template.format(variables)
 
-        # 5. Generate response via Ollama Cloud adapter
         ollama_service = OllamaCloudAIService()
         response = ollama_service.generate_response(formatted_prompt)
         return response
 
 
+# ==========================================
+# Requirement 1: User Interface
+# ==========================================
 class Requirement1_UI:
-    def __init__(self, query_router, chat_history):
-        self.query_router = query_router
+    def __init__(self, ai_caller, chat_history):
+        self.ai_caller = ai_caller
         self.chat_history = chat_history
 
     def start_command_line_interface(self, student_id: str) -> str:
         print("=== Academic AI Advisor Initialized (LangChain Flow) ===")
         print("Type your query below (or type 'exit' to quit):\n")
         response = ""
-
-        # Instantiate AICall as a standalone service, passing query_router and student_id
-        ai_caller = AICall(self.query_router, student_id)
 
         while True:
             try:
@@ -507,8 +495,8 @@ class Requirement1_UI:
 
             self.chat_history.add_message(student_id, "User", user_input)
 
-            # Call the independent AICall class method
-            response = ai_caller.CallAI(user_input=user_input)
+            # Call the globally instantiated ai_caller service
+            response = self.ai_caller.CallAI(student_id, user_input=user_input)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
             print(f"\nAI Advisor:\n{response}\n")
@@ -532,11 +520,17 @@ def main():
 
     degree_plan_generator = Requirement2_DegreePlanGenerator()
     course_verifier = Requirement4_CourseVerifier(sql_database)
-    plan_modifier = Requirement5_PlanModifier()
     chat_history = Requirement6_ConversationHistory()
 
     query_router = Requirement3_QueryRouter(sql_database, vector_store)
-    user_interface = Requirement1_UI(query_router, chat_history)
+    
+    # 🌟 INSTANTIATE AICALL ONCE HERE GLOBALLY 🌟
+    global_ai_caller = AICall(query_router)
+
+    # Pass the shared global AI service into the UI or any other components
+    user_interface = Requirement1_UI(global_ai_caller, chat_history)
+    plan_modifier = Requirement5_PlanModifier(global_ai_caller)
+
 
     sample_student_id = "STU-2026-9941"
 
@@ -555,7 +549,7 @@ def main():
     print(f"Can enroll in CS 301? {can_enroll}")
 
     print("\n--- Testing Requirement 5: Major Switching & Plan Diff ---")
-    evaluation = plan_modifier.evaluate_major_change("BS Computer Science", "BS Software Engineering")
+    evaluation = plan_modifier.evaluate_major_change(sample_student_id, "BS Computer Science", "BS Software Engineering")
     print(evaluation)
     new_plan = degree_plan_generator.generate_plan(
         "BS Software Engineering", "Artificial Intelligence", ["CS 101", "MATH 101"]
