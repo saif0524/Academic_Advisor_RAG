@@ -17,7 +17,9 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `docs/` — planning documents for the AI advisor implementation: functional requirements, the domain model, dated feature proposals, implementation logs
 - `data/course-desc.jsonl` — seed RAG corpus (75 lines of `{"id", "title", "description"}`)
 - `data/cse_undergrad_courses.pdf` — CSE undergraduate degree requirements
-- `src/main/` — backend entry point
+- `src/agent/` — Python LangChain agent/LLM zone (per `docs/2026-10-19-src-monorepo-structure.md`); legacy CLI entry in `src/main/`
+- `src/server/` — FastAPI HTTP transport scaffold (`FC-new-rest-api` proposed) — thin adapter over agent/database/core
+- `src/main/` — legacy backend entry point (`AI_Assistant_New.py`; `.java` leftover ignored)
 - `.pi/` — project-level pi configuration (see below)
 
 ## Documentation map
@@ -75,6 +77,18 @@ pi
 On first start pi asks you to **trust the project** — this is what enables the project `.pi/` config (skills, prompts, extension). Say yes. Then check `/skill:advisor-domain` and `/fc` appear in `/` command completion.
 
 Useful daily commands: `/model`, `/login`, `/settings`, `/resume`, `/continue` (CLI: `pi --continue`), and `/reload` (see below).
+
+### 4. Run the advisor API scaffold (optional)
+
+The FastAPI HTTP layer scaffold lives in `src/server/` (`docs/2026-10-19-src-monorepo-structure.md` §server):
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+PYTHONPATH=src .venv/bin/uvicorn server.app:app --reload   # http://127.0.0.1:8000/docs
+.venv/bin/pytest                                                 # smoke tests (tests/server)
+```
+
+Endpoints are 501 `not_wired` stubs until the `core`/`database`/`agent` zones are built.
 
 ## Using pi in this repo
 

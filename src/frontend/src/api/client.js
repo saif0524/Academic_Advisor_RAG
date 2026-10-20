@@ -3,10 +3,14 @@
  * Components never call `fetch` inline — everything goes through this client,
  * per the react-component skill.
  *
- * The FastAPI app lands in src/agent/server (see
- * docs/2026-10-19-src-monorepo-structure.md §agent). No endpoints exist yet —
- * add typed helpers here as routers come online, e.g.
- *   export const getDegreeRequirements = () => request('/degrees/requirements');
+ * The FastAPI scaffold lives in src/server (see
+ * docs/2026-10-19-src-monorepo-structure.md §server): routers for chat
+ * (FC22–24, FC27–28), courses (FC8–12), classes (FC13–14, FC20–21),
+ * plans (FC1–7, FC25–26), degrees (FC15, FC18), students (FC1/7/16–17/19/36),
+ * and audits (FC24). Endpoints are 501 {"error": ...} stubs until the
+ * backend zones are wired — add typed helpers here as services come online,
+ * e.g:
+ *   export const getMyProfile = () => request('/students/me');
  * No auth headers: authentication is out of scope (FC36).
  */
 

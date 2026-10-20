@@ -7,7 +7,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 | Layer | Choice |
 | --- | --- |
 | Frontend | React (built-in state management only) |
-| Agent / LLM | Python + LangChain + LangGraph (`src/main/AI_Assistant.py`) |
+| Agent / LLM | Python + LangChain (`src/agent/`; FastAPI HTTP layer in `src/server/`; legacy CLI entry `src/main/AI_Assistant_New.py`) |
 | Structured data | SQLite — students, sections, enrollments, plans, chat history |
 | Unstructured data | Chroma — course descriptions, catalog text, degree requirements (embeddings) |
 
@@ -17,7 +17,10 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `docs/2026-10-18-ai-advisor-domain-model.md` — class specs: domain entities (§1), planning/validation engine (§2), LangChain conversation layer (§3), DB managers (§4), UI (§5).
 - `data/course-desc.jsonl` — seed RAG corpus: 75 lines, one JSON object per line `{"id", "title", "description"}` (4-digit course IDs).
 - `data/cse_undergrad_courses.pdf` — CSE undergraduate degree requirements; source for degree requirement records.
-- `src/main/` — backend entry (`AI_Assistant.py`; the `.java` file is an early-design leftover).
+- `src/agent/` — agent zone: LangChain conversation layer (`agent/llm`, `agent/session`, `agent/tools`) per `docs/2026-10-19-src-monorepo-structure.md` §agent.
+- `src/server/` — FastAPI HTTP transport (proposed `FC-new-rest-api`): app factory + lifespan, all DI in `dependencies.py`, routers/controllers/services/schemas per resource (chat, courses, classes, plans, degrees, students, audits). Thin adapter over agent/database/core; unwired endpoints return 501 `not_wired` until those zones are built. Conventions: `.pi/skills/fastapi/SKILL.md`.
+- `src/main/` — backend entry (`AI_Assistant_New.py`; the `.java` file is an early-design leftover).
+- `tests/` — Python unit tests mirroring the src zones (smoke tests in `tests/server/` today).
 - `src/frontend/` — React app scaffold (Vite + Storybook 10, own toolchain/npm). One folder per component with required Storybook story; domain groups `components/{chat,planner,degrees,classes,shared}` + `pages/` composition roots + `api/client.js` (single HTTP wrapper) + `state/SessionContext.jsx` (built-in state only). Conventions: `.pi/skills/react-component/SKILL.md`; structure: `docs/2026-10-19-src-monorepo-structure.md`.
 
 ## Core architecture rules
@@ -37,7 +40,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `/skill:advisor-domain` — load domain knowledge, safeguard ownership, and data-format details.
 - `/skill:architect <feature>` — scope a feature in a design chat; explicitly ask to "write the proposal" to generate `docs/<date>-<slug>.md`.
 - `/skill:react-component` — React component conventions for `src/frontend/` (one folder per component: `.jsx` + plain `.css` + required Storybook story; atomic decomposition by domain group; built-in state management only).
-- `/skill:fastapi` — HTTP layer conventions for `src/agent/server/` (routers/controllers/services split, `Depends` DI for services, Pydantic request/response schemas).
+- `/skill:fastapi` — HTTP layer conventions for `src/server/` (routers/controllers/services split, `Depends` DI for services, Pydantic request/response schemas).
 - `/skill:langgraph` — advisor-graph conventions for `src/agent/` (nodes, edges, conditional routing, tools, state, FC23 interrupt-based confirmation, checkpointing).
 - `/skill:tester` — testing scope: business logic only (engine, services, agent orchestration with stubbed LLMs, db managers); no UI unit tests — Storybook review instead.
 - **Docs stay current:** an implementation task is not done until affected docs are re-assessed for accuracy. After every change, check the docs it touches — the FC requirements doc, the domain model, this file's repo map, and any dated feature proposals — and update anything the change made stale (including this file itself).

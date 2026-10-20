@@ -1,16 +1,16 @@
 ---
 name: fastapi
-description: FastAPI conventions for the Academic AI Advisor HTTP layer (src/agent/server/) — routers/controllers/services separation, dependency injection through FastAPI Depends for services and managers (advisor agent, SQL/Chroma db managers), and typed request/response contracts as Pydantic models. Use when creating, modifying, or reviewing FastAPI code, endpoints, DI providers, schemas, or app setup.
+description: FastAPI conventions for the Academic AI Advisor HTTP layer (src/server/) — routers/controllers/services separation, dependency injection through FastAPI Depends for services and managers (advisor agent, SQL/Chroma db managers), and typed request/response contracts as Pydantic models. Use when creating, modifying, or reviewing FastAPI code, endpoints, DI providers, schemas, or app setup.
 ---
 
 # FastAPI server conventions
 
-Scope: `src/agent/server/` (per `docs/2026-10-19-src-monorepo-structure.md`, proposed `FC-new-rest-api`). The server is a thin adapter over `AIAdvisorAgent`/`database`/`core`; nothing below `agent` may import it.
+Scope: `src/server/` (per `docs/2026-10-19-src-monorepo-structure.md`, proposed `FC-new-rest-api`). The server is a thin adapter over `agent`/`database`/`core`; nothing in those zones may import it.
 
 ## Layout — routers / controllers / services / schemas
 
 ```text
-src/agent/server/
+src/server/
 ├── app.py                # app factory + lifespan (init managers, seed/ingest); mounts routers + error handlers
 ├── dependencies.py       # all DI providers — the single place instances come from
 ├── routers/              # one file per resource: chat.py, plans.py, degrees.py, audit.py

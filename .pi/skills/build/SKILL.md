@@ -22,10 +22,10 @@ Read before deciding anything: `AGENTS.md`, `docs/2026-10-18-functional-requirem
 - `advisor-domain` — whenever the feature touches advising behavior (courses, prereqs, plans, degrees, audits).
 - `tester` — **always**; it defines what phase 3 must and must not test (business logic only).
 - `react-component` — when the request mentions UI, components, pages, or styling, or when frontend work cannot yet be ruled out. Its conventions (component anatomy, CSS, Storybook) govern frontend files in phases 3–4; the frontend gets **no** unit tests (see `tester`).
-- `fastapi` — when the feature adds/changes HTTP endpoints, `src/agent/server/` files, DI, or request/response schemas.
+- `fastapi` — when the feature adds/changes HTTP endpoints, `src/server/` files, DI, or request/response schemas.
 - `langgraph` — when the feature adds/changes graph nodes, tools, edges, state, interrupts, or the checkpointer in `src/agent/`.
 
-**Re-check at phase 2:** the file-level change list is authoritative — before finalizing affected plan sections, load every skill above whose zone the list touches (`src/frontend/` → `react-component`; `src/agent/server/` → `fastapi`; graph changes → `langgraph`).
+**Re-check at phase 2:** the file-level change list is authoritative — before finalizing affected plan sections, load every skill above whose zone the list touches (`src/frontend/` → `react-component`; `src/server/` → `fastapi`; graph changes → `langgraph`).
 
 ## Phase 1 — Resolve the spec (FC)
 
