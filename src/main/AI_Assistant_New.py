@@ -126,7 +126,6 @@ class CourseSection(Course):
         self.enrolled_count = enrolled_count
 
     def has_time_conflict(self, other_section: 'CourseSection') -> bool:
-        # Simple overlap check on meeting days and times
         if not set(self.meeting_days).intersection(set(other_section.meeting_days)):
             return False
         return self.start_time == other_section.start_time
@@ -299,6 +298,41 @@ class Requirement3_QueryRouter:
         else:
             return self.vector_store.similarity_search(query)
 
+    def extract_courses_into_semesters(self, text: str) -> list[list[dict]]:
+        pattern = re.compile(r'\b([A-Z]{2,4})\s+(\d{4})\b')
+        matches = pattern.findall(text)
+
+        courses = []
+        for dept, code_str in matches:
+            try:
+                credits = int(code_str[1])
+            except (ValueError, IndexError):
+                credits = 3
+            
+            courses.append({
+                "course_code": f"{dept} {code_str}",
+                "credits": credits
+            })
+
+        semesters = []
+        current_semester = []
+        current_semester_credits = 0
+
+        for course in courses:
+            course_credits = course["credits"]
+            if current_semester_credits + course_credits > 18:
+                semesters.append(current_semester)
+                current_semester = [course]
+                current_semester_credits = course_credits
+            else:
+                current_semester.append(course)
+                current_semester_credits += course_credits
+
+        if current_semester:
+            semesters.append(current_semester)
+
+        return semesters
+
 
 # ==========================================
 # Requirement 4: Course Verification Guardrail
@@ -311,10 +345,20 @@ class Requirement4_CourseVerifier(CourseRecommendationValidator):
 # Requirement 5: Plan Modifications & Switching
 # ==========================================
 class Requirement5_PlanModifier:
-    def evaluate_major_change(self, current_major: str, target_major: str) -> str:
+    def __init__(self, ai_caller):
+        self.ai_caller = ai_caller
+
+    def evaluate_major_change(self, student_id: str, current_major: str, target_major: str) -> str:
         print(f"Analyzing transition from {current_major} to {target_major}...")
-        return ("Advantages: Better alignment with cybersecurity careers.\n"
-                "Disadvantages: Requires 2 additional foundational math courses (MATH 250 & STAT 310).")
+        
+        prompt = (
+            f"Analyze the academic and career transition from {current_major} to {target_major}. "
+            "Provide a detailed breakdown of the advantages (such as career alignment) "
+            "and disadvantages (such as required additional foundational or prerequisite courses)."
+        )
+        
+        response = self.ai_caller.CallAI(student_id, user_input=prompt)
+        return response
 
     def generate_plan_comparison(self, old_plan: DegreePlan, new_plan: DegreePlan):
         print("=== Degree Plan Comparison Report ===")
@@ -393,26 +437,6 @@ class VectorDatabaseManager(DatabaseManager):
 
 
 # ==========================================
-# Requirement 1: User Interface
-# ==========================================
-
-def _load_jsonl_context(self, file_path: str) -> str:
-        additional_context = []
-        if os.path.exists(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            data = json.loads(line)
-                            # Convert each JSON object line into a readable string representation
-                            additional_context.append(json.dumps(data))
-            except Exception as e:
-                print(f"Warning: Could not read JSONL file: {e}")
-        return "\n".join(additional_context)
-
-
-# ==========================================
 # Open Knowledge Format (OKF) Manager
 # ==========================================
 class OpenKnowledgeFormatManager:
@@ -420,7 +444,6 @@ class OpenKnowledgeFormatManager:
         self.kb_root_dir = kb_root_dir
 
     def scan_knowledge_base(self) -> str:
-        """Scans the OKF directory structure, reading markdown files, frontmatter, and content."""
         okf_chunks = []
         if not os.path.exists(self.kb_root_dir):
             return ""
@@ -432,45 +455,78 @@ class OpenKnowledgeFormatManager:
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             content = f.read()
-                            # Format each OKF document chunk clearly for the AI context window
                             okf_chunks.append(f"--- OKF Source: {file} ---\n{content}\n")
                     except Exception as e:
                         print(f"Warning: Could not read OKF file {file}: {e}")
                         
         return "\n".join(okf_chunks)
 
-class Requirement1_UI:
+
+# ==========================================
+# Global AI Call Service
+# ==========================================
+class AICall:
     def __init__(self, query_router, chat_history):
         self.query_router = query_router
         self.chat_history = chat_history
-        # Initialize the OKF manager pointing to your knowledge base folder
         self.okf_manager = OpenKnowledgeFormatManager("data")
 
-    def _load_jsonl_context(self, file_path: str) -> str:
-        additional_context = []
-        if os.path.exists(file_path):
+    def CallAI(self, student_id: str, user_input: str = None) -> str:
+        if user_input is None:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            data = json.loads(line)
-                            additional_context.append(json.dumps(data))
-            except Exception as e:
-                print(f"Warning: Could not read JSONL file: {e}")
-        return "\n".join(additional_context)
+                user_input = input(f"Student ({student_id}): ")
+            except EOFError:
+                print("Failed AI State")
+                return ""
+        
+        prompt_template = PromptTemplate.from_template(
+            "You are an expert Academic AI Advisor specializing in {domain}. "
+            "Answer the student's question accurately using the provided context and conversation history.\n\n"
+            "Conversation History:\n{chat_history}\n\n"
+            "Context Information:\n{context}\n\n"
+            "Student Query: {input}"
+        )
+        
+        # 1. Retrieve standard RAG query context
+        retrieved_context = self.query_router.route_and_execute(student_id, user_input)
+
+        # 2. Scan and inject Open Knowledge Format (OKF) markdown files
+        okf_scanned_content = self.okf_manager.scan_knowledge_base()
+        if okf_scanned_content:
+            retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
+
+        # 3. Retrieve and format conversation history for this student
+        history_list = self.chat_history.get_history(student_id)
+        formatted_history = "\n".join([f"{sender}: {msg}" for sender, msg in history_list]) if history_list else "No prior conversation."
+
+        # 4. Format Prompt dynamically with combined context and history
+        variables = {
+            "domain": "University Course Registration and Degree Planning",
+            "chat_history": formatted_history,
+            "context": retrieved_context, 
+            "input": user_input
+        }
+
+        formatted_prompt = prompt_template.format(variables)
+
+        # 5. Generate response via Ollama Cloud adapter
+        ollama_service = OllamaCloudAIService()
+        response = ollama_service.generate_response(formatted_prompt)
+        return response
+
+
+# ==========================================
+# Requirement 1: User Interface
+# ==========================================
+class Requirement1_UI:
+    def __init__(self, ai_caller, chat_history):
+        self.ai_caller = ai_caller
+        self.chat_history = chat_history
 
     def start_command_line_interface(self, student_id: str) -> str:
         print("=== Academic AI Advisor Initialized (LangChain Flow) ===")
         print("Type your query below (or type 'exit' to quit):\n")
         response = ""
-
-        prompt_template = PromptTemplate.from_template(
-            "You are an expert Academic AI Advisor specializing in {domain}. "
-            "Answer the student's question accurately using the provided context.\n\n"
-            "Context Information:\n{context}\n\n"
-            "Student Query: {input}"
-        )
 
         while True:
             try:
@@ -483,31 +539,8 @@ class Requirement1_UI:
 
             self.chat_history.add_message(student_id, "User", user_input)
 
-            # 1. Retrieve standard RAG query context
-            retrieved_context = self.query_router.route_and_execute(student_id, user_input)
-            
-            # # 2. Append existing JSONL file context
-            # jsonl_context = self._load_jsonl_context("data/course-desc.jsonl")
-            # if jsonl_context:
-            #     retrieved_context += "\n\nCourse descriptions (JSONL):\n" + jsonl_context
-
-            # 3. Scan and inject Open Knowledge Format (OKF) markdown files
-            okf_scanned_content = self.okf_manager.scan_knowledge_base()
-            if okf_scanned_content:
-                retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
-
-            # 4. Format Prompt dynamically with combined context
-            variables = {
-                "domain": "University Course Registration and Degree Planning",
-                "context": retrieved_context,
-                "input": user_input
-            }
-
-            formatted_prompt = prompt_template.format(variables)
-
-            # 5. Generate response via Ollama Cloud adapter
-            ollama_service = OllamaCloudAIService()
-            response = ollama_service.generate_response(formatted_prompt)
+            # Call the globally instantiated ai_caller service
+            response = self.ai_caller.CallAI(student_id, user_input=user_input)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
             print(f"\nAI Advisor:\n{response}\n")
@@ -531,11 +564,16 @@ def main():
 
     degree_plan_generator = Requirement2_DegreePlanGenerator()
     course_verifier = Requirement4_CourseVerifier(sql_database)
-    plan_modifier = Requirement5_PlanModifier()
     chat_history = Requirement6_ConversationHistory()
 
     query_router = Requirement3_QueryRouter(sql_database, vector_store)
-    user_interface = Requirement1_UI(query_router, chat_history)
+    
+    # 🌟 INSTANTIATE AICALL ONCE HERE GLOBALLY WITH CHAT HISTORY 🌟
+    global_ai_caller = AICall(query_router, chat_history)
+
+    # Pass the shared global AI service into the UI and Plan Modifier
+    user_interface = Requirement1_UI(global_ai_caller, chat_history)
+    plan_modifier = Requirement5_PlanModifier(global_ai_caller)
 
     sample_student_id = "STU-2026-9941"
 
@@ -554,7 +592,7 @@ def main():
     print(f"Can enroll in CS 301? {can_enroll}")
 
     print("\n--- Testing Requirement 5: Major Switching & Plan Diff ---")
-    evaluation = plan_modifier.evaluate_major_change("BS Computer Science", "BS Software Engineering")
+    evaluation = plan_modifier.evaluate_major_change(sample_student_id, "BS Computer Science", "BS Software Engineering")
     print(evaluation)
     new_plan = degree_plan_generator.generate_plan(
         "BS Software Engineering", "Artificial Intelligence", ["CS 101", "MATH 101"]
