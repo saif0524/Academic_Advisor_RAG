@@ -390,28 +390,6 @@ class VectorDatabaseManager(DatabaseManager):
 
     def similarity_search(self, query: str) -> str:
         return f"Retrieved course catalog context matching: [{query}] using {self.backend_type} backend."
-
-
-# ==========================================
-# Requirement 1: User Interface
-# ==========================================
-
-def _load_jsonl_context(self, file_path: str) -> str:
-        additional_context = []
-        if os.path.exists(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            data = json.loads(line)
-                            # Convert each JSON object line into a readable string representation
-                            additional_context.append(json.dumps(data))
-            except Exception as e:
-                print(f"Warning: Could not read JSONL file: {e}")
-        return "\n".join(additional_context)
-
-
 # ==========================================
 # Open Knowledge Format (OKF) Manager
 # ==========================================
@@ -439,14 +417,12 @@ class OpenKnowledgeFormatManager:
                         
         return "\n".join(okf_chunks)
 
-class Requirement1_UI:
-    def __init__(self, query_router, chat_history):
-        self.query_router = query_router
-        self.chat_history = chat_history
-        # Initialize the OKF manager pointing to your knowledge base folder
-        self.okf_manager = OpenKnowledgeFormatManager("data")
 
-    def _load_jsonl_context(self, file_path: str) -> str:
+# ==========================================
+# Requirement 1: User Interface
+# ==========================================
+
+def _load_jsonl_context(self, file_path: str) -> str:
         additional_context = []
         if os.path.exists(file_path):
             try:
@@ -455,22 +431,70 @@ class Requirement1_UI:
                         line = line.strip()
                         if line:
                             data = json.loads(line)
+                            # Convert each JSON object line into a readable string representation
                             additional_context.append(json.dumps(data))
             except Exception as e:
                 print(f"Warning: Could not read JSONL file: {e}")
         return "\n".join(additional_context)
 
-    def start_command_line_interface(self, student_id: str) -> str:
-        print("=== Academic AI Advisor Initialized (LangChain Flow) ===")
-        print("Type your query below (or type 'exit' to quit):\n")
-        response = ""
+class AICall:
+    def __init__(self, query_router, student_id: str):
+        self.query_router = query_router
+        self.student_id = student_id
+        # Initialize the OKF manager pointing to your knowledge base folder
+        self.okf_manager = OpenKnowledgeFormatManager("data")
 
+    def CallAI(self, user_input: str = None) -> str:
+        # If user_input isn't passed directly, prompt for it in the terminal
+        if user_input is None:
+            try:
+                user_input = input(f"Student ({self.student_id}): ")
+            except EOFError:
+                print("Failed AI State")
+                return ""
+        
         prompt_template = PromptTemplate.from_template(
             "You are an expert Academic AI Advisor specializing in {domain}. "
             "Answer the student's question accurately using the provided context.\n\n"
             "Context Information:\n{context}\n\n"
             "Student Query: {input}"
         )
+        
+        # 1. Retrieve standard RAG query context
+        retrieved_context = self.query_router.route_and_execute(self.student_id, user_input)
+
+        # 3. Scan and inject Open Knowledge Format (OKF) markdown files
+        okf_scanned_content = self.okf_manager.scan_knowledge_base()
+        if okf_scanned_content:
+            retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
+
+        # 4. Format Prompt dynamically with combined context
+        variables = {
+            "domain": "University Course Registration and Degree Planning",
+            "context": retrieved_context,
+            "input": user_input
+        }
+
+        formatted_prompt = prompt_template.format(variables)
+
+        # 5. Generate response via Ollama Cloud adapter
+        ollama_service = OllamaCloudAIService()
+        response = ollama_service.generate_response(formatted_prompt)
+        return response
+
+
+class Requirement1_UI:
+    def __init__(self, query_router, chat_history):
+        self.query_router = query_router
+        self.chat_history = chat_history
+
+    def start_command_line_interface(self, student_id: str) -> str:
+        print("=== Academic AI Advisor Initialized (LangChain Flow) ===")
+        print("Type your query below (or type 'exit' to quit):\n")
+        response = ""
+
+        # Instantiate AICall as a standalone service, passing query_router and student_id
+        ai_caller = AICall(self.query_router, student_id)
 
         while True:
             try:
@@ -483,31 +507,8 @@ class Requirement1_UI:
 
             self.chat_history.add_message(student_id, "User", user_input)
 
-            # 1. Retrieve standard RAG query context
-            retrieved_context = self.query_router.route_and_execute(student_id, user_input)
-            
-            # # 2. Append existing JSONL file context
-            # jsonl_context = self._load_jsonl_context("data/course-desc.jsonl")
-            # if jsonl_context:
-            #     retrieved_context += "\n\nCourse descriptions (JSONL):\n" + jsonl_context
-
-            # 3. Scan and inject Open Knowledge Format (OKF) markdown files
-            okf_scanned_content = self.okf_manager.scan_knowledge_base()
-            if okf_scanned_content:
-                retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
-
-            # 4. Format Prompt dynamically with combined context
-            variables = {
-                "domain": "University Course Registration and Degree Planning",
-                "context": retrieved_context,
-                "input": user_input
-            }
-
-            formatted_prompt = prompt_template.format(variables)
-
-            # 5. Generate response via Ollama Cloud adapter
-            ollama_service = OllamaCloudAIService()
-            response = ollama_service.generate_response(formatted_prompt)
+            # Call the independent AICall class method
+            response = ai_caller.CallAI(user_input=user_input)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
             print(f"\nAI Advisor:\n{response}\n")
