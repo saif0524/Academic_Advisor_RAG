@@ -298,6 +298,41 @@ class Requirement3_QueryRouter:
         else:
             return self.vector_store.similarity_search(query)
 
+    def extract_courses_into_semesters(self, text: str) -> list[list[dict]]:
+        pattern = re.compile(r'\b([A-Z]{2,4})\s+(\d{4})\b')
+        matches = pattern.findall(text)
+
+        courses = []
+        for dept, code_str in matches:
+            try:
+                credits = int(code_str[1])
+            except (ValueError, IndexError):
+                credits = 3
+            
+            courses.append({
+                "course_code": f"{dept} {code_str}",
+                "credits": credits
+            })
+
+        semesters = []
+        current_semester = []
+        current_semester_credits = 0
+
+        for course in courses:
+            course_credits = course["credits"]
+            if current_semester_credits + course_credits > 18:
+                semesters.append(current_semester)
+                current_semester = [course]
+                current_semester_credits = course_credits
+            else:
+                current_semester.append(course)
+                current_semester_credits += course_credits
+
+        if current_semester:
+            semesters.append(current_semester)
+
+        return semesters
+
 
 # ==========================================
 # Requirement 4: Course Verification Guardrail
@@ -314,7 +349,6 @@ class Requirement5_PlanModifier:
         self.ai_caller = ai_caller
 
     def evaluate_major_change(self, student_id: str, current_major: str, target_major: str) -> str:
-        # Use the current print statement/context description as the base prompt for the AI
         print(f"Analyzing transition from {current_major} to {target_major}...")
         
         prompt = (
@@ -323,7 +357,6 @@ class Requirement5_PlanModifier:
             "and disadvantages (such as required additional foundational or prerequisite courses)."
         )
         
-        # Call the global AI caller service and return its response
         response = self.ai_caller.CallAI(student_id, user_input=prompt)
         return response
 
@@ -433,8 +466,9 @@ class OpenKnowledgeFormatManager:
 # Global AI Call Service
 # ==========================================
 class AICall:
-    def __init__(self, query_router):
+    def __init__(self, query_router, chat_history):
         self.query_router = query_router
+        self.chat_history = chat_history
         self.okf_manager = OpenKnowledgeFormatManager("data")
 
     def CallAI(self, student_id: str, user_input: str = None) -> str:
@@ -447,25 +481,35 @@ class AICall:
         
         prompt_template = PromptTemplate.from_template(
             "You are an expert Academic AI Advisor specializing in {domain}. "
-            "Answer the student's question accurately using the provided context.\n\n"
+            "Answer the student's question accurately using the provided context and conversation history.\n\n"
+            "Conversation History:\n{chat_history}\n\n"
             "Context Information:\n{context}\n\n"
             "Student Query: {input}"
         )
         
+        # 1. Retrieve standard RAG query context
         retrieved_context = self.query_router.route_and_execute(student_id, user_input)
 
+        # 2. Scan and inject Open Knowledge Format (OKF) markdown files
         okf_scanned_content = self.okf_manager.scan_knowledge_base()
         if okf_scanned_content:
             retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
 
+        # 3. Retrieve and format conversation history for this student
+        history_list = self.chat_history.get_history(student_id)
+        formatted_history = "\n".join([f"{sender}: {msg}" for sender, msg in history_list]) if history_list else "No prior conversation."
+
+        # 4. Format Prompt dynamically with combined context and history
         variables = {
             "domain": "University Course Registration and Degree Planning",
-            "context": retrieved_context,
+            "chat_history": formatted_history,
+            "context": retrieved_context, 
             "input": user_input
         }
 
         formatted_prompt = prompt_template.format(variables)
 
+        # 5. Generate response via Ollama Cloud adapter
         ollama_service = OllamaCloudAIService()
         response = ollama_service.generate_response(formatted_prompt)
         return response
@@ -524,13 +568,12 @@ def main():
 
     query_router = Requirement3_QueryRouter(sql_database, vector_store)
     
-    # 🌟 INSTANTIATE AICALL ONCE HERE GLOBALLY 🌟
-    global_ai_caller = AICall(query_router)
+    # 🌟 INSTANTIATE AICALL ONCE HERE GLOBALLY WITH CHAT HISTORY 🌟
+    global_ai_caller = AICall(query_router, chat_history)
 
-    # Pass the shared global AI service into the UI or any other components
+    # Pass the shared global AI service into the UI and Plan Modifier
     user_interface = Requirement1_UI(global_ai_caller, chat_history)
     plan_modifier = Requirement5_PlanModifier(global_ai_caller)
-
 
     sample_student_id = "STU-2026-9941"
 
