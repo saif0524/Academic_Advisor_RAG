@@ -7,7 +7,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 | Layer | Choice |
 | --- | --- |
 | Frontend | React (built-in state management only) |
-| Agent / LLM | Python + LangChain (`src/main/AI_Assistant.py`) |
+| Agent / LLM | Python + LangChain + LangGraph (`src/main/AI_Assistant.py`) |
 | Structured data | SQLite — students, sections, enrollments, plans, chat history |
 | Unstructured data | Chroma — course descriptions, catalog text, degree requirements (embeddings) |
 
@@ -32,6 +32,11 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - Trace every feature to its FC ID(s) before implementing.
 - `/fc <ids>` — pull up requirements (e.g. `/fc 29 30 31`).
 - `/plan-feature <description>` — draft a design mapped to the domain model.
+- `/build <feature description>` or `/skill:build <feature description>` — end-to-end build: resolve or add the FC spec in `docs/2026-10-18-functional-requirements.md`, plan with clarifying questions, write unit tests first, then implement until all tests pass (`.pi/skills/build/SKILL.md`; thin `/build` alias in `.pi/prompts/build.md`).
 - `/skill:advisor-domain` — load domain knowledge, safeguard ownership, and data-format details.
 - `/skill:architect <feature>` — scope a feature in a design chat; explicitly ask to "write the proposal" to generate `docs/<date>-<slug>.md`.
+- `/skill:react-component` — React component conventions for `src/frontend/` (one folder per component: `.jsx` + plain `.css` + required Storybook story; atomic decomposition by domain group; built-in state management only).
+- `/skill:fastapi` — HTTP layer conventions for `src/agent/server/` (routers/controllers/services split, `Depends` DI for services, Pydantic request/response schemas).
+- `/skill:langgraph` — advisor-graph conventions for `src/agent/` (nodes, edges, conditional routing, tools, state, FC23 interrupt-based confirmation, checkpointing).
+- `/skill:tester` — testing scope: business logic only (engine, services, agent orchestration with stubbed LLMs, db managers); no UI unit tests — Storybook review instead.
 - **Docs stay current:** an implementation task is not done until affected docs are re-assessed for accuracy. After every change, check the docs it touches — the FC requirements doc, the domain model, this file's repo map, and any dated feature proposals — and update anything the change made stale (including this file itself).

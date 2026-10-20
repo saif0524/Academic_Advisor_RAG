@@ -18,7 +18,7 @@ LLMs are not constraint solvers in this system. Advising decisions go through de
 | Detect/prevent section time conflicts | FC31 | `check_no_schedule_conflict` / `SemesterPlan.has_schedule_conflicts` |
 | Enforce per-semester and degree-total credit caps | FC32 | `check_within_semester_credit_limit`, `check_within_total_degree_credits` |
 
-The `AIAdvisorAgent` classify → tool-call → summarize loop is in `docs/2026-10-18-ai-advisor-domain-model.md` §3 (`classify_query_intent`, `handle_exact_query`, `handle_semantic_query`, `handle_plan_generation_request`). Plans come from `DegreePlanGenerator.generate_multi_year_plan` and `compare_plans` (FC25, FC26), never from the model's imagination.
+The `AIAdvisorAgent` classify → tool-call → summarize loop is in `docs/2026-10-18-ai-advisor-domain-model.md` §3 (`classify_query_intent`, `handle_exact_query`, `handle_semantic_query`, `handle_plan_generation_request`). Plans come from `DegreePlanGenerator.generate_multi_year_plan` and `compare_plans` (FC25, FC26), never from the model's imagination. LangGraph implementation conventions for that loop (nodes/edges/tools, FC23 interrupts): `.pi/skills/langgraph/SKILL.md`.
 
 ## Data routing (FC33)
 
@@ -32,8 +32,8 @@ The `AIAdvisorAgent` classify → tool-call → summarize loop is in `docs/2026-
 
 ## Stack decisions
 
-- React frontend, built-in state management only (no Redux/Zustand/etc.).
-- Python + LangChain backend; current entry point `src/main/AI_Assistant.py`. Ignore `AI_Assistant 5.java` — early-design leftover.
+- React frontend, built-in state management only (no Redux/Zustand/etc.). Component anatomy (per-component folder with `.jsx` + plain `.css` + required Storybook story), atomic decomposition, and state rules live in `.pi/skills/react-component/SKILL.md`.
+- Python + LangChain/LangGraph backend; current entry point `src/main/AI_Assistant.py`. Ignore `AI_Assistant 5.java` — early-design leftover. FastAPI HTTP conventions (routers/controllers/services, DI, Pydantic): `.pi/skills/fastapi/SKILL.md`. Testing scope (business logic only, no UI tests): `.pi/skills/tester/SKILL.md`.
 - Embeddings/ingest flow through `VectorDatabaseManager.ingest_documents`; assume pluggable embedding model choice.
 
 ## Baseline assumptions

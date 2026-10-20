@@ -73,6 +73,7 @@ agent/
 ├── __init__.py
 ├── llm/
 │   ├── advisor_agent.py       # AIAdvisorAgent: process_query, classify_query_intent (FC9/FC33 routing)
+│   ├── graph.py               # build_advisor_graph(): LangGraph nodes/edges/tools/state, FC23 interrupts
 │   ├── memory.py              # ConversationBufferMemory wiring (FC6, FC27–28 follow-ups)
 │   └── prompts/               # prompt templates (classification, summarization, clarification)
 ├── session/
@@ -83,13 +84,18 @@ agent/
 │   └── plan_tools.py          # DegreePlanGenerator/Validator wrappers (FC22–24)
 │                              # plan-affecting tools enforce confirm-before-acting (FC23, FC27–28)
 └── server/                    # HTTP transport (proposed: FC-new-rest-api)
-    ├── app.py                 # FastAPI application
-    ├── routes.py              # /chat, /plans, /degrees, /audit endpoints
-    └── schemas.py             # request/response DTOs (validated, no internal entities leaked)
+    ├── app.py                 # FastAPI app factory + lifespan; mounts routers, error handlers
+    ├── dependencies.py        # DI providers: advisor agent, db managers, pre-auth student (FC36)
+    ├── routers/               # thin per-resource APIRouters (<resource>.py, no business logic)
+    ├── controllers/           # orchestrate services → map errors → build response models
+    ├── services/              # business logic wrapping agent/database/core
+    └── schemas/               # Pydantic request/response models (no internal entities leaked)
 ```
 
 Dependency rule: `agent → database → core`; nothing below imports `agent`.
 `server/` here instead of a separate package because it is a thin adapter over `AIAdvisorAgent`.
+
+Code-level conventions live in skills (source of truth if this tree and they disagree): server routers/controllers/services split + `Depends` DI + Pydantic contracts → `.pi/skills/fastapi/SKILL.md`; graph nodes/edges/tools/state + FC23 interrupt confirmation → `.pi/skills/langgraph/SKILL.md`.
 
 ### `src/frontend/` — React UI
 
@@ -104,15 +110,18 @@ frontend/
     │   └── client.js          # single wrapper over the HTTP API
     ├── state/
     │   └── SessionContext.jsx # built-in React state only (no Redux/Zustand)
-    ├── components/
-    │   ├── chat/              # render_chat_interface (FC22–24, FC27–28)
+    ├── components/            # one folder per component — anatomy: <Name>.jsx + <Name>.css + <Name>.stories.jsx
+    │   ├── chat/              # render_chat_interface (FC22–24, FC27–28); e.g. components/chat/ChatMessage/
     │   ├── planner/           # degree plan display/compare (FC1–FC7, FC25–FC26)
     │   ├── degrees/           # degree exploration/audit (FC15–FC19)
-    │   └── classes/           # add/drop/confirm dialogs (FC20–FC21, FC23)
+    │   ├── classes/           # add/drop/confirm dialogs (FC20–FC21, FC23)
+    │   └── shared/            # cross-domain primitives (no code may import shared from above)
     └── pages/
         ├── Dashboard.jsx
         └── DegreeExplorer.jsx
 ```
+
+Component anatomy (per-component folder: component `.jsx`, plain `.css`, mandatory Storybook CSF3 `.stories.jsx`), atomic decomposition into those domain groups, plain-CSS naming, and built-in state-management rules are specified in `.pi/skills/react-component/SKILL.md` — that skill is the source of truth for the frontend if this tree and it disagree.
 
 ## Dependency map & import rules
 
