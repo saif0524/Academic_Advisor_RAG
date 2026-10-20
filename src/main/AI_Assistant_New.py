@@ -198,7 +198,7 @@ class SemesterPlan:
         self.max_credit_limit = max_credit_limit
 
     def get_total_credits(self) -> int:
-        return len(self.planned_courses) * 3
+        return sum(c.credit_hours for c in self.planned_courses)
 
     def add_course(self, course: Course) -> bool:
         if self.get_total_credits() + course.credit_hours <= self.max_credit_limit:
@@ -257,29 +257,38 @@ class CourseRecommendationValidator:
 # Requirement 2: Degree Plan Generator
 # ==========================================
 class Requirement2_DegreePlanGenerator:
-    def generate_plan(self, major: str, concentration: str, completed_courses: list) -> DegreePlan:
+    def generate_plan(self, major: str, concentration: str, completed_courses: list, extracted_semesters: list = None) -> DegreePlan:
         print(f"Generating degree plan for {major} with concentration in {concentration}...")
         
-        fall_courses = ["CS 301", "MATH 241", "CYBER 401"]
-        spring_courses = ["CS 302", "CYBER 410", "STAT 300"]
+        all_courses = []
+        if extracted_semesters:
+            for sem in extracted_semesters:
+                for c in sem:
+                    all_courses.append(c["course_code"])
+        else:
+            all_courses = ["CS 301", "MATH 241", "CYBER 401"]
 
-        fall_courses = [c for c in fall_courses if c not in completed_courses]
-        spring_courses = [c for c in spring_courses if c not in completed_courses]
+        all_courses = [c for c in all_courses if c not in completed_courses]
 
-        req = DegreeRequirement("DEG-01", major, concentration, 120, 18, fall_courses + spring_courses)
+        req = DegreeRequirement("DEG-01", major, concentration, 120, 18, all_courses)
         plan = DegreePlan("PLAN-001", "STU-2026-9941", req)
 
-        if fall_courses:
-            sem1 = SemesterPlan("Fall", 2026)
-            for c in fall_courses:
-                sem1.planned_courses.append(Course(c, "Sample Course", "Description", 3))
-            plan.add_semester(sem1)
-
-        if spring_courses:
-            sem2 = SemesterPlan("Spring", 2027)
-            for c in spring_courses:
-                sem2.planned_courses.append(Course(c, "Sample Course", "Description", 3))
-            plan.add_semester(sem2)
+        if extracted_semesters:
+            terms = ["Fall", "Spring", "Summer"]
+            start_year = 2026
+            for idx, sem_courses in enumerate(extracted_semesters):
+                term_name = terms[idx % len(terms)]
+                term_year = start_year + (idx // len(terms))
+                sem_plan = SemesterPlan(term_name, term_year)
+                for c in sem_courses:
+                    sem_plan.add_course(Course(c["course_code"], "Extracted Catalog Course", "Description", c["credits"]))
+                plan.add_semester(sem_plan)
+        else:
+            if all_courses:
+                sem1 = SemesterPlan("Fall", 2026)
+                for c in all_courses:
+                    sem1.add_course(Course(c, "Sample Course", "Description", 3))
+                plan.add_semester(sem1)
 
         return plan
 
@@ -433,7 +442,7 @@ class VectorDatabaseManager(DatabaseManager):
         pass
 
     def similarity_search(self, query: str) -> str:
-        return f"Retrieved course catalog context matching: [{query}] using {self.backend_type} backend."
+        return f"Retrieved course catalog context matching: [{query}] using {self.backend_type} backend. Suggested courses: CSE 1310, MATH 1426, CSE 1320."
 
 
 # ==========================================
@@ -487,19 +496,15 @@ class AICall:
             "Student Query: {input}"
         )
         
-        # 1. Retrieve standard RAG query context
         retrieved_context = self.query_router.route_and_execute(student_id, user_input)
 
-        # 2. Scan and inject Open Knowledge Format (OKF) markdown files
         okf_scanned_content = self.okf_manager.scan_knowledge_base()
         if okf_scanned_content:
             retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
 
-        # 3. Retrieve and format conversation history for this student
         history_list = self.chat_history.get_history(student_id)
         formatted_history = "\n".join([f"{sender}: {msg}" for sender, msg in history_list]) if history_list else "No prior conversation."
 
-        # 4. Format Prompt dynamically with combined context and history
         variables = {
             "domain": "University Course Registration and Degree Planning",
             "chat_history": formatted_history,
@@ -509,7 +514,6 @@ class AICall:
 
         formatted_prompt = prompt_template.format(variables)
 
-        # 5. Generate response via Ollama Cloud adapter
         ollama_service = OllamaCloudAIService()
         response = ollama_service.generate_response(formatted_prompt)
         return response
@@ -539,7 +543,6 @@ class Requirement1_UI:
 
             self.chat_history.add_message(student_id, "User", user_input)
 
-            # Call the globally instantiated ai_caller service
             response = self.ai_caller.CallAI(student_id, user_input=user_input)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
@@ -560,7 +563,7 @@ def main():
     sql_database.connect()
 
     vector_store = VectorDatabaseManager("ChromaDB")
-    vector_store.add_document("Course catalog text regarding AI and Cybersecurity electives.")
+    vector_store.add_document("Course catalog text regarding AI and Cybersecurity electives. Recommended courses: CSE 1310, MATH 1426, CSE 1320.")
 
     degree_plan_generator = Requirement2_DegreePlanGenerator()
     course_verifier = Requirement4_CourseVerifier(sql_database)
@@ -568,10 +571,8 @@ def main():
 
     query_router = Requirement3_QueryRouter(sql_database, vector_store)
     
-    # 🌟 INSTANTIATE AICALL ONCE HERE GLOBALLY WITH CHAT HISTORY 🌟
     global_ai_caller = AICall(query_router, chat_history)
 
-    # Pass the shared global AI service into the UI and Plan Modifier
     user_interface = Requirement1_UI(global_ai_caller, chat_history)
     plan_modifier = Requirement5_PlanModifier(global_ai_caller)
 
@@ -580,9 +581,27 @@ def main():
     response = user_interface.start_command_line_interface(sample_student_id)
     chat_history.add_message(sample_student_id, "AI Advisor", response)
 
-    print("\n--- Testing Requirement 2: Degree Plan Generation ---")
+    print("\n--- Testing Requirement 2: Degree Plan Generation from Chat History ---")
+    
+    # 1. Search chat history to find the last AI response
+    history = chat_history.get_history(sample_student_id)
+    last_ai_response = ""
+    for sender, msg in reversed(history):
+        if sender == "AI Advisor":
+            last_ai_response = msg
+            break
+
+    # If no AI response exists in history yet, fall back to a default sample text string
+    if not last_ai_response:
+        last_ai_response = "Recommended courses: CSE 1310, MATH 1426, CSE 1320."
+
+    # 2. Extract courses into semester lists using query router's method
+    extracted_semesters = query_router.extract_courses_into_semesters(last_ai_response)
+    print(f"Extracted Semesters Structure: {extracted_semesters}")
+
+    # 3. Generate degree plan using the extracted info
     initial_plan = degree_plan_generator.generate_plan(
-        "BS Computer Science", "Cybersecurity", ["CS 101", "MATH 101"]
+        "BS Computer Science", "Cybersecurity", ["CS 1105", "MATH 1426"], extracted_semesters=extracted_semesters
     )
 
     print("\n--- Testing Requirement 4: Course Verification Guardrail ---")
