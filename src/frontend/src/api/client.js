@@ -4,7 +4,7 @@
  * per the react-component skill.
  *
  * The FastAPI scaffold lives in src/server (see
- * docs/2026-10-19-src-monorepo-structure.md §server): routers for chat
+ * docs/planning/2026-10-19-src-monorepo-structure.md §server): routers for chat
  * (FC22–24, FC27–28), courses (FC8–12), classes (FC13–14, FC20–21),
  * plans (FC1–7, FC25–26), degrees (FC15, FC18), students (FC1/7/16–17/19/36),
  * and audits (FC24). Endpoints are 501 {"error": ...} stubs until the

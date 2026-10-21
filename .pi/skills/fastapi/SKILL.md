@@ -5,7 +5,7 @@ description: FastAPI conventions for the Academic AI Advisor HTTP layer (src/ser
 
 # FastAPI server conventions
 
-Scope: `src/server/` (per `docs/2026-10-19-src-monorepo-structure.md`, proposed `FC-new-rest-api`). The server is a thin adapter over `agent`/`database`/`core`; nothing in those zones may import it.
+Scope: `src/server/` (per `docs/planning/2026-10-19-src-monorepo-structure.md`, proposed `FC-new-rest-api`). The server is a thin adapter over `agent`/`database`/`core`; nothing in those zones may import it.
 
 ## Layout — routers / controllers / services / schemas
 

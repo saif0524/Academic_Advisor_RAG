@@ -1,6 +1,6 @@
 # Git Process
 
-Source for FC IDs: `docs/2026-10-18-functional-requirements.md`.
+Source for FC IDs: `docs/planning/2026-10-18-functional-requirements.md`.
 
 ## 1. Branches
 

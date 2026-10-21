@@ -5,7 +5,7 @@ description: Domain knowledge for building the Academic AI Advisor RAG platform 
 
 # Academic AI Advisor — engineering knowledge
 
-Full documentation lives in `docs/2026-10-18-functional-requirements.md` (FC1–FC36) and `docs/2026-10-18-ai-advisor-domain-model.md` (class specs). This skill carries the rules and details that are easy to get wrong.
+Full documentation lives in `docs/planning/2026-10-18-functional-requirements.md` (FC1–FC36) and `docs/planning/2026-10-18-ai-advisor-domain-model.md` (class specs). This skill carries the rules and details that are easy to get wrong.
 
 ## The one non-negotiable rule
 
@@ -18,7 +18,7 @@ LLMs are not constraint solvers in this system. Advising decisions go through de
 | Detect/prevent section time conflicts | FC31 | `check_no_schedule_conflict` / `SemesterPlan.has_schedule_conflicts` |
 | Enforce per-semester and degree-total credit caps | FC32 | `check_within_semester_credit_limit`, `check_within_total_degree_credits` |
 
-The `AIAdvisorAgent` classify → tool-call → summarize loop is in `docs/2026-10-18-ai-advisor-domain-model.md` §3 (`classify_query_intent`, `handle_exact_query`, `handle_semantic_query`, `handle_plan_generation_request`). Plans come from `DegreePlanGenerator.generate_multi_year_plan` and `compare_plans` (FC25, FC26), never from the model's imagination. LangGraph implementation conventions for that loop (nodes/edges/tools, FC23 interrupts): `.pi/skills/langgraph/SKILL.md`.
+The `AIAdvisorAgent` classify → tool-call → summarize loop is in `docs/planning/2026-10-18-ai-advisor-domain-model.md` §3 (`classify_query_intent`, `handle_exact_query`, `handle_semantic_query`, `handle_plan_generation_request`). Plans come from `DegreePlanGenerator.generate_multi_year_plan` and `compare_plans` (FC25, FC26), never from the model's imagination. LangGraph implementation conventions for that loop (nodes/edges/tools, FC23 interrupts): `.pi/skills/langgraph/SKILL.md`.
 
 ## Data routing (FC33)
 

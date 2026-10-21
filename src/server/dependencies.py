@@ -58,7 +58,7 @@ def initialize_state() -> None:
     """
     _logger.warning(
         "advisor server scaffold: manager/agent zones not built yet "
-        "(core=step2, database=step3, agent.llm=step4 in docs/2026-10-19-src-monorepo-structure.md)"
+        "(core=step2, database=step3, agent.llm=step4 in docs/planning/2026-10-19-src-monorepo-structure.md)"
     )
 
 

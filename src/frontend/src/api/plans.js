@@ -17,7 +17,7 @@
  * - Credit hours, per-semester caps, and degree totals are MOCK metadata
  *   (in the real system they live in SQLite, FC33).
  * - Roadmaps cover CSE coursework only; the real DegreePlanGenerator
- *   (FC2/FC25, docs/2026-10-18-ai-advisor-domain-model.md §2) adds gen-ed,
+ *   (FC2/FC25, docs/planning/2026-10-18-ai-advisor-domain-model.md §2) adds gen-ed,
  *   math, and physics work to reach the full degree total.
  * - The builder below is plain deterministic code — a mock of the engine's
  *   role. No LLM is involved, matching the deterministic-engine-first rule.
