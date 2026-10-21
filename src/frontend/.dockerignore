@@ -1,0 +1,7 @@
+# Frontend build context (web image): only what `npm ci` + `vite build` need.
+# NOTE: .storybook stays in context — vite.config.ts wires the Storybook
+# vitest plugin at load time, so it must exist for `vite build`.
+node_modules
+dist
+storybook-static
+.git

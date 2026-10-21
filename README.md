@@ -20,6 +20,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `src/agent/` — Python LangChain agent/LLM zone (per `docs/planning/2026-10-19-src-monorepo-structure.md`); legacy CLI entry in `src/main/`
 - `src/server/` — FastAPI HTTP transport scaffold (`FC-new-rest-api` proposed) — thin adapter over agent/database/core
 - `src/main/` — legacy backend entry point (`AI_Assistant_New.py`; `.java` leftover ignored)
+- `docker-compose.yml`, `Dockerfile`, `.dockerignore`, `src/frontend/Dockerfile` — containerized demo deployment (FC38): api + web via `docker compose up`
 - `.pi/` — project-level pi configuration (see below)
 
 ## Documentation map
@@ -93,6 +94,25 @@ PYTHONPATH=src .venv/bin/uvicorn server.app:app --reload   # http://127.0.0.1:80
 ```
 
 Endpoints are 501 `not_wired` stubs until the `core`/`database`/`agent` zones are built.
+
+### 5. Run the whole stack with Docker (FC38)
+
+Builds and starts both services with one command — no local Python/Node setup needed:
+
+```bash
+cp .env.example .env          # fill in OLLAMA_API_KEY (gitignored)
+docker compose up --build    # or: docker-compose up --build
+```
+
+| Service | URL | Notes |
+| --- | --- | --- |
+| api (FastAPI) | http://localhost:8000 (`/health`, `/docs`) | Seeds SQLite + Chroma from `data/` on every startup (FC33) |
+| web (React + nginx) | http://localhost:3000 | Static production bundle; calls the api at `http://localhost:8000` |
+
+- **LLM access stays external:** the api container reaches the **host** machine's Ollama at `http://host.docker.internal:11434` (env `ADVISOR_LLM_BASE_URL`, model `ADVISOR_LLM_MODEL`, default `glm-5.3-flash:cloud`, key from `.env` `OLLAMA_API_KEY`). Fully offline demo: set `ADVISOR_LLM_PROVIDER=stub` in `.env`.
+- **Persistence:** seed-owned tables reload fresh each `up` (FC33); user-owned chat/plan data persists in the `advisor-var` volume across `down`/`up` (FC34). Wipe state with `docker compose down -v`.
+- **First start:** the api downloads the ONNX MiniLM embedding model once (~90 MB, cached in the `advisor-model-cache` volume). With no network it degrades to deterministic hash embeddings (weaker semantics, still grounded).
+- Override the browser-side api URL with `VITE_API_BASE_URL` in `.env` + `docker compose build web` if you move the api off `localhost:8000`.
 
 ## Using pi in this repo
 

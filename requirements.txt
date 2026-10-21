@@ -9,6 +9,7 @@ pydantic>=2.7
 
 # Data layer (src/database — FC33): SQLite via stdlib; Chroma vector store
 chromadb>=1.0
+onnxruntime>=1.19    # chromadb DefaultEmbeddingFunction (ADVISOR_EMBEDDING_FUNCTION=onnx default; degrades to hash without it)
 PyYAML>=6.0          # degree-requirement .md frontmatter parsing
 numpy>=1.25          # embedding seam (hash embeddings + chroma dependency)
 
