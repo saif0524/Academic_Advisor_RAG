@@ -1,0 +1,38 @@
+/* Engine-verdict banner (FC29/FC31/FC32 display surfaces). */
+
+.plan-check-banner {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.plan-check-banner--ok {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.plan-check-banner--issues {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.plan-check-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-check-banner-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+}

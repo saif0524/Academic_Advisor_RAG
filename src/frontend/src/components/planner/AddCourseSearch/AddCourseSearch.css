@@ -1,0 +1,25 @@
+/* Timeline "Add a course" search (wireframe 02). */
+
+.add-course-search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.add-course-search-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.add-course-search-state {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.add-course-search-state--error {
+  color: var(--color-danger);
+}

@@ -1,0 +1,69 @@
+/* Home header: active-degree-plan summary (wireframe 01). */
+
+.plan-progress-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.plan-progress-header-kicker {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.plan-progress-header-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.plan-progress-header-meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.plan-progress-header-credits {
+  margin: var(--space-1) 0 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.plan-progress-header-ontrack {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-success);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.plan-progress-header-term {
+  margin-top: var(--space-1);
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-progress-header-state {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.plan-progress-header-state--error {
+  color: var(--color-danger);
+}
+
+.plan-progress-header .badge {
+  align-self: flex-start;
+}

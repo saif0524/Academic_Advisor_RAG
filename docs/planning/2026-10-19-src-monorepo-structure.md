@@ -1,6 +1,6 @@
 # Proposal: Layered `src/` monorepo structure
 
-*Date: 2026-10-19 · Status: proposed (pre-implementation) · Progress: implementation outline step 5 done — `src/frontend/` scaffolded (Vite + React JS + Storybook 10.6 + Vitest story tests; demo app/stories removed; config in `.storybook/main.ts`, vitest browser wiring in `frontend/vite.config.js`; no MSW — no API endpoints exist yet, stories get data via props). First feature on the scaffold: the FC2 degree-plan generator UI (2026-10 built) — `api/plans.js` mocks the `plans` HTTP contract (shapes mirror `src/server/schemas/plans.py`; seed-real course IDs from `data/course-desc.jsonl`, mock credit metadata), with `pages/PlanGenerator.jsx` as a full-page overlay off `Dashboard` and its state via props/DI seams, not a store. Step 4 partially done — the FastAPI scaffold is its own top-level zone, `src/server/` (app factory + lifespan + CORS in `app.py`; DI providers in `dependencies.py`; routers/controllers/services/schemas for chat, courses, classes, plans, degrees, students, audits; `NotWiredError` → 501 envelope until core/database/agent-llm land; smoke tests in `tests/server/`). The `core`, `database`, and `agent/llm` zones and endpoint implementations are still pending (outline steps 2–4); the FC2 planner keeps using the mock until `POST /plans/generate` is wired.*
+*Date: 2026-10-19 · Status: proposed (partially implemented) · Progress: the full wireframe UI (docs/wireframes/, all six screens) is built on `src/frontend/` (Vite + React **TypeScript** — converted from JS on 2026-10-21 — Storybook 10.6, strict tsconfig with `npm run typecheck`, oxlint, Vitest story tests with playwright; no MSW — no API endpoints exist yet, so every `api/*.ts` service is a labeled deterministic MOCK, stories inject fixtures via DI seams). Built surfaces: `pages/AdvisorApp` composition root (page state + advisor-chat drawer, no router), `Dashboard` (wireframe 01/06 — FC1/7/14/19/21/25 display + FC2 planner entry), `TimelinePage` (wireframes 02/03 — FC3 draft edits with FC29/FC32 engine-verdict display + Discard/Save), `CourseSearch` (wireframe 04 — FC8/FC9 query → FC22 answer + FC11/FC12 results, FC23-style Details dialog), `AccountPage` (wireframe 05 — FC26 comparison + FC23 ConfirmDialog + FC25/FC32 preferences), and the `chat/` drawer (FC22–24/27/34–35, canned replies, FC23 confirmation card). Mock seams: `api/plans.ts` (plan routes — shapes mirror `src/server/schemas/plans.py`; seed-real courses from `data/course-desc.jsonl`, mock credit metadata), `courses.ts`, `chat.ts`, `students.ts`, shared `catalog.ts`/`types.ts`. Step 4 partially done — the FastAPI scaffold is its own top-level zone, `src/server/` (app factory + lifespan + CORS in `app.py`; DI providers in `dependencies.py`; routers/controllers/services/schemas for chat, courses, classes, plans, degrees, students, audits; `NotWiredError` → 501 envelope until core/database/agent-llm land; smoke tests in `tests/server/`). The `core`, `database`, and `agent/llm` zones and endpoint implementations are still pending (outline steps 2–4); the frontend keeps using the mocks until the routes are wired.*
 
 ## Summary
 
@@ -111,36 +111,52 @@ server/
 └── schemas/                   # Pydantic request/response models (no internal entities leaked)
 ```
 
-### `src/frontend/` — React UI
+### `src/frontend/` — React UI (TypeScript)
 
 ```
 frontend/
 ├── package.json               # own toolchain; not part of Python packaging
+├── tsconfig.json              # strict TS; `npm run typecheck` = tsc --noEmit
 ├── index.html
 ├── public/
 └── src/
-    ├── main.jsx               # AdvisorUI entry (§5)
+    ├── main.tsx               # AdvisorUI entry (§5): SessionProvider + AdvisorApp
     ├── api/
-    │   ├── client.js          # single wrapper over the HTTP API
-    │   └── plans.js           # FC1/FC2/FC25 plan service — MOCK of the FastAPI plan contract; swap bodies to request() when wired
+    │   ├── client.ts          # single HTTP wrapper (components never call fetch)
+    │   ├── types.ts           # shared domain shapes for all mock seams (typed DTOs)
+    │   ├── catalog.ts         # fixture data grounded in data/course-desc.jsonl (+ mock metadata)
+    │   ├── plans.ts           # FC1/2/3/7/19/25/26 plan service — MOCK of the FastAPI plan contract
+    │   ├── courses.ts         # FC8–FC12 search/detail service — MOCK
+    │   ├── chat.ts            # FC22–24/27/34 chat service (canned deterministic replies) — MOCK
+    │   └── students.ts        # FC36 profile + FC25/FC32 preferences — MOCK
     ├── state/
-    │   └── SessionContext.jsx # built-in React state only (no Redux/Zustand)
-    ├── components/            # one folder per component — anatomy: <Name>.jsx + <Name>.css + <Name>.stories.jsx
-    │   ├── chat/              # render_chat_interface (FC22–24, FC27–28); e.g. components/chat/ChatMessage/
-    │   ├── planner/           # degree plan display/compare (FC1–FC7, FC25–FC26)
-    │   │   ├── MajorSpecSelector/   # FC1 inputs: major + one concentration, optional summer (FC25) — built
-    │   │   ├── SemesterCard/        # one roadmap semester (FC25; chips under the per-semester cap, FC32) — built
-    │   │   └── PlanRoadmap/         # FC25 roadmap display for a generated plan — built
-    │   ├── degrees/           # degree exploration/audit (FC15–FC19)
-    │   ├── classes/           # add/drop/confirm dialogs (FC20–FC21, FC23)
-    │   └── shared/            # cross-domain primitives (no code may import shared from above)
+    │   └── SessionContext.tsx # built-in React state only (no Redux/Zustand)
+    ├── components/            # one folder per component — anatomy: <Name>.tsx + <Name>.css + <Name>.stories.tsx
+    │   ├── chat/              # render_chat_interface (FC22–24, FC27–28, FC34–35): ChatPanel, ChatMessageList, ChatMessage,
+    │   │                      #   ActionConfirmationCard (FC23 gate), ChatComposer, ConversationHistory, ConversationListItem — built
+    │   ├── planner/           # major/spec + plan display/compare (FC1–FC7, FC25–FC26):
+    │   │                      #   MajorSpecSelector, PlanRoadmap — built (FC2 overlay)
+    │   │                      #   PlanProgressHeader (FC1/7/19), CurrentSemesterPanel (FC14/21), SemesterCard (FC25),
+    │   │                      #   SemesterTimeline + SemesterDetail + PlannedCourseRow + PlanCheckBanner + AddCourseSearch +
+    │   │                      #   UnsavedChangesBar (FC3/29/32 display), PlanComparisonTable (FC26), PlanningPreferences (FC25/32) — built
+    │   ├── search/            # course discovery (FC8–FC12, FC29–FC32 verdict displays): CourseSearchBox, AdvisorAnswerCard,
+    │   │                      #   SearchFilterChips, CourseResultCard, CourseDetailDialog — built
+    │   ├── degrees/           # degree exploration/audit (FC15–FC19) — pending
+    │   ├── classes/           # add/drop/confirm dialogs (FC20–FC21, FC23) — deferred (no wireframe coverage)
+    │   └── shared/            # cross-domain primitives (no code may import shared from above):
+    │                          #   AppSidebar, AppShell, Icon, Button, Badge, ProgressBar, TextInput, TextArea, Select,
+    │                          #   Checkbox, SearchInput, ConfirmDialog, textCase.ts — built
     └── pages/
-        ├── Dashboard.jsx     # landing composition root; mounts the planner overlay
-        ├── PlanGenerator.jsx # FC2 full-page overlay: load options/catalog → select major/concentration → generate → roadmap
-        └── DegreeExplorer.jsx
+        ├── AdvisorApp.tsx     # app composition root: page state + advisor-chat drawer state (no router)
+        ├── Dashboard.tsx      # home (wireframe 01/06): plan header, this semester, my semesters + FC2 planner overlay entry
+        ├── TimelinePage.tsx   # timeline (wireframes 02–03): draft edits w/ engine-verdict display, discard/save (FC3)
+        ├── CourseSearch.tsx   # search (wireframe 04): FC8/FC9 query → advisor answer + matching courses
+        ├── AccountPage.tsx    # account (wireframe 05): profile, change major (FC23 confirm dialog), plan comparison (FC26), preferences
+        ├── PlanGenerator.tsx  # FC2 full-page overlay: load options/catalog → select major/concentration → generate → roadmap
+        └── DegreeExplorer.tsx # FC15–FC19 surface — placeholder empty state
 ```
 
-Component anatomy (per-component folder: component `.jsx`, plain `.css`, mandatory Storybook CSF3 `.stories.jsx`), atomic decomposition into those domain groups, plain-CSS naming, and built-in state-management rules are specified in `.pi/skills/react-component/SKILL.md` — that skill is the source of truth for the frontend if this tree and it disagree.
+Component anatomy (per-component folder: component `.tsx`, plain `.css`, mandatory Storybook CSF3 `.stories.tsx` — TypeScript is the standard, switched from plain JS on 2026-10-21), atomic decomposition into those domain groups, plain-CSS naming, typed props (`api/types.ts` for domain shapes), and built-in state-management rules are specified in `.pi/skills/react-component/SKILL.md` — that skill is the source of truth for the frontend if this tree and it disagree.
 
 ## Dependency map & import rules
 
@@ -168,7 +184,7 @@ frontend ──HTTP──▶ server ──▶ agent(llm,tools) + database(manage
 - **Open questions carried from scoping:**
   1. FastAPI chosen as server default here — confirm; swapping to another framework changes only `server/`.
   2. One Python package with subpackages (proposed) vs. per-component `pyproject.toml`. The proposed single package is simpler for a course-project install; split later if a standalone pippable `core` is ever needed.
-  3. Frontend↔backend type sharing (hand-written DTOs vs. OpenAPI codegen) — deferred.
+  3. Frontend↔backend type sharing — hand-written typed DTOs in `src/frontend/src/api/types.ts` for now; OpenAPI codegen when the server is wired (resolved 2026-10-21 with the TS migration).
   4. `ConversationSession` lives in `agent/session` (§3), but its history is persisted via `SQLDatabaseManager` (FC34). Confirm that session persistence is agent-owned rather than database-owned.
 - **Out of scope:** authentication (FC36); any runtime feature work — moving code and creating packages only; changing `data/` formats (FC35 corpus stays as is).
 

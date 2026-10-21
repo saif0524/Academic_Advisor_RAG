@@ -1,0 +1,26 @@
+/* Search page (wireframe 04): query → advisor answer + matching courses. */
+
+.course-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 980px;
+}
+
+.course-search-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.course-search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-1);
+}
+
+.course-search-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
