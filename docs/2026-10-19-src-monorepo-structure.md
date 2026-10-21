@@ -1,6 +1,6 @@
 # Proposal: Layered `src/` monorepo structure
 
-*Date: 2026-10-19 · Status: proposed (pre-implementation) · Progress: implementation outline step 5 done — `src/frontend/` scaffolded (Vite + React JS + Storybook 10.6 + Vitest story tests; demo app/stories removed; config in `.storybook/main.ts`, vitest browser wiring in `frontend/vite.config.js`; no MSW — no API endpoints exist yet, stories get data via props). Step 4 partially done — the FastAPI scaffold is its own top-level zone, `src/server/` (app factory + lifespan + CORS in `app.py`; DI providers in `dependencies.py`; routers/controllers/services/schemas for chat, courses, classes, plans, degrees, students, audits; `NotWiredError` → 501 envelope until core/database/agent-llm land; smoke tests in `tests/server/`). The `core`, `database`, and `agent/llm` zones and endpoint implementations are still pending (outline steps 2–4).*
+*Date: 2026-10-19 · Status: proposed (pre-implementation) · Progress: implementation outline step 5 done — `src/frontend/` scaffolded (Vite + React JS + Storybook 10.6 + Vitest story tests; demo app/stories removed; config in `.storybook/main.ts`, vitest browser wiring in `frontend/vite.config.js`; no MSW — no API endpoints exist yet, stories get data via props). First feature on the scaffold: the FC2 degree-plan generator UI (2026-10 built) — `api/plans.js` mocks the `plans` HTTP contract (shapes mirror `src/server/schemas/plans.py`; seed-real course IDs from `data/course-desc.jsonl`, mock credit metadata), with `pages/PlanGenerator.jsx` as a full-page overlay off `Dashboard` and its state via props/DI seams, not a store. Step 4 partially done — the FastAPI scaffold is its own top-level zone, `src/server/` (app factory + lifespan + CORS in `app.py`; DI providers in `dependencies.py`; routers/controllers/services/schemas for chat, courses, classes, plans, degrees, students, audits; `NotWiredError` → 501 envelope until core/database/agent-llm land; smoke tests in `tests/server/`). The `core`, `database`, and `agent/llm` zones and endpoint implementations are still pending (outline steps 2–4); the FC2 planner keeps using the mock until `POST /plans/generate` is wired.*
 
 ## Summary
 
@@ -121,17 +121,22 @@ frontend/
 └── src/
     ├── main.jsx               # AdvisorUI entry (§5)
     ├── api/
-    │   └── client.js          # single wrapper over the HTTP API
+    │   ├── client.js          # single wrapper over the HTTP API
+    │   └── plans.js           # FC1/FC2/FC25 plan service — MOCK of the FastAPI plan contract; swap bodies to request() when wired
     ├── state/
     │   └── SessionContext.jsx # built-in React state only (no Redux/Zustand)
     ├── components/            # one folder per component — anatomy: <Name>.jsx + <Name>.css + <Name>.stories.jsx
     │   ├── chat/              # render_chat_interface (FC22–24, FC27–28); e.g. components/chat/ChatMessage/
     │   ├── planner/           # degree plan display/compare (FC1–FC7, FC25–FC26)
+    │   │   ├── MajorSpecSelector/   # FC1 inputs: major + one concentration, optional summer (FC25) — built
+    │   │   ├── SemesterCard/        # one roadmap semester (FC25; chips under the per-semester cap, FC32) — built
+    │   │   └── PlanRoadmap/         # FC25 roadmap display for a generated plan — built
     │   ├── degrees/           # degree exploration/audit (FC15–FC19)
     │   ├── classes/           # add/drop/confirm dialogs (FC20–FC21, FC23)
     │   └── shared/            # cross-domain primitives (no code may import shared from above)
     └── pages/
-        ├── Dashboard.jsx
+        ├── Dashboard.jsx     # landing composition root; mounts the planner overlay
+        ├── PlanGenerator.jsx # FC2 full-page overlay: load options/catalog → select major/concentration → generate → roadmap
         └── DegreeExplorer.jsx
 ```
 

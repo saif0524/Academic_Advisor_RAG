@@ -1,0 +1,53 @@
+/* PlanRoadmap — semester-by-semester roadmap display (FC25). */
+
+.plan-roadmap {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.plan-roadmap-header {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.plan-roadmap-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.plan-roadmap-meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.plan-roadmap-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  align-items: start;
+}
+
+.plan-roadmap-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.plan-roadmap-footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-1);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.plan-roadmap-total {
+  margin: 0;
+  font-weight: 600;
+}
+
+.plan-roadmap-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}

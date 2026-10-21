@@ -16,6 +16,8 @@ export const Primary = {};
 
 export const Secondary = { args: { variant: 'secondary' } };
 
+export const Disabled = { args: { disabled: true } };
+
 /* Exactly one CssCheck per project (Storybook setup): proves the global
    stylesheet (src/index.css tokens) actually loaded in the story canvas. */
 export const CssCheck = {
