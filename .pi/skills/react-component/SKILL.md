@@ -7,34 +7,48 @@ description: React component conventions for the Academic AI Advisor frontend (s
 
 Applies to everything under `src/frontend/` (per `docs/planning/2026-10-19-src-monorepo-structure.md` §frontend). Follow these rules for creating, modifying, and reviewing frontend code.
 
-## Bootstrapping (only while `src/frontend/` does not exist)
+## Bootstrapping (only when a fresh frontend is needed)
 
 Do not scaffold silently — propose the setup and wait for explicit confirmation:
 
-1. `npm create vite@latest src/frontend -- --template react` (JS template; the proposal's tree is `.jsx`/`.js`).
+1. `npm create vite@latest src/frontend -- --template react-ts` (TypeScript template).
 2. `cd src/frontend && npm install`.
-3. `npx storybook@latest init` — then check `.storybook/main.js` picks up `src/**/*.stories.@(js|jsx)`.
-4. If the user wants TypeScript instead of the proposal's JSX, switch extensions to `.tsx`/`.ts` **and update this skill plus the proposal doc first**.
+3. `npx storybook@latest init` — then check `.storybook/main.ts` picks up `src/**/*.stories.@(js|jsx|ts|tsx)`.
+
+(The repo's frontend is already TS — scaffolded as React-JS on 2026-10-20 and converted to
+TypeScript on 2026-10-21 per the user's call; keep new files `.tsx`/`.ts`.)
 
 ## Component anatomy — one folder per component
 
 ```text
 src/frontend/src/components/<domain>/<ComponentName>/
-├── <ComponentName>.jsx          # functional component, default export
-├── <ComponentName>.css          # plain CSS, imported at the top of the .jsx
-└── <ComponentName>.stories.jsx  # Storybook CSF3 — required, ≥1 story
+├── <ComponentName>.tsx          # functional component, default export, typed props
+├── <ComponentName>.css          # plain CSS, imported at the top of the .tsx
+└── <ComponentName>.stories.tsx  # Storybook CSF3 — required, ≥1 story
 ```
 
 - Folder and files named exactly after the component (PascalCase). One component per folder.
-- Props are the component's API: keep components presentational when practical; document props in a JSDoc block on the component (no prop-types dependency).
+- **TypeScript is the repo standard** (switched from JS on 2026-10-21): props get a typed `Props`
+  interface in the same file; domain data shapes live in `src/api/types.ts` — import types with
+  `import type`; extensionless relative imports (`./Button`, `../shared/Badge/Badge`). Document
+  behavior/FC context in JSDoc comments on the component.
+- No prop-types dependency — the TS interface is the contract.
 - **No component unit tests** — that is the `tester` skill's rule; UI verification is Storybook review (stories are the test surface for components).
-- An optional `index.jsx` barrel re-export is allowed for tidy imports — nothing else goes in the folder.
+- An optional `index.ts` barrel re-export is allowed for tidy imports — nothing else goes in the folder.
+- Run `npm run typecheck` (`tsc --noEmit`) alongside lint before calling frontend work done.
 
-```jsx
+```tsx
+import type { CourseResult } from '../../../api/types';
+import { toTitleCase } from '../../shared/textCase';
 import './CourseCard.css';
 
-/** Search-result card for a course. FC8/FC11. Props: course, bookmarked, onBookmark. */
-export default function CourseCard({ course, bookmarked, onBookmark }) { … }
+/** Search-result card for a course. FC8/FC11. */
+interface CourseCardProps {
+  course: CourseResult;
+  bookmarked?: boolean;
+  onBookmark?: (courseId: string) => void;
+}
+export default function CourseCard({ course, bookmarked = false, onBookmark }: CourseCardProps) { … }
 ```
 
 ## Layout, domains & atomic decomposition
@@ -66,14 +80,15 @@ Decompose complex UIs into smaller single-purpose components:
 
 CSF3, one story per distinct visual state (default plus empty/loading/error for data-driven components), controls for every prop:
 
-```jsx
+```tsx
+import type { Meta } from '@storybook/react-vite';
 import CourseCard from './CourseCard';
 
 const meta = {
-  title: 'Components/classes/CourseCard',
+  title: 'Components/search/CourseCard',
   component: CourseCard,
-  args: { course: { id: '1105', title: 'Intro to CS&E' } }, // real seed data, never invented
-};
+  args: { course: { id: '1105', title: 'INTRODUCTION TO COMPUTER SCIENCE AND ENGINEERING.', /* … */ } }, // real seed data, never invented
+} satisfies Meta<typeof CourseCard>;
 export default meta;
 
 export const Default = {};
@@ -91,4 +106,4 @@ export const Bookmarked = { args: { bookmarked: true } };
 
 ## Review checklist
 
-Folder has component + CSS + story · default export · props documented · story title/controls correct · data states rendered · plain-CSS naming rule · no cross-domain imports outside `shared/` · no external state libs · `api/client.js` used for all HTTP · FC citations present · confirmation dialog for FC23-style actions.
+Folder has component + CSS + story · default export · typed props (TS interface; `import type` from `api/types` for domain shapes) · story title/controls correct · data states rendered · plain-CSS naming rule · no cross-domain imports outside `shared/` · no external state libs · `api/client.ts` used for all HTTP · FC citations present · confirmation dialog for FC23-style actions · `npm run typecheck` + lint clean.

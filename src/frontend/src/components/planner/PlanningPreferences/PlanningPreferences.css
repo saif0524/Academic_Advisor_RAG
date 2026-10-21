@@ -1,0 +1,41 @@
+/* Planning preferences form (wireframe 05, FC25/FC32 inputs). */
+
+.planning-preferences {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.planning-preferences-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.planning-preferences-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.planning-preferences-saved {
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.planning-preferences-error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+
+.planning-preferences-state {
+  margin: 0;
+  color: var(--color-text-muted);
+}

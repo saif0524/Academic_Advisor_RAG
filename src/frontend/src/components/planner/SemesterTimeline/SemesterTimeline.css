@@ -1,0 +1,84 @@
+/* Horizontal semester chips strip (wireframes 02/03). */
+
+.semester-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.semester-timeline-list li {
+  flex-shrink: 0;
+}
+
+.semester-timeline-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-top-width: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.semester-timeline-chip--in-progress {
+  border-top-color: var(--color-info);
+}
+
+.semester-timeline-chip--planned {
+  border-top-color: var(--color-primary);
+}
+
+.semester-timeline-chip--completed {
+  border-top-color: var(--color-success);
+}
+
+.semester-timeline-chip--optional {
+  border-top-color: var(--color-border);
+  border-style: dashed;
+}
+
+.semester-timeline-chip:hover {
+  box-shadow: var(--shadow-1);
+}
+
+/* Selected chip: status-colored ring (in-progress chip keeps its top bar). */
+.semester-timeline-chip--selected {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  box-shadow: var(--shadow-1);
+}
+
+.semester-timeline-chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.semester-timeline-chip-term {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.semester-timeline-chip-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.semester-timeline-state {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.semester-timeline-state--error {
+  color: var(--color-danger);
+}

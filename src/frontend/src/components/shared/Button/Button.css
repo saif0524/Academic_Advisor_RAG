@@ -7,6 +7,17 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .button--primary {
@@ -14,8 +25,42 @@
   color: var(--color-surface);
 }
 
+.button--primary:not(:disabled):hover {
+  background: #0a347d;
+}
+
 .button--secondary {
   background: var(--color-surface);
   color: var(--color-primary);
   border-color: var(--color-border);
+}
+
+.button--secondary:not(:disabled):hover {
+  border-color: var(--color-primary);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.button--ghost:not(:disabled):hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.button--danger {
+  background: var(--color-danger);
+  color: var(--color-surface);
+}
+
+.button--danger:not(:disabled):hover {
+  background: #99201a;
+}
+
+/* Square padding for icon-only round buttons (e.g. row remove, panel close). */
+.button--icon-only {
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  line-height: 0;
 }

@@ -22,7 +22,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `src/server/` — FastAPI HTTP transport (proposed `FC-new-rest-api`): app factory + lifespan, all DI in `dependencies.py`, routers/controllers/services/schemas per resource (chat, courses, classes, plans, degrees, students, audits). Thin adapter over agent/database/core; unwired endpoints return 501 `not_wired` until those zones are built. Conventions: `.pi/skills/fastapi/SKILL.md`.
 - `src/main/` — backend entry (`AI_Assistant_New.py`; the `.java` file is an early-design leftover).
 - `tests/` — Python unit tests mirroring the src zones (smoke tests in `tests/server/` today).
-- `src/frontend/` — React app scaffold (Vite + Storybook 10, own toolchain/npm). One folder per component with required Storybook story; domain groups `components/{chat,planner,degrees,classes,shared}` + `pages/` composition roots + `api/client.js` (single HTTP wrapper) + `state/SessionContext.jsx` (built-in state only). Conventions: `.pi/skills/react-component/SKILL.md`; structure: `docs/planning/2026-10-19-src-monorepo-structure.md`; UI wireframes: `docs/wireframes/`.
+- `src/frontend/` — React app (TypeScript: components `.tsx` + plain CSS + required Storybook story; `npm run typecheck` = `tsc --noEmit`). One folder per component; domain groups `components/{chat,planner,degrees,classes,search,shared}` + `pages/` composition roots + `api/client.ts` (single HTTP wrapper) + `state/SessionContext.tsx` (built-in state only). Conventions: `.pi/skills/react-component/SKILL.md`; structure: `docs/planning/2026-10-19-src-monorepo-structure.md`; UI wireframes: `docs/wireframes/`.
 
 ## Core architecture rules
 
