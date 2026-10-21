@@ -1,0 +1,102 @@
+@startuml langgraph_activity_diagram
+title Academic AI Advisor: one chat turn through the LangGraph advisor graph (UML Activity Diagram)
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ActivityBackgroundColor #F7F9FC
+skinparam ActivityBorderColor #44546A
+skinparam ArrowColor #44546A
+skinparam partitionBorderColor #8497B0
+skinparam NoteBackgroundColor #FFF8E1
+skinparam NoteBorderColor #BF9000
+
+|Student|
+start
+:Send message\n(POST /chat/messages:\nmessage, session_id?, confirmed_action_id?);
+
+|FastAPI server|
+:ChatService.send_message;
+:ensure_chat_session (SQLite)\nwhen no session_id is given (FC27);
+:AIAdvisorAgent.process_query;
+
+|LangGraph advisor graph|
+:Load thread from checkpointer\n(AdvisorState: messages, intent,\npending_action, context_state);
+
+if (pending_action waiting\nfor confirmation?) then (yes)
+  partition "confirm_node (FC23)" {
+    if (confirmed_action_id matches\npending_action.action_id?) then (yes)
+      :Resume interrupt and run the acting tool\n(add_student_class / update_student_class /\nremove_student_class / update_student_major /\nsave_degree_plan, SQLite);
+      :resolve_pending_action("confirmed");
+    else (no)
+      :resolve_pending_action("cancelled")\nnothing is written;
+    endif
+  }
+else (no)
+  :classify_node: label intent\n(LLM structured output);
+  switch (route_intent(state.intent))
+  case ( exact lookup\nFC8, FC33 )
+    :schedule_tools: read student record, classes,\nsections, degree rows (SQLite);
+  case ( semantic question\nFC9, FC33 )
+    :search_tools: similarity_search over course\nand catalog text (Chroma);
+  case ( degree plan\nFC2, FC25 )
+    :plan_tools: DegreePlanGenerator\n.generate_multi_year_plan;
+    note right
+      FC29-FC32 checks (prereqs, not passed,
+      counts for degree, no time conflict,
+      semester and total credit caps) run inside
+      the engine via CourseRecommendationValidator.
+      The graph never does constraint math.
+    end note
+    :Propose save_degree_plan\nas pending_action;
+  case ( audit\nFC24 )
+    :plan_tools: CourseRecommendationValidator\n.verify_all_constraints;
+  case ( add / drop / change\nclass status\nFC20, FC21, FC23 )
+    if (adding a class?) then (yes)
+      :plan_tools: verify_all_constraints\nfor the requested section;
+    else (no)
+    endif
+    if (checks pass?) then (yes)
+      :Propose the change\nas pending_action;
+    else (no)
+      :Keep the failed checks\nas the reason;
+    endif
+  case ( change major, concentration\nor degree\nFC5, FC26, FC28 )
+    partition "major-change subgraph" {
+      if (enough detail to compare?\n(target degree, interests)) then (no)
+        :clarify_node: ask one follow-up,\nstore answers in context_state;
+      else (yes)
+        :DegreePlanGenerator.simulate_major_switch\n(lost credits, new timeline);
+        :DegreePlanGenerator.compare_plans\n(active plan vs proposed plan);
+        :Propose change_major / change_concentration /\nchange_degree as pending_action;
+      endif
+    }
+  case ( unclear )
+    :clarify_node: ask a follow-up question\n(bounded: proceeds or ends the turn);
+  endswitch
+
+  if (pending_action proposed?) then (yes)
+    :create_pending_action (SQLite);
+    :interrupt(): pause graph until\nthe student confirms or cancels;
+  else (no)
+  endif
+endif
+
+:summarize_node: LLM (Ollama Cloud) writes the reply\nfrom tool and engine results only;
+:Save checkpoint (MemorySaver);
+
+|FastAPI server|
+:append_chat_message for user and\nassistant turns (SQLite, FC34);
+:Return ChatMessageReply\n(session_id, reply, pending_action?);
+
+|Student|
+:Read reply;
+if (pending_action shown?) then (yes)
+  :Confirm or cancel in\nActionConfirmationCard;
+  note right
+    Confirming sends the next message
+    with confirmed_action_id, which takes
+    the confirm_node branch above.
+  end note
+else (no)
+endif
+stop
+@enduml
