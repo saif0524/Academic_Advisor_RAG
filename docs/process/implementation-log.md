@@ -143,3 +143,26 @@ search-page/chat-drawer switch to the live API.
 1. `DegreePlanGenerator` (FC2/FC25/FC26) → unblocks plan writes (then the agent's plan tools can generate).
 2. Remaining pages' mock→live swap (plans/students/classes services).
 3. OpenAPI codegen for the frontend DTOs.
+
+## 2026-10-20 — Docker Compose deployment (FC38)
+
+**Scope.** `/build` pass: containerize the stack so `docker compose up --build`
+brings up api + web for testing (spec: new FC38 in FR section 7).
+
+**Created**
+- `Dockerfile` (api) — python:3.12-slim, `pip install -r requirements.txt`, `src/`+`data/`, `PYTHONPATH=src`, `ADVISOR_HOST=0.0.0.0`, healthcheck on `/health`, ENTRYPOINT `python -m server.app` (ServerSettings stays the host/port source).
+- `src/frontend/Dockerfile` — node:22-alpine build (`npm ci`, `vite build`, `ARG VITE_API_BASE_URL` baked) → nginx:1.27-alpine static serve; `src/frontend/nginx.conf` (SPA fallback); `src/frontend/.dockerignore`.
+- `.dockerignore` (root) — secrets/models.json/var/db/dist excluded from the build context (FC36).
+- `docker-compose.yml` — `api` (8000, `advisor-var` + `advisor-model-cache` volumes, LLM env `ADVISOR_LLM_BASE_URL=http://host.docker.internal:11434` default, `OLLAMA_API_KEY` from `.env`, `extra_hosts host-gateway` for Linux) + `web` (3000→80, `VITE_API_BASE_URL` build arg default `http://localhost:8000`).
+
+**Modified**
+- `requirements.txt` (+`onnxruntime` — the default `ADVISOR_EMBEDDING_FUNCTION=onnx` imports it; a fresh image otherwise silently degrades to hash embeddings), `.env.example` (documented compose vars), `README.md` (§5 Run the whole stack with Docker + repo-structure bullet), `AGENTS.md` (repo map), FR doc (FC38 added).
+
+**Decisions**
+- Ollama stays external: the api container points at the host's Ollama (`host.docker.internal:11434`) so the demo reuses the local `glm-5.3-flash:cloud` + `OLLAMA_API_KEY`; optional `ADVISOR_LLM_PROVIDER=stub` for fully offline.
+- `ADVISOR_SEED_MODE=reload` unchanged (FC33): seed tables reload each `up`; user-owned chat/plan data persists in the `advisor-var` volume (FC34).
+- No unit tests: infra carries no business logic (tester scope) — user-acknowledged; verification = pytest regression + smoke bring-up.
+
+**Verified** `pytest`: 237 passed (unchanged by this pass). Compose YAML structure-checked; container run mode (`python -m server.app` with `ADVISOR_HOST/PORT`) smoke-proven locally: seeds, serves `/health` → 200 ok. Docker wasn't available in the build shell — first real `docker compose up --build` happens on the user's machine.
+
+**Follow-ups.** None required; revisit only if the frontend gains runtime env needs or the api gains new ports.
