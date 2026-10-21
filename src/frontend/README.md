@@ -2,7 +2,7 @@
 
 React UI for the RAG-based academic advising platform (`src/frontend/`, domain-model §5).
 Scaffolded with Vite (React, JS) + Storybook 10 + Vitest browser tests; structure follows
-`docs/2026-10-19-src-monorepo-structure.md` §frontend and `.pi/skills/react-component/SKILL.md`.
+`docs/planning/2026-10-19-src-monorepo-structure.md` §frontend and `.pi/skills/react-component/SKILL.md`.
 
 ## Commands
 

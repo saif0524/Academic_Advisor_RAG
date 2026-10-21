@@ -12,12 +12,12 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 ## Repo structure
 
 - `AGENTS.md` — repo guide + architecture rules, auto-loaded as pi instructions
-- `docs/2026-10-18-functional-requirements.md` — FC1–FC36, single source of truth for scope
-- `docs/2026-10-18-ai-advisor-domain-model.md` — class specs (§1 entities, §2 engine, §3 agent, §4 DB managers, §5 UI)
-- `docs/` — planning documents for the AI advisor implementation: functional requirements, the domain model, dated feature proposals, implementation logs
+- `docs/planning/2026-10-18-functional-requirements.md` — FC1–FC36, single source of truth for scope
+- `docs/planning/2026-10-18-ai-advisor-domain-model.md` — class specs (§1 entities, §2 engine, §3 agent, §4 DB managers, §5 UI)
+- `docs/` — organized as `planning/` (requirements, domain model, dated proposals — new proposals go here), `process/` (git process, implementation log), `wireframes/` (UI wireframes for the frontend screens), `example-chats/` (exported example advising sessions)
 - `data/course-desc.jsonl` — seed RAG corpus (75 lines of `{"id", "title", "description"}`)
 - `data/cse_undergrad_courses.pdf` — CSE undergraduate degree requirements
-- `src/agent/` — Python LangChain agent/LLM zone (per `docs/2026-10-19-src-monorepo-structure.md`); legacy CLI entry in `src/main/`
+- `src/agent/` — Python LangChain agent/LLM zone (per `docs/planning/2026-10-19-src-monorepo-structure.md`); legacy CLI entry in `src/main/`
 - `src/server/` — FastAPI HTTP transport scaffold (`FC-new-rest-api` proposed) — thin adapter over agent/database/core
 - `src/main/` — legacy backend entry point (`AI_Assistant_New.py`; `.java` leftover ignored)
 - `.pi/` — project-level pi configuration (see below)
@@ -30,12 +30,16 @@ What each documentation file is for and when to touch it:
 | --- | --- |
 | `README.md` | This file — project overview, setup, and how to use the pi skills, prompt templates, and `/build` in this repo. |
 | `AGENTS.md` | Repo guide auto-loaded as pi instructions: repo map, stack, core architecture rules, and workflow. Update whenever the repo structure or architecture rules change. |
-| `docs/2026-10-18-functional-requirements.md` | Single source of truth for scope: FC1–FC36 grouped by feature area (§1 degree plans, §2 course discovery, §3 degree requirements, §4 class management, §5 assistant engine, §6 recommendation safeguards, §7 data & assumptions). Every feature is traced to FC IDs here; look them up with `/fc <ids>`. |
-| `docs/2026-10-18-ai-advisor-domain-model.md` | Class specifications for the implementation: §1 domain entities (`Student`, `Course`, `DegreePlan`, …), §2 planning/validation engine (`CourseRecommendationValidator`, `DegreePlanGenerator`), §3 LangChain conversation layer (`AIAdvisorAgent`), §4 DB managers, §5 UI. |
-| `docs/2026-10-19-src-monorepo-structure.md` | Dated planning proposal: layered `src/` monorepo (core / database / agent / frontend) with dependency rules; status: proposed, pre-implementation. |
-| `docs/implementation-log.md` | Append-only build log written by the `/build` DOC WRITER phase; created on the first `/build` run, so it may not exist yet. |
+| `docs/planning/2026-10-18-functional-requirements.md` | Single source of truth for scope: FC1–FC36 grouped by feature area (§1 degree plans, §2 course discovery, §3 degree requirements, §4 class management, §5 assistant engine, §6 recommendation safeguards, §7 data & assumptions). Every feature is traced to FC IDs here; look them up with `/fc <ids>`. |
+| `docs/planning/2026-10-18-ai-advisor-domain-model.md` | Class specifications for the implementation: §1 domain entities (`Student`, `Course`, `DegreePlan`, …), §2 planning/validation engine (`CourseRecommendationValidator`, `DegreePlanGenerator`), §3 LangChain conversation layer (`AIAdvisorAgent`), §4 DB managers, §5 UI. |
+| `docs/planning/2026-10-19-src-monorepo-structure.md` | Dated planning proposal: layered `src/` monorepo (core / database / agent / frontend) with dependency rules; status: proposed, pre-implementation. |
+| `docs/planning/2026-10-20-architecture-diagram.png` | Architecture diagram of the planned system. |
+| `docs/process/2026-10-20-git-process.md` | Git conventions: branch naming (`<type>/fc<NN>-<slug>`), PR format, merge rules. |
+| `docs/process/implementation-log.md` | Append-only build log written by the `/build` DOC WRITER phase; created on the first `/build` run, so it may not exist yet. |
+| `docs/wireframes/` | UI wireframes for the six frontend screens (home/degree plan, timeline, prereq warning, advisor answer, change major, chat history); reference when building or reviewing frontend components. |
+| `docs/example-chats/` | Exported example advising-chat sessions; reference material for expected assistant behavior, not requirements. |
 
-New planning documents follow the dated convention `docs/<YYYY-MM-DD>-<slug>.md` (e.g. written by the architect skill when you ask it to "write the proposal").
+New planning documents follow the dated convention `docs/planning/<YYYY-MM-DD>-<slug>.md` (e.g. written by the architect skill when you ask it to "write the proposal").
 
 ## Project setup
 
@@ -80,7 +84,7 @@ Useful daily commands: `/model`, `/login`, `/settings`, `/resume`, `/continue` (
 
 ### 4. Run the advisor API scaffold (optional)
 
-The FastAPI HTTP layer scaffold lives in `src/server/` (`docs/2026-10-19-src-monorepo-structure.md` §server):
+The FastAPI HTTP layer scaffold lives in `src/server/` (`docs/planning/2026-10-19-src-monorepo-structure.md` §server):
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -106,7 +110,7 @@ Skills are directories under `.pi/skills/` containing a `SKILL.md` with a `name`
 | Command | Skill | Use it for |
 | --- | --- | --- |
 | `/skill:advisor-domain` | advisor-domain | **Implementing or reviewing feature code.** Loads the engineering rules: safeguard ownership table (FC29–FC32 → validator methods), intent routing (`AIAdvisorAgent` classify → tool → summarize), SQLite/Chroma split (FC33), seed-data formats, and stack/baseline assumptions. |
-| `/skill:architect <feature>` | architect | **Scoping a feature before implementation.** Starts a two-phase design chat: (1) scoping — grounded discussion, cites FC IDs, no files written; (2) after you explicitly say "write the proposal", it writes exactly one `docs/<date>-<slug>.md` proposal with required sections. |
+| `/skill:architect <feature>` | architect | **Scoping a feature before implementation.** Starts a two-phase design chat: (1) scoping — grounded discussion, cites FC IDs, no files written; (2) after you explicitly say "write the proposal", it writes exactly one `docs/planning/<date>-<slug>.md` proposal with required sections. |
 
 Rules of thumb: new feature work starts with `architect` (scope → proposal), then switches to `advisor-domain` when writing or reviewing the actual code. The model also auto-loads a skill when your prompt clearly matches its description, but forcing it via `/skill:` is more reliable.
 
@@ -121,17 +125,17 @@ Markdown files under `.pi/prompts/` become `/` commands; `$@` is replaced by you
 
 ### `/build` extension
 
-`.pi/extensions/orchestrator.ts` registers a `/build <feature description>` command: a deterministic pipeline of sequential pi subprocesses — **ARCHITECT** (read-only, emits a JSON task graph) → **WORKER** (one subprocess per task, in dependency order) → **TESTER** (fresh subprocess, must output `PASS`/`FAIL`) → **DOC WRITER** (appends to `docs/implementation-log.md`).
+`.pi/extensions/orchestrator.ts` registers a `/build <feature description>` command: a deterministic pipeline of sequential pi subprocesses — **ARCHITECT** (read-only, emits a JSON task graph) → **WORKER** (one subprocess per task, in dependency order) → **TESTER** (fresh subprocess, must output `PASS`/`FAIL`) → **DOC WRITER** (appends to `docs/process/implementation-log.md`).
 
 Per-phase model defaults live in the committed `.pi/pipeline.json`; override per user with `PI_BUILD_ARCHITECT_MODEL`, `PI_BUILD_WORKER_MODEL`, `PI_BUILD_TESTER_MODEL`, `PI_BUILD_DOCS_MODEL`, `PI_BUILD_TIMEOUT_MS`, etc. The orchestrator itself contains no LLM logic.
 
 ## Workflow
 
-1. Trace the feature to its FC ID(s) before implementing (see `docs/2026-10-18-functional-requirements.md`).
-2. `/skill:architect <feature>` to scope → say "write the proposal" to get `docs/<date>-<slug>.md`.
+1. Trace the feature to its FC ID(s) before implementing (see `docs/planning/2026-10-18-functional-requirements.md`).
+2. `/skill:architect <feature>` to scope → say "write the proposal" to get `docs/planning/<date>-<slug>.md`.
 3. `/plan-feature <description>` (or the proposal's implementation outline) to get the plan.
 4. `/skill:advisor-domain` while implementing; `/fc <ids>` to check requirements anytime.
-5. Docs stay current: an implementation isn't done until affected planning docs are updated if stale — the FC requirements doc, the domain model, any related dated docs in `docs/`, and the `AGENTS.md` repo map.
+5. Docs stay current: an implementation isn't done until affected planning docs are updated if stale — the FC requirements doc, the domain model, any related dated proposals in `docs/planning/`, and the `AGENTS.md` repo map.
 
 ## Data & assumptions
 

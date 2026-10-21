@@ -9,7 +9,7 @@ Run this workflow in-session, phase by phase, with the user in the loop. Everyth
 
 Ground rules (every phase):
 
-- **Deterministic engine first.** Constraint checks (FC29–FC32) and plan generation (FC2, FC25, FC26) live in plain code — `CourseRecommendationValidator`, `DegreePlanGenerator` (`docs/2026-10-18-ai-advisor-domain-model.md` §2). The LLM classifies intent, calls tools, and summarizes; it never does constraint math and never generates plans.
+- **Deterministic engine first.** Constraint checks (FC29–FC32) and plan generation (FC2, FC25, FC26) live in plain code — `CourseRecommendationValidator`, `DegreePlanGenerator` (`docs/planning/2026-10-18-ai-advisor-domain-model.md` §2). The LLM classifies intent, calls tools, and summarizes; it never does constraint math and never generates plans.
 - **Never fabricate academic data.** Courses, sections, prerequisites, credit limits, and degree requirements exist only in SQLite and Chroma. Empty lookup → say so.
 - **Cite FC IDs** in all phase output and in code comments where a requirement is implemented.
 - **Confirm before acting.** If the feature lets the assistant act on the student's behalf (FC23), its design and its tests must include the explicit-confirmation step.
@@ -17,7 +17,7 @@ Ground rules (every phase):
 
 ## Phase 0 — Orientation
 
-Read before deciding anything: `AGENTS.md`, `docs/2026-10-18-functional-requirements.md`, `docs/2026-10-18-ai-advisor-domain-model.md`, any dated `docs/<date>-<slug>.md` proposals relevant to the feature, `docs/implementation-log.md` if present, and the source files the feature will touch. Also discover the current test setup (pytest config, `package.json` scripts, or none). Load relevant skills — deliberately, not by feel:
+Read before deciding anything: `AGENTS.md`, `docs/planning/2026-10-18-functional-requirements.md`, `docs/planning/2026-10-18-ai-advisor-domain-model.md`, any dated `docs/planning/<date>-<slug>.md` proposals relevant to the feature, `docs/process/implementation-log.md` if present, and the source files the feature will touch. Also discover the current test setup (pytest config, `package.json` scripts, or none). Load relevant skills — deliberately, not by feel:
 
 - `advisor-domain` — whenever the feature touches advising behavior (courses, prereqs, plans, degrees, audits).
 - `tester` — **always**; it defines what phase 3 must and must not test (business logic only).
@@ -29,14 +29,14 @@ Read before deciding anything: `AGENTS.md`, `docs/2026-10-18-functional-requirem
 
 ## Phase 1 — Resolve the spec (FC)
 
-1. Search `docs/2026-10-18-functional-requirements.md` for requirement(s) already covering this feature — match by behavior and section, not just keywords.
+1. Search `docs/planning/2026-10-18-functional-requirements.md` for requirement(s) already covering this feature — match by behavior and section, not just keywords.
 2. **If covered:** use those FC(s) as the spec. Quote the governing FC text (and any FR-doc notes) as the start of your output.
 3. **If not covered:** draft and append a new requirement to the FR document. Place it in the most fitting numbered section, with the next FC ID (highest existing + 1, currently FC37 onward), using the section's exact table format: `| **FCn** | Title | Additional Notes |` (`•` bullets separated by `<br>` in Notes). Keep it implementation-neutral, consistent in style with neighboring rows — and consistent with the ground rules (deterministic engine, data routing FC33, auth out of scope FC36).
 4. State which path was taken and quote the final spec text.
 
 ## Phase 2 — Plan + clarifying questions (STOP for answers)
 
-Draft a plan, mapped to `docs/2026-10-18-ai-advisor-domain-model.md`:
+Draft a plan, mapped to `docs/planning/2026-10-18-ai-advisor-domain-model.md`:
 
 - Affected FC IDs (cite existing and any newly added — and check the user agrees with the new FC's wording).
 - Component map per layer: React UI / LangChain agent / SQLite / Chroma / deterministic engine.

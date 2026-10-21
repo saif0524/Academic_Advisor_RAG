@@ -5,7 +5,7 @@ description: React component conventions for the Academic AI Advisor frontend (s
 
 # React component conventions
 
-Applies to everything under `src/frontend/` (per `docs/2026-10-19-src-monorepo-structure.md` §frontend). Follow these rules for creating, modifying, and reviewing frontend code.
+Applies to everything under `src/frontend/` (per `docs/planning/2026-10-19-src-monorepo-structure.md` §frontend). Follow these rules for creating, modifying, and reviewing frontend code.
 
 ## Bootstrapping (only while `src/frontend/` does not exist)
 

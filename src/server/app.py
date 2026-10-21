@@ -3,7 +3,7 @@
 Thin adapter over the agent/database/core zones (`server → {agent, database,
 core}`); nothing in `agent`/`database`/`core` may import this package.
 Structure & rules: `.pi/skills/fastapi/SKILL.md`,
-`docs/2026-10-19-src-monorepo-structure.md` §server.
+`docs/planning/2026-10-19-src-monorepo-structure.md` §server.
 
 Run from the repo root:
     PYTHONPATH=src python -m uvicorn server.app:app --reload

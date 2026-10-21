@@ -5,7 +5,7 @@ description: LangGraph orchestration conventions for the Academic AI Advisor age
 
 # LangGraph — advisor graph conventions
 
-Scope: `src/agent/` orchestration. The graph implements the domain-model §3 loop — classify intent → route (exact/SQLite vs semantic/Chroma vs plan request, FC22, FC33) → tools → summarize — with plan generation delegated to the deterministic engine (FC2, FC25–FC26). If the graph structure diverges from §3, update `docs/2026-10-18-ai-advisor-domain-model.md` (docs-stay-current rule).
+Scope: `src/agent/` orchestration. The graph implements the domain-model §3 loop — classify intent → route (exact/SQLite vs semantic/Chroma vs plan request, FC22, FC33) → tools → summarize — with plan generation delegated to the deterministic engine (FC2, FC25–FC26). If the graph structure diverges from §3, update `docs/planning/2026-10-18-ai-advisor-domain-model.md` (docs-stay-current rule).
 
 ## The one non-negotiable rule
 
