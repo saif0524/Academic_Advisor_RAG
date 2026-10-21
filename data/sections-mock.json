@@ -1,0 +1,17 @@
+{
+  "_comment": "MOCK demo course sections for FC12/FC31-style planning demos — NOT real registrar data. Term Fall 2026, schedules for CSE corpus courses; '1105-002' is deliberately full, and '1325-501' deliberately overlaps '1320-501' in time.",
+  "sections": [
+    { "section_id": "1105-001", "course_id": "1105", "term": "Fall 2026", "instructor": "Dr. Alex Rivera", "meeting_days": ["Monday", "Wednesday"], "start_time": "09:00", "end_time": "09:50", "room_capacity": 40, "enrolled_count": 31 },
+    { "section_id": "1105-002", "course_id": "1105", "term": "Fall 2026", "instructor": "Dr. Alex Rivera", "meeting_days": ["Tuesday", "Thursday"], "start_time": "10:00", "end_time": "10:50", "room_capacity": 40, "enrolled_count": 40 },
+    { "section_id": "1106-001", "course_id": "1106", "term": "Fall 2026", "instructor": "Dr. Dana Okafor", "meeting_days": ["Friday"], "start_time": "13:00", "end_time": "15:50", "room_capacity": 24, "enrolled_count": 12 },
+    { "section_id": "1310-001", "course_id": "1310", "term": "Fall 2026", "instructor": "Dr. Priya Nathan", "meeting_days": ["Tuesday", "Thursday"], "start_time": "09:30", "end_time": "10:50", "room_capacity": 60, "enrolled_count": 44 },
+    { "section_id": "1310-002", "course_id": "1310", "term": "Fall 2026", "instructor": "Dr. Priya Nathan", "meeting_days": ["Monday", "Wednesday", "Friday"], "start_time": "11:00", "end_time": "11:50", "room_capacity": 60, "enrolled_count": 58 },
+    { "section_id": "1311-001", "course_id": "1311", "term": "Fall 2026", "instructor": "Dr. Sam Patel", "meeting_days": ["Tuesday", "Thursday"], "start_time": "12:30", "end_time": "13:50", "room_capacity": 45, "enrolled_count": 20 },
+    { "section_id": "1320-501", "course_id": "1320", "term": "Fall 2026", "instructor": "Dr. Wei Chen", "meeting_days": ["Monday", "Wednesday"], "start_time": "14:00", "end_time": "15:20", "room_capacity": 50, "enrolled_count": 35 },
+    { "section_id": "1325-501", "course_id": "1325", "term": "Fall 2026", "instructor": "Dr. Wei Chen", "meeting_days": ["Tuesday", "Thursday"], "start_time": "14:00", "end_time": "15:20", "room_capacity": 50, "enrolled_count": 41 },
+    { "section_id": "2315-001", "course_id": "2315", "term": "Fall 2026", "instructor": "Dr. Ines Kowalski", "meeting_days": ["Monday", "Wednesday"], "start_time": "12:00", "end_time": "13:20", "room_capacity": 55, "enrolled_count": 39 },
+    { "section_id": "3310-001", "course_id": "3310", "term": "Fall 2026", "instructor": "Dr. Sofia Marino", "meeting_days": ["Monday", "Wednesday"], "start_time": "10:00", "end_time": "11:20", "room_capacity": 45, "enrolled_count": 28 },
+    { "section_id": "3330-001", "course_id": "3330", "term": "Fall 2026", "instructor": "Dr. Hana Sato", "meeting_days": ["Tuesday", "Thursday"], "start_time": "11:00", "end_time": "12:20", "room_capacity": 40, "enrolled_count": 33 },
+    { "section_id": "4308-001", "course_id": "4308", "term": "Fall 2026", "instructor": "Dr. Kwame Boateng", "meeting_days": ["Monday", "Wednesday"], "start_time": "15:30", "end_time": "16:50", "room_capacity": 35, "enrolled_count": 30 }
+  ]
+}

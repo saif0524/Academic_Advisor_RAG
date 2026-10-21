@@ -2,6 +2,22 @@
 
 ---
 
+**Implementation notes (2026-10-21, database build):** entities under
+`src/core/entities/` follow §1/§2 as dataclasses, with these implemented
+adjustments: `Student.current_major` is stored as the major_name string (the
+`DegreeRequirement` object is loaded on demand) plus `selected_degree_id`; the
+`Course.course_id` is the 4-digit corpus id for catalog-backed courses
+(`"1105"`) and the full code (`"ENGL 1301"`) otherwise; `DegreeRequirement`
+gains `blocks` (block-level requirement structure behind FC18/FC19).
+`SQLDatabaseManager` migrations live in `src/database/sql/migrations/` (v1:
+students/courses/sections/classes/degrees/requirements/plans/chat),
+`vector/embeddings.py` is the pluggable embedding seam, and chat-history
+embeddings (`save_chat_history_embeddings`) are intentionally deferred until a
+feature needs them (FC34 persistence is SQL-side). The §2 engine
+(`CourseRecommendationValidator`, `DegreePlanGenerator`) is not built yet.
+
+---
+
 ## 1. Core Academic Domain Models
 
 ### Class Name: `Student`

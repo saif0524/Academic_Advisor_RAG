@@ -1,15 +1,15 @@
 """Audit service (FC24) — deterministic checks only (FC29–FC32).
 
 Both endpoints answer by running `CourseRecommendationValidator` /
-requirement checks from `core` (outline step 2) against SQLite state — the
-LLM never decides eligibility.
+requirement checks from `core` against SQLite state — the LLM never decides
+eligibility. UNWIRED until the core engine zone lands (monorepo step 2).
 """
 from server.errors import NotWiredError
-from server.schemas.audit import CourseAuditResponse, CourseAuditRequest, DegreeAuditRequest, DegreeAuditResponse
+from server.schemas.audit import CourseAuditRequest, CourseAuditResponse, DegreeAuditRequest, DegreeAuditResponse
 
 
 class AuditService:
-    """Wiring: `sql_db_manager` (student/section data) + core validator (outline step 2)."""
+    """Wiring: `sql_db_manager` (student/section data) + core validator (step 2)."""
 
     def __init__(self, sql_db_manager, vector_db_manager) -> None:
         self._sql_db_manager = sql_db_manager
@@ -20,12 +20,12 @@ class AuditService:
         FC30 (not already passed), FC31 (section conflict when section given)."""
         raise NotWiredError(
             "Course audits are not wired yet: needs CourseRecommendationValidator "
-            "(core — outline step 2) and SQLDatabaseManager (outline step 3)."
+            "(core — outline step 2) and SQLDatabaseManager (now available)."
         )
 
     def degree_check(self, student_id: str, request: DegreeAuditRequest) -> DegreeAuditResponse:
         """Degree-requirements status (FC24) — remaining requirements + progress."""
         raise NotWiredError(
             "Degree audits are not wired yet: needs DegreeRequirement.remaining checks "
-            "(core — outline step 2) and SQLDatabaseManager (outline step 3)."
+            "(core — outline step 2; SQLDatabaseManager is now available)."
         )

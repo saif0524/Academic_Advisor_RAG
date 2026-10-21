@@ -2,21 +2,29 @@
 
 Per the fastapi skill: routes receive every service, manager, and agent
 through these providers (`Depends`); controllers never construct services and
-routers never touch db managers. Tests swap implementations via
-`app.dependency_overrides` — never by monkeypatching class internals.
+routers never touch db managers. Tests override providers with
+`app.dependency_overrides` — or, for store-location tests, set the
+ADVISOR_* environment variables before the app boots (lifespan reads them).
 
-Scaffold state (proposed FC-new-rest-api): manager/agent slots are None until
-`database/` (outline step 3) and `agent/llm/` (outline step 4) exist. Unwired
-service methods raise `NotWiredError` → HTTP 501 envelope.
+Wired state (database zone done — monorepo outline step 3): SQLDatabaseManager
+(FC33/FC34) + VectorDatabaseManager (FC9/FC33) with reload seeding; the agent
+slot stays None until `agent/llm/` lands (outline step 4) — chat send
+therefore still answers 501 `not_wired`.
 """
 from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import Depends, Header
 
+from database.errors import RecordNotFoundError
+from database.seed import DEFAULT_STUDENT_ID, seed_chroma, seed_sqlite
+from database.sql.sqlite_manager import SQLDatabaseManager
+from database.vector.chroma_manager import VectorDatabaseManager
+from database.vector.embeddings import get_embedding_function
 from server.schemas.students import StudentIdentity
 from server.services.audit import AuditService
 from server.services.chat import ChatService
@@ -29,58 +37,83 @@ from server.services.students import StudentService
 _logger = logging.getLogger("server")
 
 # Dev fallback identity (FC36 — auth is out of scope: the pre-authenticated
-# student id comes from the X-Student-ID header; locally this fallback keeps
-# the UI working before a client header is wired).
-DEFAULT_STUDENT_ID = "STU-2026-9941"
+# student id comes from the X-Student-ID header; the default matches the
+# seeded demo student from data/student-demo.json — re-exported as the shared
+# constant in database.seed).
+
 
 class ServerState:
     """Process-lifetime holder — one agent graph and one db set per process."""
 
     def __init__(self) -> None:
-        # TODO(FC-new-rest-api): populated by initialize_state() below.
-        self.sql_db_manager: Optional[Any] = None    # SQLDatabaseManager (FC33, FC34)
-        self.vector_db_manager: Optional[Any] = None # VectorDatabaseManager (FC9, FC33)
-        self.advisor_agent: Optional[Any] = None     # AIAdvisorAgent (FC22–FC24)
+        self.sql_db_manager: Optional[SQLDatabaseManager] = None   # FC33, FC34
+        self.vector_db_manager: Optional[VectorDatabaseManager] = None  # FC9, FC33
+        self.advisor_agent: Optional[Any] = None                   # AIAdvisorAgent (FC22–FC24)
 
 
 _state = ServerState()
 
 
+def _env(name: str, default: str) -> str:
+    return os.getenv(name, default)
+
+
 def initialize_state() -> None:
-    """Construct the single agent graph + db connection set (app lifespan).
+    """Construct the single db set + agent (app lifespan).
 
     Single construction point — nothing else in the app may instantiate these.
-    TODO(FC-new-rest-api), monorepo outline steps 3–4:
-        _state.sql_db_manager = SQLDatabaseManager(...)
-        _state.vector_db_manager = VectorDatabaseManager(...)  # + ingest via database/seed.py
-        _state.advisor_agent = AIAdvisorAgent(...)
-    Each construction should log once (below) until wired.
+    The advisor_agent remains None until the agent/llm zone exists (outline
+    step 4): chat send keeps answering 501 `not_wired`.
     """
-    _logger.warning(
-        "advisor server scaffold: manager/agent zones not built yet "
-        "(core=step2, database=step3, agent.llm=step4 in docs/planning/2026-10-19-src-monorepo-structure.md)"
+    data_dir = Path(_env("ADVISOR_DATA_DIR", str(Path(__file__).resolve().parents[2] / "data")))
+    seed_mode = _env("ADVISOR_SEED_MODE", "reload")  # product decision: reload every startup
+
+    sql = SQLDatabaseManager(_env("ADVISOR_SQLITE_PATH", "var/advisor.db"))
+    sql.connect()
+    vector = VectorDatabaseManager(
+        _env("ADVISOR_CHROMA_PATH", "var/chroma"),
+        embedding_function=get_embedding_function(_env("ADVISOR_EMBEDDING_FUNCTION", "onnx")),
     )
+    vector.connect()
+    if seed_mode == "reload":
+        seed_sqlite(sql, data_dir=data_dir)
+        seed_chroma(vector, data_dir=data_dir)
+    elif seed_mode != "off":
+        raise ValueError(f"Unknown ADVISOR_SEED_MODE {seed_mode!r}: use 'reload' or 'off'")
+
+    _state.sql_db_manager = sql
+    _state.vector_db_manager = vector
+    _state.advisor_agent = None  # TODO(FC-new-rest-api step 4): AIAdvisorAgent(...)
+    _logger.info("advisor server db zone wired (sqlite=%s, chroma=%s, seed=%s)",
+                 _env("ADVISOR_SQLITE_PATH", "var/advisor.db"),
+                 _env("ADVISOR_CHROMA_PATH", "var/chroma"), seed_mode)
 
 
 def shutdown_state() -> None:
-    """Mirror of initialize_state(): TODO — .disconnect() populated managers."""
-    return None
+    """Mirror of initialize_state(): disconnect constructed managers."""
+    if _state.sql_db_manager is not None:
+        _state.sql_db_manager.disconnect()
+        _state.sql_db_manager = None
+    if _state.vector_db_manager is not None:
+        _state.vector_db_manager.disconnect()
+        _state.vector_db_manager = None
+    _state.advisor_agent = None
 
 
 # ---------------------------------------------------------------- providers
 
-def get_sql_db_manager() -> Optional[Any]:
+def get_sql_db_manager() -> SQLDatabaseManager:
     """SQLDatabaseManager (FC33 — students, sections, enrollments, plans, chat)."""
-    return _state.sql_db_manager
+    return _state.sql_db_manager  # type: ignore[return-value]
 
 
-def get_vector_db_manager() -> Optional[Any]:
+def get_vector_db_manager() -> VectorDatabaseManager:
     """VectorDatabaseManager (FC33 — descriptions, catalog, degrees for FC9/FC35)."""
-    return _state.vector_db_manager
+    return _state.vector_db_manager  # type: ignore[return-value]
 
 
 def get_advisor_agent() -> Optional[Any]:
-    """AIAdvisorAgent (FC22–FC24) — the only LLM entry point; created once."""
+    """AIAdvisorAgent (FC22–FC24) — None until the agent zone lands (501s)."""
     return _state.advisor_agent
 
 
@@ -90,7 +123,7 @@ def get_current_student(
     """Pre-authenticated student session (FC36). No auth flows, ever.
 
     Identity is the header value, falling back to ADVISOR_DEFAULT_STUDENT_ID
-    (then DEFAULT_STUDENT_ID) in local development.
+    (then the seeded demo student) in local development.
     """
     student_id = x_student_id or os.getenv("ADVISOR_DEFAULT_STUDENT_ID", DEFAULT_STUDENT_ID)
     return StudentIdentity(student_id=student_id)
