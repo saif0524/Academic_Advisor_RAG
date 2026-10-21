@@ -1,0 +1,62 @@
+/* Shared AppShell — sidebar | content | chat drawer grid (wireframes 01–06). */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-shell-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.app-shell-drawer {
+  width: 360px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Floating advisor pill (bottom-left on Search/Account wireframes). */
+.app-shell-advisor-pill {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-3);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-surface);
+  font: inherit;
+  font-weight: 700;
+  box-shadow: var(--shadow-2);
+  cursor: pointer;
+}
+
+.app-shell-advisor-pill:hover {
+  background: #0a347d;
+}
+
+.app-shell-advisor-pill:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .app-shell-drawer {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 60;
+    box-shadow: var(--shadow-2);
+  }
+}

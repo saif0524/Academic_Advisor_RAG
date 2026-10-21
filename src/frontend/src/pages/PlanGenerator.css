@@ -1,0 +1,80 @@
+/* PlanGenerator — full-page overlay for plan generation (FC1, FC2, FC25). */
+
+.plan-generator {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow-y: auto;
+  background: var(--color-background);
+}
+
+.plan-generator-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-1) var(--space-3);
+}
+
+.plan-generator-heading {
+  min-width: 0;
+}
+
+.plan-generator-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.plan-generator-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.plan-generator-main {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-3);
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.plan-generator-status,
+.plan-generator-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}
+
+.plan-generator-alert {
+  margin: 0;
+  color: var(--color-danger);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}
+
+.plan-generator-error {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  color: var(--color-danger);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}
+
+.plan-generator-error p {
+  margin: 0;
+}

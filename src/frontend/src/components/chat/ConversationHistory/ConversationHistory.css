@@ -1,0 +1,48 @@
+/* Previous conversations panel (wireframe 06, FC34). */
+
+.conversation-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  overflow-y: auto;
+}
+
+.conversation-history-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conversation-history-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.conversation-history-group-label {
+  margin: var(--space-1) 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.conversation-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conversation-history-state {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.conversation-history-state--error {
+  color: var(--color-danger);
+}

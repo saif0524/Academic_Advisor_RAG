@@ -1,0 +1,46 @@
+/* Advisor answer card (wireframe 04, FC22/FC24 display). */
+
+.advisor-answer-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-primary-soft);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.advisor-answer-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.advisor-answer-card-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.advisor-answer-card-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.advisor-answer-card-state {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.advisor-answer-card-state--error {
+  color: var(--color-danger);
+}

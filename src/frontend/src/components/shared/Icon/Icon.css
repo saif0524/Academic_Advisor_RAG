@@ -1,0 +1,7 @@
+/* Shared Icon primitive — inherits currentColor for flexible tinting. */
+
+.icon {
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}

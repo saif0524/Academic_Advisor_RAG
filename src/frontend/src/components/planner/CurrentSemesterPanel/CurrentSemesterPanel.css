@@ -1,0 +1,65 @@
+/* Home "This semester" schedule list (wireframe 01, FC14/FC21 display). */
+
+.current-semester-panel {
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.current-semester-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.current-semester-panel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.current-semester-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.current-semester-panel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 8px 10px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.current-semester-panel-code {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  min-width: 64px;
+}
+
+.current-semester-panel-name {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.current-semester-panel-state {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.current-semester-panel-state--error {
+  color: var(--color-danger);
+}

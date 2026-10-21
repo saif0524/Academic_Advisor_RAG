@@ -1,0 +1,17 @@
+# Academic AI Advisor — backend runtime + smoke-test deps (Python >= 3.9).
+# Install from the repo root:
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# HTTP layer (src/server, proposed FC-new-rest-api)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+
+# Data layer (src/database — FC33): SQLite via stdlib; Chroma vector store
+chromadb>=1.0
+PyYAML>=6.0          # degree-requirement .md frontmatter parsing
+numpy>=1.25          # embedding seam (hash embeddings + chroma dependency)
+
+# Test runtime (tests/ — pytest; TestClient requires httpx)
+httpx>=0.27
+pytest>=8.0

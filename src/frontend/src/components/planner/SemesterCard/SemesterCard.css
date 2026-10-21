@@ -1,0 +1,83 @@
+/* One semester card of the "My semesters" grid (FC25). */
+
+.semester-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.semester-card--summer {
+  border-style: dashed;
+}
+
+.semester-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.semester-card-term {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.semester-card-meta {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.semester-card-credits {
+  font-weight: 600;
+}
+
+.semester-card-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.semester-card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.semester-card-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.semester-card-chip--unknown {
+  opacity: 0.7;
+}
+
+.semester-card-chip-id {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  min-width: 64px;
+}
+
+.semester-card-chip-title {
+  font-size: 0.85rem;
+}

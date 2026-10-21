@@ -1,0 +1,74 @@
+/* Shared ProgressBar primitive — single and stacked credit fills (FC19/FC32). */
+
+.progress-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-bar-track {
+  display: flex;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  transition: width 200ms ease;
+}
+
+.progress-bar-fill--completed {
+  background: var(--color-progress-completed);
+}
+
+.progress-bar-fill--in-progress {
+  background: var(--color-progress-inprogress);
+}
+
+.progress-bar-fill--planned {
+  background: var(--color-progress-planned);
+}
+
+.progress-bar-fill--success {
+  background: var(--color-success);
+}
+
+.progress-bar-fill--primary {
+  background: var(--color-primary);
+}
+
+.progress-bar-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+.progress-bar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.progress-bar-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-progress-planned);
+}
+
+.progress-bar-legend-item--completed .progress-bar-legend-dot {
+  background: var(--color-progress-completed);
+}
+
+.progress-bar-legend-item--in-progress .progress-bar-legend-dot {
+  background: var(--color-progress-inprogress);
+}

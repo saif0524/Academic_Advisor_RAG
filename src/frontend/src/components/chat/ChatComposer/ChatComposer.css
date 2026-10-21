@@ -1,0 +1,14 @@
+/* Chat composer (FC35 prompt input). */
+
+.chat-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.chat-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+}

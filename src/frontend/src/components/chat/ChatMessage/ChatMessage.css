@@ -1,0 +1,45 @@
+/* One advisor/user chat bubble (FC22). */
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 88%;
+}
+
+.chat-message--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-message--advisor {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chat-message-author {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.chat-message-bubble {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+}
+
+/* Advisor bubbles keep the surface color; user bubbles use the brand tint. */
+.chat-message--advisor .chat-message-bubble {
+  background: var(--color-primary-soft);
+  border-color: transparent;
+}
+
+.chat-message-text {
+  margin: 0;
+  font-size: 0.9rem;
+  white-space: pre-line; /* canned replies use newlines for plan shifts (FC27) */
+}

@@ -126,7 +126,6 @@ class CourseSection(Course):
         self.enrolled_count = enrolled_count
 
     def has_time_conflict(self, other_section: 'CourseSection') -> bool:
-        # Simple overlap check on meeting days and times
         if not set(self.meeting_days).intersection(set(other_section.meeting_days)):
             return False
         return self.start_time == other_section.start_time
@@ -199,7 +198,7 @@ class SemesterPlan:
         self.max_credit_limit = max_credit_limit
 
     def get_total_credits(self) -> int:
-        return len(self.planned_courses) * 3
+        return sum(c.credit_hours for c in self.planned_courses)
 
     def add_course(self, course: Course) -> bool:
         if self.get_total_credits() + course.credit_hours <= self.max_credit_limit:
@@ -258,29 +257,38 @@ class CourseRecommendationValidator:
 # Requirement 2: Degree Plan Generator
 # ==========================================
 class Requirement2_DegreePlanGenerator:
-    def generate_plan(self, major: str, concentration: str, completed_courses: list) -> DegreePlan:
+    def generate_plan(self, major: str, concentration: str, completed_courses: list, extracted_semesters: list = None) -> DegreePlan:
         print(f"Generating degree plan for {major} with concentration in {concentration}...")
         
-        fall_courses = ["CS 301", "MATH 241", "CYBER 401"]
-        spring_courses = ["CS 302", "CYBER 410", "STAT 300"]
+        all_courses = []
+        if extracted_semesters:
+            for sem in extracted_semesters:
+                for c in sem:
+                    all_courses.append(c["course_code"])
+        else:
+            all_courses = ["CS 301", "MATH 241", "CYBER 401"]
 
-        fall_courses = [c for c in fall_courses if c not in completed_courses]
-        spring_courses = [c for c in spring_courses if c not in completed_courses]
+        all_courses = [c for c in all_courses if c not in completed_courses]
 
-        req = DegreeRequirement("DEG-01", major, concentration, 120, 18, fall_courses + spring_courses)
+        req = DegreeRequirement("DEG-01", major, concentration, 120, 18, all_courses)
         plan = DegreePlan("PLAN-001", "STU-2026-9941", req)
 
-        if fall_courses:
-            sem1 = SemesterPlan("Fall", 2026)
-            for c in fall_courses:
-                sem1.planned_courses.append(Course(c, "Sample Course", "Description", 3))
-            plan.add_semester(sem1)
-
-        if spring_courses:
-            sem2 = SemesterPlan("Spring", 2027)
-            for c in spring_courses:
-                sem2.planned_courses.append(Course(c, "Sample Course", "Description", 3))
-            plan.add_semester(sem2)
+        if extracted_semesters:
+            terms = ["Fall", "Spring", "Summer"]
+            start_year = 2026
+            for idx, sem_courses in enumerate(extracted_semesters):
+                term_name = terms[idx % len(terms)]
+                term_year = start_year + (idx // len(terms))
+                sem_plan = SemesterPlan(term_name, term_year)
+                for c in sem_courses:
+                    sem_plan.add_course(Course(c["course_code"], "Extracted Catalog Course", "Description", c["credits"]))
+                plan.add_semester(sem_plan)
+        else:
+            if all_courses:
+                sem1 = SemesterPlan("Fall", 2026)
+                for c in all_courses:
+                    sem1.add_course(Course(c, "Sample Course", "Description", 3))
+                plan.add_semester(sem1)
 
         return plan
 
@@ -299,6 +307,41 @@ class Requirement3_QueryRouter:
         else:
             return self.vector_store.similarity_search(query)
 
+    def extract_courses_into_semesters(self, text: str) -> list[list[dict]]:
+        pattern = re.compile(r'\b([A-Z]{2,4})\s+(\d{4})\b')
+        matches = pattern.findall(text)
+
+        courses = []
+        for dept, code_str in matches:
+            try:
+                credits = int(code_str[1])
+            except (ValueError, IndexError):
+                credits = 3
+            
+            courses.append({
+                "course_code": f"{dept} {code_str}",
+                "credits": credits
+            })
+
+        semesters = []
+        current_semester = []
+        current_semester_credits = 0
+
+        for course in courses:
+            course_credits = course["credits"]
+            if current_semester_credits + course_credits > 18:
+                semesters.append(current_semester)
+                current_semester = [course]
+                current_semester_credits = course_credits
+            else:
+                current_semester.append(course)
+                current_semester_credits += course_credits
+
+        if current_semester:
+            semesters.append(current_semester)
+
+        return semesters
+
 
 # ==========================================
 # Requirement 4: Course Verification Guardrail
@@ -311,10 +354,20 @@ class Requirement4_CourseVerifier(CourseRecommendationValidator):
 # Requirement 5: Plan Modifications & Switching
 # ==========================================
 class Requirement5_PlanModifier:
-    def evaluate_major_change(self, current_major: str, target_major: str) -> str:
+    def __init__(self, ai_caller):
+        self.ai_caller = ai_caller
+
+    def evaluate_major_change(self, student_id: str, current_major: str, target_major: str) -> str:
         print(f"Analyzing transition from {current_major} to {target_major}...")
-        return ("Advantages: Better alignment with cybersecurity careers.\n"
-                "Disadvantages: Requires 2 additional foundational math courses (MATH 250 & STAT 310).")
+        
+        prompt = (
+            f"Analyze the academic and career transition from {current_major} to {target_major}. "
+            "Provide a detailed breakdown of the advantages (such as career alignment) "
+            "and disadvantages (such as required additional foundational or prerequisite courses)."
+        )
+        
+        response = self.ai_caller.CallAI(student_id, user_input=prompt)
+        return response
 
     def generate_plan_comparison(self, old_plan: DegreePlan, new_plan: DegreePlan):
         print("=== Degree Plan Comparison Report ===")
@@ -389,27 +442,7 @@ class VectorDatabaseManager(DatabaseManager):
         pass
 
     def similarity_search(self, query: str) -> str:
-        return f"Retrieved course catalog context matching: [{query}] using {self.backend_type} backend."
-
-
-# ==========================================
-# Requirement 1: User Interface
-# ==========================================
-
-def _load_jsonl_context(self, file_path: str) -> str:
-        additional_context = []
-        if os.path.exists(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            data = json.loads(line)
-                            # Convert each JSON object line into a readable string representation
-                            additional_context.append(json.dumps(data))
-            except Exception as e:
-                print(f"Warning: Could not read JSONL file: {e}")
-        return "\n".join(additional_context)
+        return f"Retrieved course catalog context matching: [{query}] using {self.backend_type} backend. Suggested courses: CSE 1310, MATH 1426, CSE 1320."
 
 
 # ==========================================
@@ -420,7 +453,6 @@ class OpenKnowledgeFormatManager:
         self.kb_root_dir = kb_root_dir
 
     def scan_knowledge_base(self) -> str:
-        """Scans the OKF directory structure, reading markdown files, frontmatter, and content."""
         okf_chunks = []
         if not os.path.exists(self.kb_root_dir):
             return ""
@@ -432,45 +464,73 @@ class OpenKnowledgeFormatManager:
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             content = f.read()
-                            # Format each OKF document chunk clearly for the AI context window
                             okf_chunks.append(f"--- OKF Source: {file} ---\n{content}\n")
                     except Exception as e:
                         print(f"Warning: Could not read OKF file {file}: {e}")
                         
         return "\n".join(okf_chunks)
 
-class Requirement1_UI:
+
+# ==========================================
+# Global AI Call Service
+# ==========================================
+class AICall:
     def __init__(self, query_router, chat_history):
         self.query_router = query_router
         self.chat_history = chat_history
-        # Initialize the OKF manager pointing to your knowledge base folder
         self.okf_manager = OpenKnowledgeFormatManager("data")
 
-    def _load_jsonl_context(self, file_path: str) -> str:
-        additional_context = []
-        if os.path.exists(file_path):
+    def CallAI(self, student_id: str, user_input: str = None) -> str:
+        if user_input is None:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            data = json.loads(line)
-                            additional_context.append(json.dumps(data))
-            except Exception as e:
-                print(f"Warning: Could not read JSONL file: {e}")
-        return "\n".join(additional_context)
+                user_input = input(f"Student ({student_id}): ")
+            except EOFError:
+                print("Failed AI State")
+                return ""
+        
+        prompt_template = PromptTemplate.from_template(
+            "You are an expert Academic AI Advisor specializing in {domain}. "
+            "Answer the student's question accurately using the provided context and conversation history.\n\n"
+            "Conversation History:\n{chat_history}\n\n"
+            "Context Information:\n{context}\n\n"
+            "Student Query: {input}"
+        )
+        
+        retrieved_context = self.query_router.route_and_execute(student_id, user_input)
+
+        okf_scanned_content = self.okf_manager.scan_knowledge_base()
+        if okf_scanned_content:
+            retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
+
+        history_list = self.chat_history.get_history(student_id)
+        formatted_history = "\n".join([f"{sender}: {msg}" for sender, msg in history_list]) if history_list else "No prior conversation."
+
+        variables = {
+            "domain": "University Course Registration and Degree Planning",
+            "chat_history": formatted_history,
+            "context": retrieved_context, 
+            "input": user_input
+        }
+
+        formatted_prompt = prompt_template.format(variables)
+
+        ollama_service = OllamaCloudAIService()
+        response = ollama_service.generate_response(formatted_prompt)
+        return response
+
+
+# ==========================================
+# Requirement 1: User Interface
+# ==========================================
+class Requirement1_UI:
+    def __init__(self, ai_caller, chat_history):
+        self.ai_caller = ai_caller
+        self.chat_history = chat_history
 
     def start_command_line_interface(self, student_id: str) -> str:
         print("=== Academic AI Advisor Initialized (LangChain Flow) ===")
         print("Type your query below (or type 'exit' to quit):\n")
         response = ""
-
-        prompt_template = PromptTemplate.from_template(
-            "You are an expert Academic AI Advisor specializing in {domain}. "
-            "Answer the student's question accurately using the provided context.\n\n"
-            "Context Information:\n{context}\n\n"
-            "Student Query: {input}"
-        )
 
         while True:
             try:
@@ -483,31 +543,7 @@ class Requirement1_UI:
 
             self.chat_history.add_message(student_id, "User", user_input)
 
-            # 1. Retrieve standard RAG query context
-            retrieved_context = self.query_router.route_and_execute(student_id, user_input)
-            
-            # # 2. Append existing JSONL file context
-            # jsonl_context = self._load_jsonl_context("data/course-desc.jsonl")
-            # if jsonl_context:
-            #     retrieved_context += "\n\nCourse descriptions (JSONL):\n" + jsonl_context
-
-            # 3. Scan and inject Open Knowledge Format (OKF) markdown files
-            okf_scanned_content = self.okf_manager.scan_knowledge_base()
-            if okf_scanned_content:
-                retrieved_context += "\n\nOpen Knowledge Format (OKF) Repository Context:\n" + okf_scanned_content
-
-            # 4. Format Prompt dynamically with combined context
-            variables = {
-                "domain": "University Course Registration and Degree Planning",
-                "context": retrieved_context,
-                "input": user_input
-            }
-
-            formatted_prompt = prompt_template.format(variables)
-
-            # 5. Generate response via Ollama Cloud adapter
-            ollama_service = OllamaCloudAIService()
-            response = ollama_service.generate_response(formatted_prompt)
+            response = self.ai_caller.CallAI(student_id, user_input=user_input)
 
             self.chat_history.add_message(student_id, "AI Advisor", response)
             print(f"\nAI Advisor:\n{response}\n")
@@ -527,24 +563,45 @@ def main():
     sql_database.connect()
 
     vector_store = VectorDatabaseManager("ChromaDB")
-    vector_store.add_document("Course catalog text regarding AI and Cybersecurity electives.")
+    vector_store.add_document("Course catalog text regarding AI and Cybersecurity electives. Recommended courses: CSE 1310, MATH 1426, CSE 1320.")
 
     degree_plan_generator = Requirement2_DegreePlanGenerator()
     course_verifier = Requirement4_CourseVerifier(sql_database)
-    plan_modifier = Requirement5_PlanModifier()
     chat_history = Requirement6_ConversationHistory()
 
     query_router = Requirement3_QueryRouter(sql_database, vector_store)
-    user_interface = Requirement1_UI(query_router, chat_history)
+    
+    global_ai_caller = AICall(query_router, chat_history)
+
+    user_interface = Requirement1_UI(global_ai_caller, chat_history)
+    plan_modifier = Requirement5_PlanModifier(global_ai_caller)
 
     sample_student_id = "STU-2026-9941"
 
     response = user_interface.start_command_line_interface(sample_student_id)
     chat_history.add_message(sample_student_id, "AI Advisor", response)
 
-    print("\n--- Testing Requirement 2: Degree Plan Generation ---")
+    print("\n--- Testing Requirement 2: Degree Plan Generation from Chat History ---")
+    
+    # 1. Search chat history to find the last AI response
+    history = chat_history.get_history(sample_student_id)
+    last_ai_response = ""
+    for sender, msg in reversed(history):
+        if sender == "AI Advisor":
+            last_ai_response = msg
+            break
+
+    # If no AI response exists in history yet, fall back to a default sample text string
+    if not last_ai_response:
+        last_ai_response = "Recommended courses: CSE 1310, MATH 1426, CSE 1320."
+
+    # 2. Extract courses into semester lists using query router's method
+    extracted_semesters = query_router.extract_courses_into_semesters(last_ai_response)
+    print(f"Extracted Semesters Structure: {extracted_semesters}")
+
+    # 3. Generate degree plan using the extracted info
     initial_plan = degree_plan_generator.generate_plan(
-        "BS Computer Science", "Cybersecurity", ["CS 101", "MATH 101"]
+        "BS Computer Science", "Cybersecurity", ["CS 1105", "MATH 1426"], extracted_semesters=extracted_semesters
     )
 
     print("\n--- Testing Requirement 4: Course Verification Guardrail ---")
@@ -554,7 +611,7 @@ def main():
     print(f"Can enroll in CS 301? {can_enroll}")
 
     print("\n--- Testing Requirement 5: Major Switching & Plan Diff ---")
-    evaluation = plan_modifier.evaluate_major_change("BS Computer Science", "BS Software Engineering")
+    evaluation = plan_modifier.evaluate_major_change(sample_student_id, "BS Computer Science", "BS Software Engineering")
     print(evaluation)
     new_plan = degree_plan_generator.generate_plan(
         "BS Software Engineering", "Artificial Intelligence", ["CS 101", "MATH 101"]

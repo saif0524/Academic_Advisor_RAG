@@ -1,0 +1,45 @@
+/* FC23 explicit-confirmation card inside the advisor chat. */
+
+.action-confirmation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: flex-start;
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.action-confirmation-card--pending {
+  border-left-color: var(--color-primary);
+}
+
+.action-confirmation-card--confirmed {
+  border-left-color: var(--color-success);
+}
+
+.action-confirmation-card--declined {
+  border-left-color: var(--color-border);
+  opacity: 0.75;
+}
+
+.action-confirmation-card-summary {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.action-confirmation-card-detail {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.action-confirmation-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}

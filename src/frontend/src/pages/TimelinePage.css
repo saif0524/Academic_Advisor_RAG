@@ -1,0 +1,27 @@
+/* Timeline page (wireframes 02/03): chips + semester editing + draft bar. */
+
+.timeline-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 980px;
+}
+
+.timeline-page-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.timeline-page-program {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.timeline-page-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 600;
+}

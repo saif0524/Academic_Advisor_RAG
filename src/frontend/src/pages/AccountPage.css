@@ -1,0 +1,71 @@
+/* Account page (wireframe 05): identity, program change, preferences. */
+
+.account-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 720px;
+}
+
+.account-page-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.account-page-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.account-page-name {
+  margin: 0;
+  font-weight: 700;
+}
+
+.account-page-meta,
+.account-page-major,
+.account-page-hint,
+.account-page-state {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.account-page-major {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.account-page-section-title {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.account-page-change {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.account-page-change-selects {
+  display: flex;
+  gap: var(--space-1);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.account-page-change-actions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -1,0 +1,38 @@
+/* Home page (wireframes 01/06): plan summary + this semester + my semesters. */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 900px;
+}
+
+.dashboard-semesters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dashboard-semesters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.dashboard-semesters-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.dashboard-semesters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-1);
+}
+
+.dashboard-semesters-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
