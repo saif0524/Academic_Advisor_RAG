@@ -1,0 +1,14 @@
+.degree-explorer {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: var(--space-3);
+}
+
+.degree-explorer-title {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.degree-explorer-empty {
+  color: var(--color-text-muted);
+}

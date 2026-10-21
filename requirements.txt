@@ -1,0 +1,12 @@
+# Academic AI Advisor — backend runtime + smoke-test deps (Python >= 3.9).
+# Install from the repo root:
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# HTTP layer (src/agent/server, proposed FC-new-rest-api)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+
+# Test runtime (tests/agent/server smoke tests; TestClient requires httpx)
+httpx>=0.27
+pytest>=8.0

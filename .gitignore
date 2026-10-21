@@ -5,4 +5,7 @@
 *.log
 node_modules/
 models.json
-.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

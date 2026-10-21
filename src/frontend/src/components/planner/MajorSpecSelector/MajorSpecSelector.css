@@ -1,0 +1,58 @@
+/* MajorSpecSelector — plan-generation form (FC1, FC2, FC25). */
+
+.major-spec-selector {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.major-spec-selector-fields {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.major-spec-selector-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.major-spec-selector-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.major-spec-selector-select {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.major-spec-selector-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  padding: 0.4rem 0;
+}
+
+.major-spec-selector-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.major-spec-selector-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
