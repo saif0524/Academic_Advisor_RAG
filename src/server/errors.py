@@ -4,7 +4,8 @@ Domain failures must never surface as generic 500s:
 - `NotWiredError` → 501 `not_wired` (backing zone not built; no fake data)
 - database lookup misses → 404 `not_found` (grounded-answers rule)
 - `InvalidRequestError` → 422 `validation_failed` (e.g. FC16 misalignment)
-- TODO (core zone): FC29–FC32 ValidationFailure → 409/422 per-check detail
+- agent `LLMError` → 503 `llm_unavailable` (no fabricated replies when the
+  model is down; the deterministic surface keeps working)
 """
 from typing import Any, Dict, List, Optional
 
@@ -12,6 +13,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from database.errors import RecordNotFoundError
+from agent.errors import LLMError
 from server.schemas.common import ErrorDetail, ErrorResponse
 
 
@@ -73,4 +75,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=422,
             content=error_envelope("validation_failed", exc.message, exc.details),
+        )
+
+    @app.exception_handler(LLMError)
+    async def llm_unavailable_handler(request: Request, exc: LLMError) -> JSONResponse:
+        # The model is unavailable mid-conversation: honest 503, no fabricated
+        # answer (grounded-answers rule); deterministic endpoints unaffected.
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope("llm_unavailable", str(exc)),
         )

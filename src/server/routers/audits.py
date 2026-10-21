@@ -9,7 +9,6 @@ from server.schemas.audit import (
     DegreeAuditRequest,
     DegreeAuditResponse,
 )
-from server.schemas.common import ErrorResponse
 from server.schemas.students import StudentIdentity
 from server.services.audit import AuditService
 
@@ -19,7 +18,6 @@ router = APIRouter(prefix="/audits", tags=["audits"])
 @router.post(
     "/course-check",
     response_model=CourseAuditResponse,
-    responses={501: {"model": ErrorResponse}},
     operation_id="audit_course_eligibility",
 )
 def course_check(
@@ -30,8 +28,8 @@ def course_check(
     """Audit whether the student can take a course (FC24).
 
     Each `check` names its owning safeguard: prerequisites (FC29),
-    already-passed (FC30), section schedule conflict when given (FC31).
-    Produced by the deterministic validator, never the LLM.
+    already-passed (FC30), section schedule conflict when given (FC31),
+    credit caps (FC32). Produced by the deterministic validator, never the LLM.
     """
     return audit_controller.course_check(student, payload, service)
 
@@ -39,7 +37,6 @@ def course_check(
 @router.post(
     "/degree-check",
     response_model=DegreeAuditResponse,
-    responses={501: {"model": ErrorResponse}},
     operation_id="audit_degree_progress",
 )
 def degree_check(

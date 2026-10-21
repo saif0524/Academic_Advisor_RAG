@@ -2,6 +2,32 @@
 
 ---
 
+**Implementation notes (2026-10-20, agent build):** the §2 engine is now
+built in `src/core/engine/` — `CourseRecommendationValidator` (FC29–FC32)
+as pure functions taking entities + the data they need as arguments (per the
+monorepo dependency rule, no `sql_db` attribute in core), plus
+`compute_degree_progress` (FC19/FC24 — moved verbatim from the student
+service, which now delegates to it); `check_fulfills_degree_requirement`
+(§2 Req 4c) rides along informationally and never blocks eligibility.
+Still unbuilt: `DegreePlanGenerator` (FC2/FC25/FC26).
+The §3 layer is live in `src/agent/` — `AIAdvisorAgent` (LangGraph
+classify → route → tools → summarize; the four §3 `handle_*` functions are
+groups of graph nodes), `ConversationSession` (history is the durable
+context). Implemented adjustments: the LLM seam is
+`ADVISOR_LLM_PROVIDER=ollama` (default `glm-5.3-flash:cloud` via local
+ChatOllama; `stub` = deterministic rules/templates for offline tests) — and
+on any model failure the classifier/summarizer DEGRADE to the deterministic
+stub on the same payload (routing/wording only; data stays tool-gathered).
+FC23 confirmation is a durable pause/resume: proposals persist in the
+`chat_pending_actions` table and execute only on the next turn's
+`confirmed_action_id`/`cancelled_action_id` (validated in the ChatService,
+re-checked in the confirm node — restart-safe across HTTP requests; this
+replaces an in-process `interrupt()`). FC27/FC28: history is read from
+SQLite each turn (last 12 turns) and fed to the classifier; clarification is
+bounded to one question per turn. No LangGraph checkpointer is installed —
+the durable conversation state IS SQLite (FC34), intentionally diverging
+from the skill's dev `MemorySaver` default.
+
 **Implementation notes (2026-10-21, database build):** entities under
 `src/core/entities/` follow §1/§2 as dataclasses, with these implemented
 adjustments: `Student.current_major` is stored as the major_name string (the

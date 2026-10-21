@@ -17,8 +17,10 @@ export interface ChatSeams {
   /** DI seams defaulting to the api service (stories inject fixtures). */
   loadConversations?: () => Promise<Conversation[]>;
   loadMessages?: (conversationId: string) => Promise<ChatMessage[]>;
-  sendMessage?: (text: string) => Promise<ChatMessage>;
-  respondToProposal?: (messageId: string, decision: ProposalDecision) => Promise<{ messageId: string; decision: ProposalDecision; reply: string }>;
+  sendMessage?: (text: string, conversationId?: string) => Promise<ChatMessage>;
+  respondToProposal?: (
+    messageId: string, decision: ProposalDecision, conversationId?: string,
+  ) => Promise<{ messageId: string; decision: ProposalDecision; reply: string }>;
 }
 
 interface ChatPanelProps extends ChatSeams {
@@ -50,7 +52,7 @@ export default function ChatPanel({
   loadMessages = getMessagesViaApi,
   sendMessage = sendMessageViaApi,
   respondToProposal = respondToProposalViaApi,
-  initialConversationId = 'conv-1',
+  initialConversationId = '',
 }: ChatPanelProps) {
   const [activeId, setActiveId] = useState(initialConversationId);
   const [mode, setMode] = useState<'conversation' | 'history'>('conversation');
@@ -62,8 +64,15 @@ export default function ChatPanel({
   const [thread, setThread] = useState<ThreadState>({ id: activeId, messages: null, loading: true, error: null });
   const [sending, setSending] = useState(false);
 
-  /* FC23 decision state for whichever message carries `action`. */
-  const [proposal, setProposal] = useState<{ messageId: string; status: 'pending' | 'confirmed' | 'declined'; busy: boolean } | null>(null);
+  /* FC23 decision state for whichever message carries `action` — holds the
+     server pending-action id (`actionId`) decisions travel with, falling
+     back to the message id for mock fixtures. */
+  const [proposal, setProposal] = useState<{
+    messageId: string;
+    actionId?: string;
+    status: 'pending' | 'confirmed' | 'declined';
+    busy: boolean;
+  } | null>(null);
 
   useEffect(() => {
     // External system: the chat api seam. The selection handler (event)
@@ -76,9 +85,13 @@ export default function ChatPanel({
         if (!cancelled) {
           setThread({ id: activeId, messages: loaded, loading: false, error: null });
           // FC23: a proposal in the restored thread starts pending and needs
-          // the explicit decision; track it next to the decision state.
+          // the explicit decision; track it next to the decision state. The
+          // live api may attach the server's open pending-action to the
+          // newest advisor turn (FC23 durability across reloads).
           const proposed = loaded.find((message) => Boolean(message.action));
-          setProposal(proposed ? { messageId: proposed.id, status: 'pending', busy: false } : null);
+          setProposal(proposed
+            ? { messageId: proposed.id, actionId: proposed.action?.actionId, status: 'pending', busy: false }
+            : null);
         }
       } catch (error) {
         if (!cancelled) {
@@ -116,8 +129,16 @@ export default function ChatPanel({
       messages: [...(current.messages ?? []), { id: `user-${Date.now()}`, role: 'user', text }],
     }));
     try {
-      const reply = await sendMessage(text);
+      const reply = await sendMessage(text, activeId || undefined);
       setThread((current) => ({ ...current, messages: [...(current.messages ?? []), reply] }));
+      if (reply.action) {
+        setProposal({
+          messageId: reply.id,
+          actionId: reply.action.actionId,
+          status: 'pending',
+          busy: false,
+        });
+      }
     } catch (error) {
       setThread((current) => ({ ...current, error: error instanceof Error ? error.message : String(error) }));
     } finally {
@@ -126,12 +147,14 @@ export default function ChatPanel({
   };
 
   /* FC23 gate: the deterministic side only "acts" on the explicit decision.
-     The mock resolves with a follow-up advisor turn either way. */
+     Decisions carry the server pending-action id (FC23); fixtures fall back
+     to the message id. The mock resolves with a follow-up advisor turn either way. */
   const decide = async (decision: ProposalDecision) => {
     if (!proposal) return;
     setProposal({ ...proposal, busy: true });
     try {
-      const response = await respondToProposal(proposal.messageId, decision);
+      const response = await respondToProposal(
+        proposal.actionId ?? proposal.messageId, decision, activeId || undefined);
       setProposal({ messageId: proposal.messageId, status: decision, busy: false });
       setThread((current) => ({
         ...current,
@@ -200,7 +223,7 @@ export default function ChatPanel({
             </p>
           ) : null}
           <ChatComposer onSend={handleSend} busy={sending} />
-          <p className="chat-panel-note">Demo replies — no live advisor agent behind this panel yet.</p>
+          <p className="chat-panel-note">Advisor answers come from the live agent — grounded in your records and the catalog.</p>
         </div>
       )}
     </div>

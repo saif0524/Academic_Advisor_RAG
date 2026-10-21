@@ -6,10 +6,11 @@ routers never touch db managers. Tests override providers with
 `app.dependency_overrides` — or, for store-location tests, set the
 ADVISOR_* environment variables before the app boots (lifespan reads them).
 
-Wired state (database zone done — monorepo outline step 3): SQLDatabaseManager
-(FC33/FC34) + VectorDatabaseManager (FC9/FC33) with reload seeding; the agent
-slot stays None until `agent/llm/` lands (outline step 4) — chat send
-therefore still answers 501 `not_wired`.
+Wired state (agent zone live — monorepo outline step 4): SQLDatabaseManager
+(FC33/FC34) + VectorDatabaseManager (FC9/FC33) with reload seeding + the
+AIAdvisorAgent graph (FC22–FC24, FC27–FC28) — chat send answers real turns
+(ADVISOR_LLM_PROVIDER=ollama default, stub offline). The §2 plan generator
+(FC2/FC25/FC26) remains unbuilt — plan writes stay 501 `not_wired`.
 """
 from __future__ import annotations
 
@@ -20,6 +21,8 @@ from typing import Any, Optional
 
 from fastapi import Depends, Header
 
+from agent.llm import AIAdvisorAgent, LLMConfig
+from agent.errors import LLMError
 from database.errors import RecordNotFoundError
 from database.seed import DEFAULT_STUDENT_ID, seed_chroma, seed_sqlite
 from database.sql.sqlite_manager import SQLDatabaseManager
@@ -83,10 +86,14 @@ def initialize_state() -> None:
 
     _state.sql_db_manager = sql
     _state.vector_db_manager = vector
-    _state.advisor_agent = None  # TODO(FC-new-rest-api step 4): AIAdvisorAgent(...)
-    _logger.info("advisor server db zone wired (sqlite=%s, chroma=%s, seed=%s)",
+    # FC22–FC24: the advisor graph goes live here (ollama provider by
+    # default; 'stub' for offline tests/demos — never a live model in tests).
+    llm_config = LLMConfig.from_env()
+    _state.advisor_agent = AIAdvisorAgent.build(sql, vector, llm_config)
+    _logger.info("advisor server wired (sqlite=%s, chroma=%s, seed=%s, llm=%s/%s)",
                  _env("ADVISOR_SQLITE_PATH", "var/advisor.db"),
-                 _env("ADVISOR_CHROMA_PATH", "var/chroma"), seed_mode)
+                 _env("ADVISOR_CHROMA_PATH", "var/chroma"), seed_mode,
+                 llm_config.provider, llm_config.model or "stubs")
 
 
 def shutdown_state() -> None:
@@ -112,8 +119,8 @@ def get_vector_db_manager() -> VectorDatabaseManager:
     return _state.vector_db_manager  # type: ignore[return-value]
 
 
-def get_advisor_agent() -> Optional[Any]:
-    """AIAdvisorAgent (FC22–FC24) — None until the agent zone lands (501s)."""
+def get_advisor_agent():
+    """AIAdvisorAgent (FC22–FC24) — the agent/llm graph (built in lifespan)."""
     return _state.advisor_agent
 
 

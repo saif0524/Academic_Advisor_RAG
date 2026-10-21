@@ -15,6 +15,7 @@ _DATA = Path(__file__).resolve().parents[2] / "data"
 _SQLITE = "ADVISOR_SQLITE_PATH"
 _CHROMA = "ADVISOR_CHROMA_PATH"
 _DATA_DIR, _SEED, _EMB = "ADVISOR_DATA_DIR", "ADVISOR_SEED_MODE", "ADVISOR_EMBEDDING_FUNCTION"
+_LLM = "ADVISOR_LLM_PROVIDER"
 
 MAJOR = "Bachelor of Science in Computer Science"
 OTHER_MAJOR = "Bachelor of Science in Software Engineering"
@@ -23,12 +24,13 @@ OTHER_MAJOR = "Bachelor of Science in Software Engineering"
 @pytest.fixture(scope="module")
 def client(tmp_path_factory: pytest.TempPathFactory):
     tmp = tmp_path_factory.mktemp("api")
-    saved = {k: os.environ.get(k) for k in (_SQLITE, _CHROMA, _DATA_DIR, _SEED, _EMB)}
+    saved = {k: os.environ.get(k) for k in (_SQLITE, _CHROMA, _DATA_DIR, _SEED, _EMB, _LLM)}
     os.environ[_SQLITE] = str(tmp / "advisor.db")
     os.environ[_CHROMA] = str(tmp / "chroma")
     os.environ[_DATA_DIR] = str(_DATA)
     os.environ[_SEED] = "reload"
     os.environ[_EMB] = "hash"
+    os.environ[_LLM] = "stub"  # offline: agent runs on the deterministic stubs
     from server.app import create_app
 
     app = create_app()
@@ -209,13 +211,16 @@ def test_chat_history_wired_for_new_and_unknown_sessions(client):
     assert client.get("/chat/messages", params={"session_id": "nope"}).status_code == 404
 
 
-# ----------------------------------------------------- still-unwired (501) surface
+# ----------------------------------------------------- wired agent surface (FC22)
 
-def test_chat_send_message_needs_agent(client):
-    """FC22 needs AIAdvisorAgent (agent step 4) — must stay 501, not fake a reply."""
+def test_chat_send_message_wired_via_agent(client):
+    """FC22 wired: the stub agent answers with a clarifying question for an
+    under-specified request (FC28) — honest, non-empty reply."""
     response = client.post("/chat/messages", json={"message": "What if I switch to AI?"})
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "not_wired"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"]
+    assert body["pending_action"] is None  # clarification, nothing proposed
 
 
 def test_plan_generation_and_write_ops_need_core_engine(client):
@@ -234,10 +239,10 @@ def test_plan_read_endpoints_wired_but_empty(client):
     assert client.get("/plans/unknown-plan/versions").status_code == 404
 
 
-def test_audits_need_core_validator(client):
-    """FC24/FC29–FC32 audits run in core — stay 501 until that zone lands."""
+def test_audits_wired_via_core_validator(client):
+    """FC24/FC29–FC32 audits run in core — wired and deterministic."""
     course = client.post("/audits/course-check", json={"course_id": "3330"})
+    assert course.status_code == 200
+    assert course.json()["eligible"] is True
     degree = client.post("/audits/degree-check", json={})
-    for response in (course, degree):
-        assert response.status_code == 501
-        assert response.json()["error"]["code"] == "not_wired"
+    assert degree.status_code == 200

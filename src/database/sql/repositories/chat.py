@@ -48,16 +48,58 @@ def append_chat_message(
 
 def get_chat_history(conn: sqlite3.Connection, student_id: str, session_id: str) -> List[dict]:
     """FC34: persisted turns oldest-first; unknown session → honest 404."""
-    row = conn.execute(
-        "SELECT student_id FROM chat_sessions WHERE session_id = ?", (session_id,)
-    ).fetchone()
-    if row is None or row["student_id"] != student_id:
-        raise RecordNotFoundError(f"Chat session {session_id!r} not found for student {student_id!r}")
+    if not session_exists(conn, student_id, session_id):
+        raise RecordNotFoundError(
+            f"Chat session {session_id!r} not found for student {student_id!r}")
     rows = conn.execute(
         "SELECT role, content, created_at FROM chat_messages WHERE session_id = ? ORDER BY id",
         (session_id,),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+def session_exists(conn: sqlite3.Connection, student_id: str, session_id: str) -> bool:
+    """FC34: ownership check — the session must exist AND belong to the student."""
+    row = conn.execute(
+        "SELECT student_id FROM chat_sessions WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    return row is not None and row["student_id"] == student_id
+
+
+def get_open_pending_action(conn: sqlite3.Connection, session_id: str) -> Optional[dict]:
+    """FC23 durability: the session's newest OPEN proposal (server-side gate
+    state) — history reads surface it so the UI card survives reloads."""
+    row = conn.execute(
+        "SELECT action_id, action_type, description FROM chat_pending_actions"
+        " WHERE session_id = ? AND status = 'open' ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (session_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def list_chat_sessions(conn: sqlite3.Connection, student_id: str) -> List[dict]:
+    """FC34/FC35 view: the student's sessions, newest activity first. The
+    title is the first user message (truncated), never a fabricated title."""
+    rows = conn.execute(
+        """SELECT s.session_id, s.created_at, s.last_active_at,
+                  (SELECT SUBSTR(m.content, 1, 80) FROM chat_messages m
+                   WHERE m.session_id = s.session_id AND m.role = 'user'
+                   ORDER BY m.id LIMIT 1) AS title
+           FROM chat_sessions s
+           WHERE s.student_id = ?
+           ORDER BY s.last_active_at DESC""",
+        (student_id,),
+    ).fetchall()
+    return [
+        {
+            "session_id": row["session_id"],
+            "title": row["title"] or "(no messages yet)",
+            "created_at": row["created_at"],
+            "last_active_at": row["last_active_at"],
+        }
+        for row in rows
+    ]
 
 
 # --------------------------------------------------------- FC23 groundwork
@@ -80,7 +122,7 @@ def create_pending_action(
 
 def get_pending_action(conn: sqlite3.Connection, action_id: str) -> Optional[dict]:
     row = conn.execute(
-        "SELECT action_id, session_id, action_type, description, payload, status, created_at "
+        "SELECT action_id, session_id, student_id, action_type, description, payload, status, created_at "
         "FROM chat_pending_actions WHERE action_id = ?",
         (action_id,),
     ).fetchone()
