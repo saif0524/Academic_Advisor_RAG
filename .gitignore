@@ -9,3 +9,8 @@ models.json
 __pycache__/
 *.pyc
 .pytest_cache/
+# Runtime stores (rebuilt from data/ by database.seed on startup)
+var/
+*.db
+*.db-shm
+*.db-wal

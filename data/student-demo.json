@@ -1,0 +1,22 @@
+{
+  "_comment": "MOCK demo student profile — NOT a real person. Pre-authenticated demo account for FC36 baseline; statuses use the FC21 enum; prior major history seeds FC7. Course ids are canonical catalog ids (4-digit corpus ids; 'ENGL 1301' full-code form).",
+  "student": {
+    "student_id": "STU-2026-9941",
+    "name": "Demo Student",
+    "current_major": "Bachelor of Science in Computer Science",
+    "concentration": "Artificial Intelligence",
+    "career_interest": "Machine learning and data engineering",
+    "include_summer_sessions": false,
+    "selected_degree_id": "BS-CS"
+  },
+  "major_history": [],
+  "classes": [
+    { "course_id": "1105", "status": "passed", "grade": "A", "semester_taken": "Fall 2024" },
+    { "course_id": "1310", "status": "passed", "grade": "B+", "semester_taken": "Spring 2025" },
+    { "course_id": "1320", "status": "passed", "grade": "B", "semester_taken": "Spring 2025" },
+    { "course_id": "1325", "status": "in_progress", "semester_taken": "Fall 2026" },
+    { "course_id": "2315", "status": "in_progress", "semester_taken": "Fall 2026" },
+    { "course_id": "1301", "status": "failed", "grade": "F", "semester_taken": "Spring 2025" },
+    { "course_id": "1106", "status": "not_taken", "bookmarked": true }
+  ]
+}

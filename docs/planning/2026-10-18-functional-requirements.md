@@ -84,3 +84,4 @@
 | **FC34** | System shall persist advising sessions and chat history in the database | • All chat logs and advising interactions saved across sessions [6, 7] |
 | **FC35**  | System UI shall support prompt-based queries and structured dialog box inputs | • Accessible via Web UI, Desktop GUI, or CLI interface [1, 3] |
 | **FC36** | System assumes pre-authenticated student sessions (Baseline Scope) | • Login/logout and security authentication rules are out of scope for assignment baseline [7] |
+| **FC37** | System shall expose a REST API (FastAPI) between the client UI and the backend zones | • Router → controller → service layering; agent, db managers, and pre-auth student (FC36) supplied by dependency injection<br>• Assistant-initiated actions require a confirmation flag in the request (FC23)<br>• Endpoints whose backing zone is not built return 501 `not_wired` — never fabricated data |
