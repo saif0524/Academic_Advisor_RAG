@@ -9,16 +9,23 @@ from core.entities.degree import DegreePlan
 from database.errors import RecordNotFoundError
 
 
-def save_degree_plan(conn: sqlite3.Connection, plan: DegreePlan) -> bool:
-    """§4 contract (FC2 destination): store plan metadata + first version snapshot."""
-    payload = plan.to_payload()
+def save_degree_plan(
+    conn: sqlite3.Connection, plan: DegreePlan, payload: Optional[dict] = None,
+    is_active: bool = False,
+) -> bool:
+    """§4 contract (FC2 destination): store plan metadata + first version.
+
+    is_active=False: the plan-activation flow (generate → edit → make active)
+    keeps new plans off the Dashboard until explicitly confirmed — plans
+    start inactive and become active via activate_plan (FC6)."""
+    payload = payload or plan.to_payload()
     conn.execute(
         """INSERT OR REPLACE INTO plans
                (plan_id, student_id, degree_id, target_major, concentration,
                 includes_summer, is_active)
-           VALUES (?, ?, ?, ?, ?, ?, 1)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (plan.plan_id, plan.student_id, plan.degree_id, plan.target_major,
-         plan.concentration, int(plan.includes_summer)),
+         plan.concentration, int(plan.includes_summer), int(is_active)),
     )
     conn.execute(
         "INSERT OR IGNORE INTO plan_versions (plan_id, version_number, payload, note) "
@@ -44,6 +51,56 @@ def create_plan_version(
     )
     conn.commit()
     return next_number
+
+
+def get_active_plan(conn: sqlite3.Connection, student_id: str) -> Optional[dict]:
+    """FC6: the student's single active plan (None when nothing is active)."""
+    row = conn.execute(
+        "SELECT * FROM plans WHERE student_id = ? AND is_active = 1 ORDER BY created_at DESC",
+        (student_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return _row_to_plan_dict(conn, row)
+
+
+def activate_plan(conn: sqlite3.Connection, student_id: str, plan_id: str) -> bool:
+    """Make `plan_id` the student's one active plan (FC6/FC17-style).
+    Returns False when the plan doesn't exist for the student."""
+    exists = conn.execute(
+        "SELECT 1 FROM plans WHERE plan_id = ? AND student_id = ?",
+        (plan_id, student_id),
+    ).fetchone()
+    if exists is None:
+        return False
+    conn.execute(
+        "UPDATE plans SET is_active = 0 WHERE student_id = ? AND plan_id != ?",
+        (student_id, plan_id),
+    )
+    conn.execute(
+        "UPDATE plans SET is_active = 1 WHERE plan_id = ? AND student_id = ?",
+        (plan_id, student_id),
+    )
+    conn.commit()
+    return True
+
+
+def update_plan_meta(
+    conn: sqlite3.Connection, plan_id: str,
+    includes_summer: Optional[bool] = None, concentration: Optional[str] = None,
+) -> None:
+    """Refresh mutable plan metadata after an edit (FC3)."""
+    assignments, params = [], []
+    if includes_summer is not None:
+        assignments.append("includes_summer = ?")
+        params.append(int(includes_summer))
+    if concentration is not None:
+        assignments.append("concentration = ?")
+        params.append(concentration)
+    if assignments:
+        params.append(plan_id)
+        conn.execute(f"UPDATE plans SET {', '.join(assignments)} WHERE plan_id = ?", tuple(params))
+        conn.commit()
 
 
 def list_plans(conn: sqlite3.Connection, student_id: str) -> List[dict]:
@@ -107,7 +164,9 @@ def _row_to_plan_dict(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
         "target_major": row["target_major"],
         "concentration": row["concentration"],
         "includes_summer": bool(row["includes_summer"]),
+        "is_active": bool(row["is_active"]) if "is_active" in row.keys() else False,
         "created_at": row["created_at"],
         "version_number": versions[-1]["version_number"] if versions else 0,
         "semesters": payload.get("semesters", []),
+        "notes": payload.get("notes", []),
     }

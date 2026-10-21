@@ -56,7 +56,8 @@ export default function PlanProgressHeader({
       <p className="plan-progress-header-kicker">Active degree plan</p>
       <h1 className="plan-progress-header-title">{program.majorName}</h1>
       <p className="plan-progress-header-meta">
-        {program.concentration} concentration · Catalog {program.catalogYear}
+        {program.concentration} concentration
+        {program.catalogYear && program.catalogYear !== '—' ? ` · Catalog ${program.catalogYear}` : ''}
       </p>
       <p className="plan-progress-header-credits">
         {progress.completed} of {progress.total} credit hours
@@ -83,7 +84,9 @@ export default function PlanProgressHeader({
           />
         </div>
       )}
-      <Badge variant="neutral">{program.catalogYear} catalog</Badge>
+      {program.catalogYear && program.catalogYear !== '—' ? (
+        <Badge variant="neutral">{program.catalogYear} catalog</Badge>
+      ) : null}
     </section>
   );
 }

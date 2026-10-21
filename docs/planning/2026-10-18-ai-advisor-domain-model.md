@@ -2,6 +2,42 @@
 
 ---
 
+**Implementation notes (2026-10-22, plan/account/dashboard end-to-end build):**
+the §2 engine is COMPLETE — `DegreePlanGenerator` lives in
+`src/core/engine/generator.py` (pure, entity-passed). Implemented adjustments
+to the §2 outline: `generate_multi_year_plan(student, target_degree,
+courses_by_id, include_summer, max_credits_per_sem, current_term)` takes the
+catalog as a dict instead of a db-backed attribute (core stays offline) and
+returns a `PlanGenerationResult` (plan + grounded `notes`: skipped completed
+courses FC30, unresolvable requirement rows, dry elective buckets, unknown
+credit hours). `review_plan_semesters` (FC29–FC32 verdicts over unsaved
+drafts; blocking = FC30/FC32, warning = FC29) and `compare_plans` /
+`simulate_major_switch` (FC26 set-arithmetic + trade-off lines) round out the
+outline. Placement semantics: prereqs must land in an EARLIER semester than
+dependents (FC29 planning form; same-semester placement defers), courses
+level-sorted, Fall→Spring (+ optional Summer) sequence from the current term
+(an in-progress semester anchors the roadmap; passed/taken work is never
+re-planned). Server: plan write endpoints (generate/update/revert/compare)
+plus `GET /plans/active`, `PATCH /plans/{id}/activate`, `POST /plans/review`,
+`GET /plans/options` are wired — no more 501s in the plan zone; new plans
+deactivate-then-activate (generate → edit → make active, per product
+decision). Concentrations are not modeled in the degrees seed, so plan
+options offer 'General' per major (honest default; requested values persist
+as stored text). Planning preferences (FC25 summer toggle, FC32 cap input)
+persist in `student_preferences` (migration 0002) and feed generation. The
+agent gained the `plan_generation` intent: stub/LLM classifier routes
+"generate a plan" phrasing to a plan node that calls
+`AdvisorToolkit.generate_plan` (engine + persistence; target major resolved
+from the message or the student's record; honest refusal when unresolved).
+Frontend swap complete: plans/students/catalog/candidate mocks are now live
+HTTP calls (`planDetailToActive` maps server detail → UI shape); pages gained
+real loading/empty/error states; AccountPage's confirm path applies major
+changes + auto-generates an inactive plan (FC23-style UI gate), and the
+timeline saves engine-validated drafts (PATCH) with version history + revert.
+Stories keep deterministic DI fixtures (`reviewFn` seam) and never hit HTTP.
+
+---
+
 **Implementation notes (2026-10-20, agent build):** the §2 engine is now
 built in `src/core/engine/` — `CourseRecommendationValidator` (FC29–FC32)
 as pure functions taking entities + the data they need as arguments (per the

@@ -58,4 +58,22 @@ class DegreeProgressResponse(BaseModel):
 
     degree_id: Optional[str] = None
     completion_percent: Optional[float] = None
+    completed_hours: Optional[int] = Field(
+        default=None, description="Passed/taken hours that count (FC19 counting)."
+    )
+    in_progress_hours: Optional[int] = None
+    total_credits_required: Optional[int] = Field(
+        default=None, description="The degree's total credit ceiling."
+    )
     outstanding_requirements: List[str] = Field(default_factory=list)
+
+
+class PlanningPreferences(BaseModel):
+    """Planning-preference inputs (FC25 summer toggle, FC32 cap input)."""
+
+    max_credits_per_semester: Optional[int] = Field(
+        default=None,
+        description="Per-semester credit cap (FC32 input); None = not set yet.",
+    )
+    include_summer: bool = False
+    preferred_class_times: Optional[str] = None

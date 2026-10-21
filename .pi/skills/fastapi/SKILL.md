@@ -40,6 +40,7 @@ Routers never touch db managers; controllers never construct services — they r
 
 ## Repo rules in the HTTP layer
 
+- **POC fidelity (2026-10-22):** keep endpoints thin and honest, not hardened — no pagination, rate limiting, or exhaustive error taxonomies beyond what the frontend renders (`not_wired`, `not_found`, `validation_failed`).
 - Endpoints that recommend, audit, or plan must produce results through the deterministic engine in `core` (FC29–FC32, FC2, FC25–FC26) — never by asking the LLM.
 - Actions taken on the student's behalf (add/drop class, create/modify plan — FC20–FC21, FC23) require proof of explicit user confirmation in the confirming request (e.g. a confirmation token/flag carried from the UI dialog); unconfirmed action requests are rejected.
 - Chat/session state persists through `SQLDatabaseManager` (FC34), not FastAPI session state.

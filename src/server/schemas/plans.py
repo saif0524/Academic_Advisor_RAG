@@ -4,7 +4,7 @@ Generated plans come exclusively from `DegreePlanGenerator` (deterministic,
 FC2/FC25/FC26); these models describe its output for HTTP, nothing more.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -34,6 +34,11 @@ class PlanDetail(PlanSummary):
     """Full plan: summary fields + the semester-by-semester roadmap (FC25)."""
 
     semesters: List[SemesterEntry] = Field(default_factory=list)
+    notes: List[str] = Field(
+        default_factory=list,
+        description="Grounded caveats from the deterministic engine "
+        "(unfulfilled buckets, excluded rows) — never invented away.",
+    )
 
 
 class PlanListResponse(BaseModel):
@@ -69,6 +74,42 @@ class PlanVersionSummary(BaseModel):
     version_id: str
     created_at: Optional[datetime] = None
     label: Optional[str] = None
+
+
+class PlanOption(BaseModel):
+    name: str
+    concentrations: List[str]
+
+
+class PlanOptionsResponse(BaseModel):
+    """Generate-form inputs (FC1): majors from the degrees table with their
+    selectable concentrations. Concentrations are not modeled in the degrees
+    seed data — 'General' is the honest default offering."""
+
+    majors: List[PlanOption]
+
+
+class PlanReviewRequest(BaseModel):
+    """Draft review input: unsaved semesters get the engine's FC29–FC32
+    verdicts (the deterministic surface the UI's plan-check banner shows)."""
+
+    semesters: List[SemesterEntry] = Field(default_factory=list)
+    max_credits_per_semester: Optional[int] = Field(
+        default=None, description="Cap override; defaults to the tracked degree's cap."
+    )
+
+
+class PlanReviewIssue(BaseModel):
+    code: str
+    course: Optional[str] = None
+    text: str
+    severity: Literal["blocking", "warning"]
+
+
+class PlanReviewResponse(BaseModel):
+    status: Literal["ok", "issues"]
+    issues: List[str] = Field(default_factory=list)
+    semester_issues: Dict[str, List[PlanReviewIssue]] = Field(default_factory=dict)
 
 
 class PlanVersionListResponse(BaseModel):
@@ -110,4 +151,11 @@ class PlanComparisonResponse(BaseModel):
     )
     added_courses: List[str] = Field(
         default_factory=list, description="Course ids newly required by the new plan."
+    )
+    retained_hours: Optional[int] = None
+    lost_hours: Optional[int] = None
+    added_hours: Optional[int] = None
+    graduation_estimate: Optional[str] = Field(
+        default=None,
+        description="Proposed plan's final term — grounded in the generated roadmap.",
     )

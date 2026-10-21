@@ -172,6 +172,29 @@ class StubSummarizer:
                     "Nothing has been changed yet — I only act after your confirmation (FC23).")
         return "I couldn't prepare that action."
 
+    def _render_plan_generation(self, payload: dict, user_input: str) -> str:
+        refusal = payload.get("refusal")
+        if refusal:
+            return refusal
+        plan = payload.get("plan")
+        if not plan or not plan.get("semesters"):
+            return ("I couldn't build a plan from the data on record — nothing "
+                    "was invented.")
+        semesters = plan["semesters"]
+        first, last = semesters[0], semesters[-1]
+        lines = [
+            f"Here's a semester-by-semester plan for {plan['target_major']}"
+            + (f" — {plan['concentration']}" if plan.get("concentration") else "")
+            + f", covering {first['term']} {first['year']} through "
+            f"{last['term']} {last['year']} ({len(semesters)} semesters, "
+            f"{'summer sessions included' if plan.get('includes_summer') else 'no summer sessions'})."
+        ]
+        for note in payload.get("notes") or []:
+            lines.append(f"• {note}")
+        lines.append("Review it in the planner, edit what you need, then make it "
+                     "active when it looks right.")
+        return "\n".join(lines)
+
     def _render_confirm(self, payload: dict, user_input: str) -> str:
         if payload.get("error"):
             return payload["error"]

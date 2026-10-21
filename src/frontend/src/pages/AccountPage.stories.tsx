@@ -6,11 +6,11 @@ import { expect, fireEvent, userEvent } from 'storybook/test';
 const PROFILE_FIXTURE: StudentProfile = {
   studentId: 'stu-0001',
   studentIdLabel: '[ID]',
-  name: 'Jordan Lee',
-  catalogYear: '2024-2025',
-  standing: 'Junior',
-  major: 'BS in Computer Science',
-  concentration: 'Cybersecurity',
+  name: 'Demo Student',
+  catalogYear: '—',
+  standing: '—',
+  major: 'Bachelor of Science in Computer Science',
+  concentration: 'Artificial Intelligence',
 };
 
 const PREFS_FIXTURE: PlanningPreferences = {
@@ -19,30 +19,43 @@ const PREFS_FIXTURE: PlanningPreferences = {
   preferredClassTimes: 'Any time',
 };
 
+const OPTIONS_FIXTURE = {
+  majors: [
+    { name: 'Bachelor of Science in Computer Science', concentrations: ['General'] },
+    { name: 'Bachelor of Science in Software Engineering', concentrations: ['General'] },
+  ],
+};
+
 const SEAMS = {
-  loadDependencies: () => Promise.resolve({ profile: PROFILE_FIXTURE, preferences: PREFS_FIXTURE }),
+  loadDependencies: () =>
+    Promise.resolve({
+      profile: PROFILE_FIXTURE,
+      preferences: PREFS_FIXTURE,
+      options: OPTIONS_FIXTURE,
+      comparePlanId: 'plan-0001',
+    }),
   compareFn: () =>
     Promise.resolve({
       current: {
-        degree: 'BS in Computer Science',
-        concentration: 'Cybersecurity',
-        hoursThatCount: '81 of 81',
-        hoursRemaining: '39',
-        graduation: 'Spring 2028',
+        degree: 'Bachelor of Science in Computer Science',
+        concentration: 'Artificial Intelligence',
+        hoursThatCount: '54 of 81 planned hours carry over',
+        hoursRemaining: '27 hours would no longer count',
+        graduation: 'see current plan',
       },
       proposed: {
-        degree: 'BS in Software Engineering',
-        concentration: 'Artificial Intelligence',
-        hoursThatCount: '72 of 81',
-        hoursRemaining: '48',
-        graduation: 'Fall 2028',
+        degree: 'Bachelor of Science in Software Engineering',
+        concentration: 'General',
+        hoursThatCount: '54 planned hours carry over',
+        hoursRemaining: '33 new hours required',
+        graduation: 'Spring 2028',
       },
       notes: [
-        'Estimates from your degree audit — the advisor walks through pros and cons before you commit.',
-        'Two CSE concentration courses would no longer count toward the new degree.',
+        '8 planned course(s) carry over (54 hours).',
+        '5 planned course(s) would no longer count (27 hours).',
       ],
     }),
-  confirmFn: () => Promise.resolve({ applied: true }),
+  confirmFn: (_major: string, _concentration: string) => Promise.resolve({ applied: true }),
   savePreferencesFn: () => Promise.resolve({ saved: true, savedAt: new Date().toISOString() }),
 };
 
@@ -56,23 +69,23 @@ export default meta;
 
 export const Default: StoryObj<typeof AccountPage> = {};
 
-/** Wireframe 05 flow: pick a new program → comparison → FC23 confirm gate. */
+/** Wireframe 05 flow: pick a new program → comparison → confirm gate. */
 export const ChangeProgramFlow: StoryObj<typeof AccountPage> = {
   play: async ({ canvas }) => {
-    fireEvent.change(canvas.getByLabelText('New major'), { target: { value: 'BS in Software Engineering' } });
-    fireEvent.change(canvas.getByLabelText('Concentration'), { target: { value: 'Artificial Intelligence' } });
+    fireEvent.change(canvas.getByLabelText('New major'), { target: { value: 'Bachelor of Science in Software Engineering' } });
+    fireEvent.change(canvas.getByLabelText('Concentration'), { target: { value: 'General' } });
     await expect(await canvas.findByText(/Plan comparison/i)).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: /Confirm program change…/i }));
     await expect(await canvas.findByRole('dialog')).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Confirm program change' }));
-    await expect(await canvas.findByText(/Program change applied \(demo\)/i)).toBeVisible();
+    await expect(await canvas.findByText(/Program change applied/i)).toBeVisible();
   },
 };
 
 export const CancelNeverCommits: StoryObj<typeof AccountPage> = {
   play: async ({ canvas }) => {
-    fireEvent.change(canvas.getByLabelText('New major'), { target: { value: 'BS in Software Engineering' } });
-    fireEvent.change(canvas.getByLabelText('Concentration'), { target: { value: 'Artificial Intelligence' } });
+    fireEvent.change(canvas.getByLabelText('New major'), { target: { value: 'Bachelor of Science in Software Engineering' } });
+    fireEvent.change(canvas.getByLabelText('Concentration'), { target: { value: 'General' } });
     await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }));
     await expect(
       await canvas.findByText('Pick a new major and concentration above to compare degree plans.'),

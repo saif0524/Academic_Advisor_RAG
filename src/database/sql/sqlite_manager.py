@@ -239,10 +239,11 @@ class SQLDatabaseManager(DatabaseManager):
 
     # ------------------------------------------------------------- plans (§4)
 
-    def save_degree_plan(self, plan: DegreePlan) -> bool:
-        """§4 contract (FC2 destination + FC4 first version)."""
+    def save_degree_plan(self, plan: DegreePlan, payload: Optional[dict] = None) -> bool:
+        """§4 contract (FC2 destination + FC4 first version); new plans start
+        inactive — activation is its own explicit step (build decision Q2)."""
         with self._connect() as conn:
-            return plans_repo.save_degree_plan(conn, plan)
+            return plans_repo.save_degree_plan(conn, plan, payload=payload)
 
     def list_plans(self, student_id: str) -> List[dict]:
         """FC6."""
@@ -253,6 +254,19 @@ class SQLDatabaseManager(DatabaseManager):
         with self._connect() as conn:
             return plans_repo.get_plan(conn, student_id, plan_id)
 
+    def get_active_plan(self, student_id: str) -> Optional[dict]:
+        """FC6: the active plan, or None when nothing is active."""
+        with self._connect() as conn:
+            return plans_repo.get_active_plan(conn, student_id)
+
+    def activate_plan(self, student_id: str, plan_id: str) -> bool:
+        with self._connect() as conn:
+            return plans_repo.activate_plan(conn, student_id, plan_id)
+
+    def update_plan_meta(self, plan_id: str, includes_summer: Optional[bool] = None) -> None:
+        with self._connect() as conn:
+            plans_repo.update_plan_meta(conn, plan_id, includes_summer=includes_summer)
+
     def list_plan_versions(self, plan_id: str) -> List[dict]:
         """FC4."""
         with self._connect() as conn:
@@ -262,7 +276,44 @@ class SQLDatabaseManager(DatabaseManager):
         with self._connect() as conn:
             return plans_repo.create_plan_version(conn, plan_id, payload, note)
 
-    # -------------------------------------------------------------- chat (§4+
+    # ------------------------------------------------ favorites/prefs (§4)
+
+    def get_student_preferences(self, student_id: str) -> Optional[dict]:
+        """Planning preferences (FC25/FC32 inputs); None until first save."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT max_credits_per_semester, include_summer, preferred_class_times "
+                "FROM student_preferences WHERE student_id = ?",
+                (student_id,),
+            ).fetchone()
+            if row is None:
+                return None
+            return {
+                "max_credits_per_semester": row["max_credits_per_semester"],
+                "include_summer": bool(row["include_summer"]),
+                "preferred_class_times": row["preferred_class_times"],
+            }
+
+    def update_student_preferences(
+        self, student_id: str, max_credits_per_semester: Optional[int],
+        include_summer: bool, preferred_class_times: Optional[str],
+    ) -> dict:
+        with self._connect() as conn:
+            conn.execute(
+                """INSERT INTO student_preferences
+                       (student_id, max_credits_per_semester, include_summer, preferred_class_times)
+                   VALUES (?, ?, ?, ?)
+                   ON CONFLICT(student_id) DO UPDATE SET
+                       max_credits_per_semester = excluded.max_credits_per_semester,
+                       include_summer = excluded.include_summer,
+                       preferred_class_times = excluded.preferred_class_times,
+                       updated_at = CURRENT_TIMESTAMP""",
+                (student_id, max_credits_per_semester, int(include_summer), preferred_class_times),
+            )
+            conn.commit()
+        return self.get_student_preferences(student_id)
+
+    # -------------------------------------------------------------- chat (§4+)
 
     def ensure_chat_session(self, student_id: str) -> str:
         """FC27/FC34."""

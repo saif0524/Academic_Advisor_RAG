@@ -9,6 +9,7 @@ Run this workflow in-session, phase by phase, with the user in the loop. Everyth
 
 Ground rules (every phase):
 
+- **POC fidelity (2026-10-22, class assignment):** the bar is *working*, not *production-hardened*. Prefer the smallest implementation that satisfies the spec, the grounding rule, and the tests; skip edge-case hardening, exhaustive error taxonomies, pagination, and caching unless something below requires it. When a choice arises, favor a demo that works end to end.
 - **Deterministic engine first.** Constraint checks (FC29–FC32) and plan generation (FC2, FC25, FC26) live in plain code — `CourseRecommendationValidator`, `DegreePlanGenerator` (`docs/planning/2026-10-18-ai-advisor-domain-model.md` §2). The LLM classifies intent, calls tools, and summarizes; it never does constraint math and never generates plans.
 - **Never fabricate academic data.** Courses, sections, prerequisites, credit limits, and degree requirements exist only in SQLite and Chroma. Empty lookup → say so.
 - **Cite FC IDs** in all phase output and in code comments where a requirement is implemented.

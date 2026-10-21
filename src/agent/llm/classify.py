@@ -15,7 +15,7 @@ from agent.tools.course_ids import course_mentions
 _logger = logging.getLogger("agent.classify")
 
 INTENTS = ("exact", "semantic", "recommend", "audit", "propose_action",
-           "clarify", "chitchat")
+           "plan_generation", "clarify", "chitchat")
 
 
 @dataclass
@@ -162,6 +162,17 @@ class StubClassifier:
                                       followup="Which degree should I track (e.g. BS-CS)?")
             return Classification("propose_action", {
                 "action_type": "change_degree", "degree_id": degree.group(1).strip()})
+
+        # ----- deterministic plan generation (FC2/FC25; engine owns the math)
+        if re.search(r"\b(GENERATE|CREATE|BUILD|DRAW UP|PLAN OUT)\b", upper) and \
+                re.search(r"\b(DEGREE\s+)?PLAN\b", upper):
+            target = re.search(r"\bPLAN\b.*?\bFOR\s+(.+)$", upper)
+            params: Dict = {}
+            filler = target and target.group(1).strip().strip(" .!?").lower() in {
+                "me", "my", "it", "this", "that"}
+            if target and not filler:
+                params["target_major"] = in_original(target).strip(" .!?")
+            return Classification("plan_generation", params)
 
         # ----- exact facts (FC33 SQLite side)
         if mentions and re.search(
