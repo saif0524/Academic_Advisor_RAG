@@ -279,6 +279,21 @@ class SQLDatabaseManager(DatabaseManager):
         with self._connect() as conn:
             return chat_repo.get_chat_history(conn, student_id, session_id)
 
+    def get_open_pending_action(self, session_id: str) -> Optional[dict]:
+        """FC23: newest open proposal for the session (UI card restoration)."""
+        with self._connect() as conn:
+            return chat_repo.get_open_pending_action(conn, session_id)
+
+    def chat_session_exists(self, student_id: str, session_id: str) -> bool:
+        """FC34 ownership check (explicit unknown ids must 404, not continue)."""
+        with self._connect() as conn:
+            return chat_repo.session_exists(conn, student_id, session_id)
+
+    def list_chat_sessions(self, student_id: str) -> List[dict]:
+        """FC34/FC35: conversations view for the chat drawer's history list."""
+        with self._connect() as conn:
+            return chat_repo.list_chat_sessions(conn, student_id)
+
     def create_pending_action(
         self, session_id: str, student_id: str, action_type: str, description: str, payload: dict
     ) -> str:

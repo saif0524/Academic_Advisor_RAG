@@ -8,7 +8,7 @@ import SearchFilterChips from '../components/search/SearchFilterChips/SearchFilt
 import type { SearchFilter } from '../components/search/SearchFilterChips/SearchFilterChips';
 import CourseResultCard from '../components/search/CourseResultCard/CourseResultCard';
 import CourseDetailDialog from '../components/search/CourseDetailDialog/CourseDetailDialog';
-import { getCourseDetail, searchCourses } from '../api/courses';
+import { getCourseDetailLive, searchLive } from '../api/liveSearch';
 import type { CourseDetail, SearchResponse } from '../api/types';
 import './CourseSearch.css';
 
@@ -24,11 +24,12 @@ interface CourseSearchProps {
 }
 
 /**
- * Search page (wireframe 04): one box — course codes/titles (FC8, future
- * SQLite path) or plain-language questions (FC9, future Chroma path) — an
- * advisor answer card (FC22/FC24 display), FC10 filter chips, and matching
- * course cards with engine-verdict badges (FC29–FC32 display). "Details"
- * opens the FC11/FC12 dialog. All data through the api seams.
+ * Search page (wireframe 04): one box — course codes/titles (FC8, SQLite
+ * path) or plain-language questions (FC9, Chroma path) — an advisor answer
+ * card powered by the SAME live agent as the chat drawer (FC22, persisted
+ * FC34), FC10 filter chips, and matching course cards with engine-verdict
+ * badges from the FC24 audit endpoint (FC29–FC32). Details opens the
+ * FC11/FC12 dialog. All data through the api seams; stories inject fixtures.
  */
 export default function CourseSearch({
   active = 'search',
@@ -36,8 +37,8 @@ export default function CourseSearch({
   chatOpen = false,
   onToggleChat,
   chatSlot = null,
-  searchFn = searchCourses,
-  detailFn = getCourseDetail,
+  searchFn = searchLive,
+  detailFn = getCourseDetailLive,
 }: CourseSearchProps) {
   const [submitted, setSubmitted] = useState('');
   const [response, setResponse] = useState<SearchResponse | null>(null);
@@ -68,12 +69,15 @@ export default function CourseSearch({
 
   const courseFilters: SearchFilter[] = useMemo(() => {
     const courses = response?.courses ?? [];
+    // Terms derive from the actual results — no hardcoded semester labels.
+    const terms = [...new Set(courses.map((c) => c.term).filter((t): t is string => Boolean(t)))];
+    const primaryTerm = terms[0] ?? 'All terms';
     return [
-      { id: 'term', label: 'Spring 2027', count: courses.filter((c) => c.term === 'Spring 2027').length },
+      ...(terms.length > 0 ? [{ id: 'term', label: primaryTerm, count: courses.filter((c) => c.term === primaryTerm).length }] : []),
       {
         id: 'degree',
         label: 'Counts toward my degree',
-        count: courses.filter((c) => !c.flags.some((f) => f.label.includes('Conflicts'))).length,
+        count: courses.filter((c) => !c.flags.some((f) => f.label.startsWith("Doesn't count"))).length,
       },
       {
         id: 'schedule',
@@ -83,15 +87,20 @@ export default function CourseSearch({
     ];
   }, [response]);
 
+  const primaryTerm = useMemo(
+    () => ([...new Set((response?.courses ?? []).map((c) => c.term).filter((t): t is string => Boolean(t)))])[0] ?? 'Spring 2027',
+    [response],
+  );
+
   const filteredCourses = useMemo(() => {
     const courses = response?.courses ?? [];
     return courses.filter((course) => {
-      if (activeFilters.includes('term') && course.term !== 'Spring 2027') return false;
-      if (activeFilters.includes('degree') && course.flags.some((f) => f.label.includes('Conflicts'))) return false;
+      if (activeFilters.includes('term') && course.term !== primaryTerm) return false;
+      if (activeFilters.includes('degree') && course.flags.some((f) => f.label.startsWith("Doesn't count"))) return false;
       if (activeFilters.includes('schedule') && course.flags.some((f) => f.variant === 'danger')) return false;
       return true;
     });
-  }, [response, activeFilters]);
+  }, [response, activeFilters, primaryTerm]);
 
   const handleDetails = async (courseId: string) => {
     setDetailOpen(true);

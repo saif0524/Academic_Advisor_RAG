@@ -33,6 +33,10 @@ class ChatMessageRequest(BaseModel):
         default=None,
         description="Proof of explicit user confirmation for a pending_action (FC23).",
     )
+    cancelled_action_id: Optional[str] = Field(
+        default=None,
+        description="Explicit cancellation of a pending_action (FC23) — no action taken.",
+    )
 
 
 class ChatMessageReply(BaseModel):
@@ -60,3 +64,23 @@ class ChatHistoryResponse(BaseModel):
     session_id: str
     student_id: str
     messages: List[ChatHistoryMessage]
+    pending_action: Optional[PendingAction] = Field(
+        default=None,
+        description="The session's newest open proposal (FC23 durability across reloads).",
+    )
+
+
+class ChatSessionSummary(BaseModel):
+    """One conversation in the drawer's history list (FC34 view; FC35)."""
+
+    session_id: str
+    title: str = Field(description="First user message (truncated) — never synthesized.")
+    created_at: Optional[datetime] = None
+    last_active_at: Optional[datetime] = None
+
+
+class ChatSessionsResponse(BaseModel):
+    """The student's advising conversations (FC34 view)."""
+
+    results: List[ChatSessionSummary] = Field(default_factory=list)
+    count: int = 0

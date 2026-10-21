@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 _DATA = Path(__file__).resolve().parents[2] / "data"
 _ENV_KEYS = ("ADVISOR_SQLITE_PATH", "ADVISOR_CHROMA_PATH", "ADVISOR_DATA_DIR",
-             "ADVISOR_SEED_MODE", "ADVISOR_EMBEDDING_FUNCTION")
+             "ADVISOR_SEED_MODE", "ADVISOR_EMBEDDING_FUNCTION", "ADVISOR_LLM_PROVIDER")
 
 
 @pytest.fixture(scope="module")
@@ -27,6 +27,7 @@ def client(tmp_path_factory):
         ADVISOR_DATA_DIR=str(_DATA),
         ADVISOR_SEED_MODE="reload",
         ADVISOR_EMBEDDING_FUNCTION="hash",
+        ADVISOR_LLM_PROVIDER="stub",
     )
     from server.app import create_app
 
@@ -76,11 +77,12 @@ def test_openapi_resources_mounted(client):
     assert expected <= set(paths)
 
 
-def test_chat_send_message_not_wired(client):
-    """FC22 needs the agent zone (step 4) — stays 501 honest."""
-    response = client.post("/chat/messages", json={"message": "What if I switch to AI?"})
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "not_wired"
+def test_chat_send_message_wired(client):
+    """FC22 wired: the agent zone is live (stub provider in tests — no LLM)."""
+    response = client.post("/chat/messages", json={"message": "What time does CSE 3330 meet?"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"], "the stub agent answers from real seed data"
 
 
 def test_semantic_search_wired(client):
@@ -110,11 +112,15 @@ def test_plan_generation_not_wired(client):
     assert response.json()["error"]["code"] == "not_wired"
 
 
-def test_audits_not_wired(client):
-    """FC24 needs the core validator — stays 501 honest."""
-    response = client.post("/audits/course-check", json={"course_id": "3330"})
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "not_wired"
+def test_audits_wired(client):
+    """FC24 wired: the core validator answers deterministic checks."""
+    response = client.post("/audits/course-check", json={"course_id": "4308"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["eligible"] is True
+    response = client.post("/audits/degree-check", json={})
+    assert response.status_code == 200
+    assert response.json()["degree_id"] == "BS-CS"
 
 
 def test_identity_from_header(client):

@@ -206,6 +206,8 @@ export interface Conversation {
 export interface ProposedAction {
   summary: string;
   detail?: string;
+  /** Server pending-action id (FC23) — decisions travel back with it. */
+  actionId?: string;
 }
 
 export interface ChatMessage {
