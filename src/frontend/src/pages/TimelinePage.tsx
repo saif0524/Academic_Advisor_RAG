@@ -2,17 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import AppShell from '../components/shared/AppShell/AppShell';
 import type { PageId } from '../components/shared/AppSidebar/AppSidebar';
+import Button from '../components/shared/Button/Button';
+import Select from '../components/shared/Select/Select';
 import SemesterTimeline from '../components/planner/SemesterTimeline/SemesterTimeline';
 import SemesterDetail from '../components/planner/SemesterDetail/SemesterDetail';
 import UnsavedChangesBar from '../components/planner/UnsavedChangesBar/UnsavedChangesBar';
-import { getActivePlan, getCourseCatalog, reviewPlanDraft, savePlanDraft } from '../api/plans';
 import { getCourseSuggestions } from '../api/courses';
-import { getMeeting } from '../api/catalog';
+import {
+  activatePlan,
+  getPlanById,
+  getActivePlan,
+  getCourseCatalog,
+  listPlanVersions,
+  listPlans,
+  planDetailToActive,
+  revertPlan,
+  reviewPlanDraft,
+  savePlanDraft,
+} from '../api/plans';
 import type {
   ActivePlanData,
   CourseCatalog,
   CourseSuggestion,
+  PlanListItem,
   PlanReview,
+  PlanVersionInfo,
   Semester,
   SemesterHydrated,
   SemesterSummary,
@@ -20,7 +34,9 @@ import type {
 import './TimelinePage.css';
 
 export interface TimelineDependencies {
+  plans: PlanListItem[];
   plan: ActivePlanData | null;
+  activePlanId: string | null;
   catalog: CourseCatalog;
 }
 
@@ -30,26 +46,49 @@ interface TimelinePageProps {
   chatOpen?: boolean;
   onToggleChat?: () => void;
   chatSlot?: ReactNode;
-  /** DI seam (stories inject instant fixtures); defaults to the api mock. */
+  /** DI seam (stories inject instant fixtures); defaults to the live api. */
   loadDependencies?: () => Promise<TimelineDependencies>;
+  /** DI seam for the FC29–FC32 draft review (stories inject deterministic
+      fixture verdicts; the live default posts to POST /plans/review). */
+  reviewFn?: (semesters: Array<Pick<Semester, 'id' | 'term' | 'year' | 'courseIds' | 'credits'>>) => Promise<PlanReview>;
 }
 
+/** Live defaults (FC6 list + FC3 view + FC8 catalog; the active plan wins,
+    the most recently generated plan is the fallback when nothing is active). */
 async function defaultLoadDependencies(): Promise<TimelineDependencies> {
-  const [plan, catalog] = await Promise.all([getActivePlan(), getCourseCatalog()]);
-  return { plan, catalog };
+  const [plans, activeDetail, catalog] = await Promise.all([
+    listPlans(),
+    getActivePlan(),
+    getCourseCatalog(),
+  ]);
+  const activePlanId = activeDetail?.plan_id ?? null;
+  const fallbackId = plans[plans.length - 1]?.plan_id ?? null;
+  let plan = activeDetail ?? null;
+  if (plan === null && fallbackId) {
+    try {
+      plan = planDetailToActive(
+        await getPlanById(fallbackId),
+        { completionPercent: null, completedHours: null, inProgressHours: null, totalCreditsRequired: null },
+      );
+    } catch {
+      plan = null; // honest empty state when the fallback can't load
+    }
+  }
+  return { plans, plan, activePlanId, catalog };
 }
 
 const creditsFor = (courseIds: string[], catalog: CourseCatalog): number =>
   courseIds.reduce((sum, id) => sum + (catalog[id]?.creditHours ?? 0), 0);
 
 /**
- * Timeline page (wireframes 02/03; FC3): select a semester chip, edit its
- * courses (remove / add via search), and see live engine-verdict feedback —
- * the plan check banner and per-course warnings come from the api seam's
- * deterministic review (mock of CourseRecommendationValidator, FC29–FC32,
- * display only). Edits stage a draft; "Unsaved changes — Discard | Save
- * plan" persists via the api seam (FC3). The in-progress semester is
- * read-only — those classes are on the profile (FC14/FC21).
+ * Timeline page (wireframes 02/03; FC3): select a plan from the student's
+ * plans (FC6), edit semester courses (remove / add via live search, FC8),
+ * and see engine-verdict feedback — the plan-check banner and per-course
+ * warnings come from the server's deterministic review (POST /plans/review,
+ * FC29–FC32; never computed client-side). Edits stage a draft; "Save plan"
+ * persists via PATCH /plans/{id} (engine-validated, versioned — FC3/FC4).
+ * The in-progress semester is read-only — those classes are on the profile
+ * (FC14/FC21). "Make active" promotes the plan for the dashboard (FC6).
  */
 export default function TimelinePage({
   active = 'timeline',
@@ -58,12 +97,19 @@ export default function TimelinePage({
   onToggleChat,
   chatSlot = null,
   loadDependencies,
+  reviewFn,
 }: TimelinePageProps) {
   const loadData = loadDependencies ?? defaultLoadDependencies;
+  const review = reviewFn ?? reviewPlanDraft;
+  const [plans, setPlans] = useState<PlanListItem[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [plan, setPlan] = useState<ActivePlanData | null>(null);
+  const [versions, setVersions] = useState<PlanVersionInfo[]>([]);
   const [catalog, setCatalog] = useState<CourseCatalog>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [activating, setActivating] = useState(false);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Semester[] | null>(null);
@@ -75,21 +121,21 @@ export default function TimelinePage({
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [candidatesError, setCandidatesError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // External system: the api seam. Mount state (loading=true) is covered
-    // by useState defaults; seam changes remount the page, so all setState
-    // calls happen after the await.
+  const initialLoad = () => {
     let cancelled = false;
     const run = async () => {
       try {
-        const { plan: loadedPlan, catalog: loadedCatalog } = await loadData();
+        const deps = await loadData();
         if (cancelled) return;
-        setPlan(loadedPlan);
-        setCatalog(loadedCatalog);
+        setPlans(deps.plans);
+        setActivePlanId(deps.activePlanId);
+        setCatalog(deps.catalog);
+        setSelectedPlanId(deps.plan?.plan_id ?? deps.plans[deps.plans.length - 1]?.plan_id ?? null);
+        setPlan(deps.plan);
         const defaultSemester =
-          loadedPlan?.semesters.find((s) => s.status === 'planned') ?? loadedPlan?.semesters[0];
+          deps.plan?.semesters.find((s) => s.status === 'planned') ?? deps.plan?.semesters[0];
         setSelectedId(defaultSemester?.id ?? null);
-        setDraft(loadedPlan ? loadedPlan.semesters.map((s) => ({ ...s, courseIds: [...s.courseIds] })) : null);
+        setDraft(deps.plan ? deps.plan.semesters.map((s) => ({ ...s, courseIds: [...s.courseIds] })) : null);
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
@@ -100,17 +146,76 @@ export default function TimelinePage({
     return () => {
       cancelled = true;
     };
-  }, [loadData]);
+  };
 
-  /* Live engine-verdict display: the deterministic review runs over the
-     draft whenever it changes (mock seam for the FC29–FC32 validator). */
-  const check: PlanReview | null = useMemo(() => (draft ? reviewPlanDraft(draft) : null), [draft]);
+  useEffect(initialLoad, [loadData]);
+
+  /* Switch plans (FC6): load the chosen plan fresh and re-run the review. */
+  const handleSelectPlan = (planId: string) => {
+    if (planId === selectedPlanId) return;
+    setSelectedPlanId(planId);
+    setSelectedId(null);
+    setDraft(null);
+    setLoadError(null);
+    const run = async () => {
+      try {
+        await refreshPlanById(planId);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      }
+    };
+    void run();
+  };
+
+  async function refreshPlanById(planId: string) {
+    const detail = await getPlanById(planId);
+    const reviewResult = await review(detail.semesters.map((s) => ({
+      id: `${s.term.toLowerCase()}-${s.year}`,
+      term: s.term, year: s.year, courseIds: s.courses, credits: s.credits ?? 0,
+    })));
+    const active = planDetailToActive(detail, plan ? {
+      completionPercent: null,
+      completedHours: plan.progress.completed,
+      inProgressHours: plan.progress.inProgress,
+      totalCreditsRequired: plan.progress.total,
+    } : null);
+    setPlan({ ...active, check: reviewResult });
+    const defaultSemester =
+      active.semesters.find((s) => s.status === 'planned') ?? active.semesters[0];
+    setSelectedId(defaultSemester?.id ?? null);
+    setDraft(active.semesters.map((s) => ({ ...s, courseIds: [...s.courseIds] })));
+    listPlanVersions(planId).then(setVersions).catch(() => setVersions([]));
+  }
+
+  /* Live engine-verdict display: the deterministic review (FC29–FC32) runs
+     server-side whenever the draft changes. */
+  const [check, setCheck] = useState<PlanReview | null>(null);
+  useEffect(() => {
+    if (!draft) {
+      setCheck(null);
+      return;
+    }
+    let cancelled = false;
+    review(draft)
+      .then((reviewResult) => {
+        if (!cancelled) setCheck(reviewResult);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setCheck({ status: 'issues', issues: [`Could not review the draft: ${error instanceof Error ? error.message : String(error)}`], semesterIssues: {} });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [draft, review]);
 
   const selected = draft?.find((semester) => semester.id === selectedId) ?? null;
   const selectedIsEditable = selected !== null && selected.status !== 'in-progress';
 
-  /* Hydrated rows for the detail panel: catalog titles + meetings + the
-     per-course warning text from the review (grounded data only). */
+  /* Hydrated rows for the detail panel: catalog titles + the per-course
+     warning text from the review (grounded data only; meetings come from
+     the courses detail endpoint, not fabricated here). */
   const selectedSemester: SemesterHydrated | null = useMemo(() => {
     if (!selected) return null;
     return {
@@ -121,7 +226,7 @@ export default function TimelinePage({
           id,
           title: course?.title ?? null,
           creditHours: course?.creditHours ?? null,
-          meeting: getMeeting(id),
+          meeting: null,
           warning: check?.semesterIssues[selected.id]?.find((issue) => issue.course === id)?.text,
         };
       }),
@@ -161,13 +266,13 @@ export default function TimelinePage({
   };
 
   useEffect(() => {
-    // External system: the courses suggest endpoint. Sync state is managed in
-    // handleSelectSemester; this effect only applies post-await results.
+    // External system: the courses search endpoint (FC8). Sync state is
+    // managed in handleSelectSemester; this effect only applies post-await.
     if (selectedId === null || !selectedIsEditable) return;
     let cancelled = false;
     const run = async () => {
       try {
-        const suggestions = await getCourseSuggestions(selectedId, selected?.courseIds ?? []);
+        const suggestions = await getCourseSuggestions(selectedId, selected?.courseIds ?? [], searchTerm);
         if (!cancelled) {
           setCandidates(suggestions);
           setCandidatesLoading(false);
@@ -219,17 +324,25 @@ export default function TimelinePage({
   };
 
   const handleSave = async () => {
-    if (!draft) return;
+    if (!draft || !selectedPlanId) return;
     setSaving(true);
     setSaveError(null);
     try {
-      await savePlanDraft();
-      const nextCheck = reviewPlanDraft(draft);
-      setPlan((current) =>
-        current
-          ? { ...current, semesters: draft.map((s) => ({ ...s, courseIds: [...s.courseIds] })), check: nextCheck }
-          : current,
+      const detail = await savePlanDraft(selectedPlanId, draft);
+      const refreshed = planDetailToActive(
+        detail,
+        plan ? {
+          completionPercent: null,
+          completedHours: plan.progress.completed,
+          inProgressHours: plan.progress.inProgress,
+          totalCreditsRequired: plan.progress.total,
+        } : null,
       );
+      setPlan(refreshed);
+      setDraft(refreshed.semesters.map((s) => ({ ...s, courseIds: [...s.courseIds] })));
+      const reviewed = await review(refreshed.semesters);
+      setPlan((current) => (current ? { ...current, check: reviewed } : current));
+      listPlanVersions(selectedPlanId).then(setVersions).catch(() => setVersions([]));
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -237,8 +350,46 @@ export default function TimelinePage({
     }
   };
 
+  /* FC5: revert to a previous version — the restored payload becomes a new
+     version server-side, so history stays honest. */
+  const [reverting, setReverting] = useState(false);
+  const handleRevert = async (versionId: string) => {
+    if (!selectedPlanId) return;
+    setReverting(true);
+    setSaveError(null);
+    try {
+      await revertPlan(selectedPlanId, versionId);
+      await refreshPlanById(selectedPlanId);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setReverting(false);
+    }
+  };
+
+  /* FC6: make the selected plan the dashboard's plan (explicit step). */
+  const handleMakeActive = async () => {
+    if (!selectedPlanId) return;
+    setActivating(true);
+    setSaveError(null);
+    try {
+      await activatePlan(selectedPlanId);
+      setActivePlanId(selectedPlanId);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setActivating(false);
+    }
+  };
+
   /* Loading signal for the detail panel's add-course search. */
   const showCandidatesLoading = candidatesLoading || (selectedIsEditable && candidates === null && !candidatesError);
+
+  const planOptions = plans.map((p) => ({
+    value: p.plan_id,
+    label: `${p.target_major ?? 'Plan'} — ${p.concentration ?? ''} (${p.created_at ? new Date(p.created_at).toISOString().slice(0, 10) : 'date unknown'})`,
+  }));
+
 
   return (
     <AppShell active={active} onNavigate={onNavigate} chatOpen={chatOpen} onToggleChat={onToggleChat} chatSlot={chatSlot}>
@@ -257,17 +408,49 @@ export default function TimelinePage({
           </p>
         ) : (
           <>
+            {plans.length > 0 ? (
+              <div className="timeline-page-plan-selector">
+                <Select
+                  label="Plan"
+                  value={selectedPlanId ?? ''}
+                  options={planOptions}
+                  onChange={handleSelectPlan}
+                />
+                {selectedPlanId !== activePlanId ? (
+                  <Button onClick={handleMakeActive} disabled={activating}>
+                    {activating ? 'Activating…' : 'Make active'}
+                  </Button>
+                ) : (
+                  <span className="timeline-page-active-note" role="status">Active plan</span>
+                )}
+                {versions.length > 1 ? (
+                  <Select
+                    label="Revert to version"
+                    value=""
+                    placeholder="Choose version…"
+                    options={versions.slice(0, -1).map((v) => ({
+                      value: v.version_id,
+                      label: `v${v.version_id}${v.label ? ` — ${v.label}` : ''}`,
+                    }))}
+                    onChange={(version) => {
+                      if (version) void handleRevert(version);
+                    }}
+                    disabled={reverting}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            {saveError ? (
+              <p className="timeline-page-error" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             <SemesterTimeline
               semesters={summaries}
               selectedId={selectedId}
               onSelect={handleSelectSemester}
               loading={loading}
             />
-            {saveError ? (
-              <p className="timeline-page-error" role="alert">
-                Could not save the plan: {saveError}
-              </p>
-            ) : null}
             <SemesterDetail
               semester={selectedSemester}
               creditCap={18}

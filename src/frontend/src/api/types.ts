@@ -109,12 +109,14 @@ export interface SemesterHydrated extends Semester {
 export interface PlanIssue {
   course: string | null; // offending course id, when the issue is per-course
   text: string;
+  code?: string; // FC id owning the verdict (FC29/FC30/FC32/FC33)
+  severity?: 'blocking' | 'warning';
 }
 
 export interface PlanReview {
   status: 'ok' | 'issues';
   issues: string[];
-  semesterIssues: Record<string, PlanIssue[]>; // api mock of engine verdicts (FC29/FC32)
+  semesterIssues: Record<string, PlanIssue[]>; // engine verdicts (FC29–FC32)
 }
 
 export interface PlanProgram {
@@ -169,6 +171,24 @@ export interface PlanDetail {
   semester_count: number;
   created_at: string;
   semesters: PlanDetailSemester[];
+  notes?: string[]; // grounded engine caveats (unfulfilled buckets, etc.)
+}
+
+/** Plan list row (GET /plans, FC6). */
+export interface PlanListItem {
+  plan_id: string;
+  target_major: string | null;
+  concentration: string | null;
+  includes_summer: boolean;
+  semester_count: number;
+  created_at: string | null;
+}
+
+/** One historical version of a plan (GET /plans/{id}/versions, FC4). */
+export interface PlanVersionInfo {
+  version_id: string;
+  created_at: string | null;
+  label: string | null;
 }
 
 export interface ComparisonRow {
@@ -230,11 +250,11 @@ export interface ProposalResponse {
 export interface StudentProfile {
   studentId: string;
   studentIdLabel: string;
-  name: string;
-  catalogYear: string;
-  standing: string;
-  major: string;
-  concentration: string;
+  name: string | null; // null → render 'Not on record' (FC36 lazy rows)
+  catalogYear: string; // not modeled in seed data — rendered as unknown
+  standing: string; // ditto
+  major: string | null;
+  concentration: string | null;
 }
 
 export interface PlanningPreferences {

@@ -10,6 +10,9 @@ from server.schemas.plans import (
     PlanCompareRequest,
     PlanDetail,
     PlanListResponse,
+    PlanOptionsResponse,
+    PlanReviewRequest,
+    PlanReviewResponse,
     PlanUpdateRequest,
     PlanVersionListResponse,
     RevertPlanRequest,
@@ -69,6 +72,50 @@ def compare_plans(
 
 
 @router.get(
+    "/options",
+    response_model=PlanOptionsResponse,
+    responses={501: {"model": ErrorResponse}},
+    operation_id="get_plan_options",
+)
+def get_plan_options(
+    service: PlanService = Depends(get_plan_service),
+) -> PlanOptionsResponse:
+    """Generate-form inputs (FC1): majors from the degrees table."""
+    return plans_controller.get_plan_options(service)
+
+
+@router.get(
+    "/active",
+    response_model=PlanDetail,
+    responses={404: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
+    operation_id="get_active_plan",
+)
+def get_active_plan(
+    student: StudentIdentity = Depends(get_current_student),
+    service: PlanService = Depends(get_plan_service),
+) -> PlanDetail:
+    """The student's single active plan (FC6) — 404 when nothing is active,
+    so the Dashboard renders an honest empty state (never a made-up plan)."""
+    return plans_controller.get_active_plan(student, service)
+
+
+@router.post(
+    "/review",
+    response_model=PlanReviewResponse,
+    responses={501: {"model": ErrorResponse}},
+    operation_id="review_plan_draft",
+)
+def review_plan_draft(
+    payload: PlanReviewRequest,
+    student: StudentIdentity = Depends(get_current_student),
+    service: PlanService = Depends(get_plan_service),
+) -> PlanReviewResponse:
+    """FC29–FC32 verdicts over an unsaved draft — the plan-check banner's
+    deterministic surface (the LLM never grades drafts)."""
+    return plans_controller.review_plan(student, payload, service)
+
+
+@router.get(
     "/{plan_id}/versions",
     response_model=PlanVersionListResponse,
     responses={501: {"model": ErrorResponse}},
@@ -97,6 +144,22 @@ def revert_plan(
 ) -> PlanDetail:
     """Revert a plan to a previous version (FC5)."""
     return plans_controller.revert_plan(student, plan_id, payload, service)
+
+
+@router.patch(
+    "/{plan_id}/activate",
+    response_model=PlanDetail,
+    responses={404: {"model": ErrorResponse}},
+    operation_id="activate_plan",
+)
+def activate_plan(
+    plan_id: str = Path(...),
+    student: StudentIdentity = Depends(get_current_student),
+    service: PlanService = Depends(get_plan_service),
+) -> PlanDetail:
+    """The explicit activation step (FC6): a generated plan becomes the
+    student's one active plan once it looks good — generate → edit → active."""
+    return plans_controller.activate_plan(student, plan_id, service)
 
 
 @router.get(

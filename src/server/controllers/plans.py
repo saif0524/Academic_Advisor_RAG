@@ -4,6 +4,9 @@ from server.schemas.plans import (
     PlanComparisonResponse,
     PlanDetail,
     PlanListResponse,
+    PlanOptionsResponse,
+    PlanReviewRequest,
+    PlanReviewResponse,
     PlanUpdateRequest,
     PlanVersionListResponse,
     RevertPlanRequest,
@@ -60,3 +63,25 @@ def compare_plans(
         payload.target_major,
         payload.target_concentration,
     )
+
+
+def get_plan_options(service: PlanService) -> PlanOptionsResponse:
+    """FC1: generate-form inputs from the degrees table."""
+    return service.list_options()
+
+
+def get_active_plan(student: StudentIdentity, service: PlanService) -> PlanDetail:
+    """FC6: the dashboard's single active plan (404 when none is active)."""
+    return service.get_active_plan(student.student_id)
+
+
+def activate_plan(student: StudentIdentity, plan_id: str, service: PlanService) -> PlanDetail:
+    """The explicit 'make active' step (FC6): generate → edit → activate."""
+    return service.activate_plan(student.student_id, plan_id)
+
+
+def review_plan(
+    student: StudentIdentity, payload: PlanReviewRequest, service: PlanService
+) -> PlanReviewResponse:
+    """Engine verdicts over an unsaved draft (FC29–FC32 display surface)."""
+    return service.review_plan(student.student_id, payload)

@@ -100,6 +100,7 @@ export const Bookmarked = { args: { bookmarked: true } };
 
 ## Grounded UI (repo rules)
 
+- **POC fidelity (2026-10-22):** components should be simple and working — explicit loading/empty/error states where data comes from the api, but don't gold-plate skeletons, optimistic updates, or retry/backoff machinery.
 - Never render invented courses, sections, instructors, degrees, or requirements — data exists only in SQLite/Chroma behind the API. Empty lookup → explicit empty state.
 - Actions taken on the student's behalf (adding/dropping classes, plan or major changes — FC20–FC21, FC23) always flow through a confirmation dialog in the UI; plan changes also need the multi-turn clarification flow (FC27–FC28).
 - Cite FC IDs in component header comments for the requirements the component serves.

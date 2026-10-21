@@ -14,6 +14,9 @@ Choose exactly one intent:
 - "audit": the student asks "can I take X?" or about degree progress.
 - "propose_action": the student asks you to act on their behalf (add a class,
   change a class status, change major, concentration, or degree).
+- "plan_generation": the student asks to generate or build a NEW degree plan
+  ("generate a plan", "build me a roadmap"); put any target major named after
+  "for" into `params.target_major` verbatim.
 - "clarify": the request is missing a required parameter — set
   clarification_question to the one question that would resolve it.
 - "chitchat": greetings/small talk.

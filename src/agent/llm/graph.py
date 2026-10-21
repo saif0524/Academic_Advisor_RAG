@@ -44,6 +44,7 @@ INTENT_ROUTES: Dict[str, str] = {
     "recommend": "recommend_tools",
     "audit": "audit_tools",
     "propose_action": "propose_action",
+    "plan_generation": "plan_tools",
     "chitchat": "summarize",
 }
 
@@ -155,6 +156,13 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         progress = toolkit.degree_audit(state["student_id"], None)
         return {"tool_payload": {"course": None, "result": None, "progress": progress}}
 
+    def plan_tools_node(state: AdvisorState) -> dict:
+        """FC2/FC25 — plan generation runs through the deterministic engine
+        (DegreePlanGenerator); this node only assembles inputs and persists
+        the built plan. It can never bypass the validator or invent courses."""
+        params = dict(state.get("params") or {})
+        return {"tool_payload": toolkit.generate_plan(state["student_id"], params)}
+
     def propose_action_node(state: AdvisorState) -> dict:
         """FC23 — deterministic prechecks, then persist the proposal. The
         profile is untouched until the confirming turn executes it."""
@@ -228,6 +236,7 @@ def build_advisor_graph(toolkit, classifier, summarizer):
     graph.add_node("semantic_tools", semantic_tools_node)
     graph.add_node("recommend_tools", recommend_tools_node)
     graph.add_node("audit_tools", audit_tools_node)
+    graph.add_node("plan_tools", plan_tools_node)
     graph.add_node("propose_action", propose_action_node)
     graph.add_node("clarify", clarify_node)
     graph.add_node("confirm", confirm_node)
@@ -243,11 +252,12 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         "recommend_tools": "recommend_tools",
         "audit_tools": "audit_tools",
         "propose_action": "propose_action",
+        "plan_tools": "plan_tools",
         "clarify": "clarify",
         "summarize": "summarize",
     })
     for node in ("exact_tools", "semantic_tools", "recommend_tools", "audit_tools",
-                 "propose_action", "confirm"):
+                 "propose_action", "plan_tools", "confirm"):
         graph.add_edge(node, "summarize")
     graph.add_edge("summarize", END)
     graph.add_edge("clarify", END)

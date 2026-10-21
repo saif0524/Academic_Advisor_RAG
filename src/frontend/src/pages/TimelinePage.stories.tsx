@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import TimelinePage from './TimelinePage';
 import type { TimelineDependencies } from './TimelinePage';
+import type { PlanReview, Semester } from '../api/types';
 import { expect, userEvent } from 'storybook/test';
 
 /* Instant fixtures (real seed records from api/catalog + plans) — stories
@@ -25,7 +26,54 @@ const CATALOG = {
   '3340': { id: '3340', title: 'INTRODUCTION TO HUMAN COMPUTER INTERACTION', creditHours: 3 },
 } as const;
 
+/* Deterministic fixture review (mirrors the mock FC29 ordering check) —
+   stories never hit the real api. */
+const PREREQS: Record<string, string[]> = { '4381': ['4380'], '4317': ['4316'], '4382': ['3320'] };
+function fixtureReview(
+  semesters: Array<Pick<Semester, 'id' | 'term' | 'year' | 'courseIds' | 'credits'>>,
+): Promise<PlanReview> {
+  const satisfied = new Set<string>();
+  const issues: string[] = [];
+  const semesterIssues: PlanReview['semesterIssues'] = {};
+  for (const semester of semesters) {
+    const semIssues: PlanReview['semesterIssues'][string] = [];
+    for (const courseId of semester.courseIds) {
+      for (const prereqId of PREREQS[courseId] ?? []) {
+        if (!satisfied.has(prereqId)) {
+          const text = `CSE ${courseId} needs CSE ${prereqId} in an earlier semester`;
+          semIssues.push({ course: courseId, text, severity: 'warning' });
+          issues.push(text);
+        }
+      }
+      satisfied.add(courseId);
+    }
+    semesterIssues[semester.id] = semIssues;
+  }
+  return Promise.resolve({ status: issues.length ? 'issues' : 'ok', issues, semesterIssues });
+}
+
+const PLAN_LISTS = [
+  {
+    plan_id: 'plan-0001',
+    target_major: 'Bachelor of Science in Computer Science',
+    concentration: 'Cybersecurity',
+    includes_summer: false,
+    semester_count: 5,
+    created_at: '2026-10-20T10:00:00Z',
+  },
+  {
+    plan_id: 'plan-0002',
+    target_major: 'Bachelor of Science in Software Engineering',
+    concentration: 'General',
+    includes_summer: false,
+    semester_count: 4,
+    created_at: '2026-10-21T10:00:00Z',
+  },
+];
+
 const FIXTURES: TimelineDependencies = {
+  plans: PLAN_LISTS,
+  activePlanId: 'plan-0001',
   plan: {
     plan_id: 'plan-0001',
     student_id: 'stu-0001',
@@ -47,6 +95,7 @@ const FIXTURES: TimelineDependencies = {
 
 const SEAMS = {
   loadDependencies: () => Promise.resolve(FIXTURES),
+  reviewFn: fixtureReview,
 };
 
 const meta = {

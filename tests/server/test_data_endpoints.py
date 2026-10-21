@@ -223,20 +223,21 @@ def test_chat_send_message_wired_via_agent(client):
     assert body["pending_action"] is None  # clarification, nothing proposed
 
 
-def test_plan_generation_and_write_ops_need_core_engine(client):
-    """FC2/FC3/FC5/FC26 need DegreePlanGenerator — reads are wired, writes stay 501."""
-    assert client.post("/plans/generate", json={"major_name": MAJOR, "concentration": "AI"}).status_code == 501
-    assert client.patch("/plans/whatever", json={"semesters": []}).status_code == 501
-    assert client.post("/plans/compare", json={
-        "existing_plan_id": "p", "target_major": MAJOR, "target_concentration": "AI"}).status_code == 501
-
-
-def test_plan_read_endpoints_wired_but_empty(client):
-    """FC6 reads: wired to SQLite; empty until FC2 can create plans."""
+def test_plan_writes_engine_backed_and_reads_wired(client):
+    """FC2/FC3/FC5/FC26 now run through the built DegreePlanGenerator: plan
+    writes are engine-backed (generate → edit → make active) and FC6 reads
+    list what was created; unknown ids stay honest 404s."""
+    created = client.post("/plans/generate", json={"major_name": MAJOR, "concentration": "General"})
+    assert created.status_code == 200
     listing = client.get("/plans").json()
-    assert listing["results"] == [] and listing["count"] == 0
+    assert listing["count"] >= 1
     assert client.get("/plans/unknown-plan").status_code == 404
     assert client.get("/plans/unknown-plan/versions").status_code == 404
+    assert client.patch("/plans/unknown-plan", json={"semesters": []}).status_code == 404
+    compare = client.post("/plans/compare", json={
+        "existing_plan_id": created.json()["plan_id"], "target_major": OTHER_MAJOR,
+        "target_concentration": "General"})
+    assert compare.status_code == 200  # FC26 wired via the engine
 
 
 def test_audits_wired_via_core_validator(client):

@@ -13,6 +13,7 @@ from server.schemas.students import (
     MajorHistoryEntry,
     MajorHistoryResponse,
     MajorUpdateRequest,
+    PlanningPreferences,
     SelectDegreeRequest,
     StudentProfile,
 )
@@ -102,7 +103,35 @@ class StudentService:
         return DegreeProgressResponse(
             degree_id=degree.degree_id,
             completion_percent=totals["completion_percent"],
+            completed_hours=int(totals["completed_hours"]),
+            in_progress_hours=int(totals["in_progress_hours"]),
+            total_credits_required=degree.total_credits_required,
             outstanding_requirements=totals["outstanding_requirements"],
+        )
+
+    def get_preferences(self, student_id: str) -> PlanningPreferences:
+        """Planning-preference inputs (FC25/FC32) — honest defaults when unset."""
+        stored = self._sql_db_manager.get_student_preferences(student_id)
+        if stored is None:
+            return PlanningPreferences()  # no invented cap numbers (FC33)
+        return PlanningPreferences(
+            max_credits_per_semester=stored["max_credits_per_semester"],
+            include_summer=stored["include_summer"],
+            preferred_class_times=stored["preferred_class_times"],
+        )
+
+    def update_preferences(self, student_id: str, prefs: PlanningPreferences) -> PlanningPreferences:
+        """Persist the planning inputs the deterministic engine consumes."""
+        stored = self._sql_db_manager.update_student_preferences(
+            student_id,
+            max_credits_per_semester=prefs.max_credits_per_semester,
+            include_summer=prefs.include_summer,
+            preferred_class_times=prefs.preferred_class_times,
+        )
+        return PlanningPreferences(
+            max_credits_per_semester=stored["max_credits_per_semester"],
+            include_summer=stored["include_summer"],
+            preferred_class_times=stored["preferred_class_times"],
         )
 
     def _catalog_hours(self, course_ids: List[str]) -> Dict[str, int]:
@@ -133,6 +162,7 @@ def _progress_math(degree: DegreeRequirement, classes, hours_by_id: Dict[str, in
        they satisfy (e.g. 'CSE 4000-level' → number >= 4000), until cap.
     3. Everything else is ignored (grounded: it maps to nothing in this degree).
     """
+    underway_hours = 0.0
     completed: Dict[str, int] = {}      # course_id → hours (passed/taken)
     underway: Dict[str, int] = {}
     for entry in classes:
@@ -140,6 +170,7 @@ def _progress_math(degree: DegreeRequirement, classes, hours_by_id: Dict[str, in
             completed[entry.course_id] = completed.get(entry.course_id, 0) + (hours_by_id.get(entry.course_id) or 0)
         elif entry.status == "in_progress":
             underway[entry.course_id] = underway.get(entry.course_id, 0) + (hours_by_id.get(entry.course_id) or 0)
+            underway_hours += underway[entry.course_id]
 
     per_block_done: Dict[str, float] = {}
     per_block_progress: Dict[str, float] = {}
@@ -195,6 +226,7 @@ def _progress_math(degree: DegreeRequirement, classes, hours_by_id: Dict[str, in
         "completion_percent": percentage,
         "outstanding_requirements": outstanding,
         "completed_hours": total_done,
+        "in_progress_hours": underway_hours,
     }
 
 

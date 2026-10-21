@@ -3,6 +3,7 @@ from server.schemas.students import (
     DegreeProgressResponse,
     MajorHistoryResponse,
     MajorUpdateRequest,
+    PlanningPreferences,
     SelectDegreeRequest,
     StudentIdentity,
     StudentProfile,
@@ -39,3 +40,15 @@ def get_degree_progress(
 ) -> DegreeProgressResponse:
     """FC19."""
     return service.get_degree_progress(student.student_id)
+
+
+def get_preferences(student: StudentIdentity, service: StudentService) -> PlanningPreferences:
+    """Planning-preference inputs (FC25/FC32) for the UI + plan generation."""
+    return service.get_preferences(student.student_id)
+
+
+def update_preferences(
+    student: StudentIdentity, payload: PlanningPreferences, service: StudentService
+) -> PlanningPreferences:
+    """Persist planning preferences; the engine consumes them on generate."""
+    return service.update_preferences(student.student_id, payload)

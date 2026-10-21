@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import MajorSpecSelector from '../components/planner/MajorSpecSelector/MajorSpecSelector';
 import PlanRoadmap from '../components/planner/PlanRoadmap/PlanRoadmap';
 import Button from '../components/shared/Button/Button';
-import { generatePlan as generatePlanViaApi, getCourseCatalog, getPlanOptions } from '../api/plans';
+import {
+  activatePlan,
+  generatePlan as generatePlanViaApi,
+  getCourseCatalog,
+  getPlanOptions,
+} from '../api/plans';
+import { ApiError } from '../api/client';
 import type { CourseCatalog, PlanDetail, PlanOption } from '../api/types';
 import './PlanGenerator.css';
-
-const MOCK_PREVIEW_NOTE =
-  'Mock preview: CSE coursework only — the full plan adds general education, math, and physics to the degree total.';
 
 interface LoadDependencies {
   options: { majors: PlanOption[] };
@@ -17,7 +20,9 @@ interface LoadDependencies {
 interface PlanGeneratorProps {
   /** Closes the overlay, returning to the home page. */
   onNavigateBack?: () => void;
-  /** DI seam (stories inject instant fixtures); defaults to the api service. */
+  /** Opens the timeline to keep editing the generated plan. */
+  onOpenPlan?: () => void;
+  /** DI seam (stories inject instant fixtures); defaults to the live api. */
   loadDependencies?: () => Promise<LoadDependencies>;
   /** DI seam (stories inject fixtures). Null result means the requested
       major/concentration has no plan — the page renders an explicit error. */
@@ -29,19 +34,40 @@ async function defaultLoadDependencies(): Promise<LoadDependencies> {
   return { options, catalog };
 }
 
+/** Live generate: 404 (unknown major/concentration pair) resolves null so
+    the page renders its explicit not-found error (grounded, no fake plan). */
+async function defaultGenerate(request: {
+  majorName: string;
+  concentration: string;
+  includeSummer?: boolean;
+}): Promise<PlanDetail | null> {
+  try {
+    return await generatePlanViaApi(request);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 /**
  * Full-page "generate a degree plan" experience (FC1, FC2, FC25) rendered as
  * a viewport-filling overlay, with an explicit back action (no router —
  * single-page state).
  *
- * All data flows through the api service layer (mocked in api/plans until
- * the FastAPI plan endpoints are wired) — components never fetch inline.
- * Generation is a preview: it does not modify the student's record, so no
- * FC23 confirmation gate applies here.
+ * Generation goes to POST /plans/generate — the deterministic engine builds
+ * the roadmap and grounded caveats ride along as `plan.notes`. Generation is
+ * only a preview (no FC23 gate); the generated plan is INACTIVE — make it
+ * active from here or keep editing in the timeline (generate → edit →
+ * make active).
  */
-export default function PlanGenerator({ onNavigateBack, loadDependencies, generatePlanFn }: PlanGeneratorProps) {
+export default function PlanGenerator({
+  onNavigateBack,
+  onOpenPlan,
+  loadDependencies,
+  generatePlanFn,
+}: PlanGeneratorProps) {
   const loadData = loadDependencies ?? defaultLoadDependencies;
-  const generate = generatePlanFn ?? generatePlanViaApi;
+  const generate = generatePlanFn ?? defaultGenerate;
 
   const [data, setData] = useState<LoadDependencies | null>(null); // { options, catalog }
   const [loadError, setLoadError] = useState(false);
@@ -51,6 +77,9 @@ export default function PlanGenerator({ onNavigateBack, loadDependencies, genera
   const [plan, setPlan] = useState<PlanDetail | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
+  const [activating, setActivating] = useState(false);
+  const [activateError, setActivateError] = useState('');
+  const [activated, setActivated] = useState(false);
 
   const [reloadToken, setReloadToken] = useState(0);
   useEffect(() => {
@@ -84,6 +113,8 @@ export default function PlanGenerator({ onNavigateBack, loadDependencies, genera
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGenerateError('');
+    setActivated(false);
+    setActivateError('');
     try {
       const request = {
         majorName: major,
@@ -96,10 +127,27 @@ export default function PlanGenerator({ onNavigateBack, loadDependencies, genera
         return;
       }
       setPlan(result);
-    } catch {
-      setGenerateError('Plan generation failed. Select Generate plan to try again.');
+    } catch (error) {
+      setGenerateError(
+        error instanceof Error ? error.message : 'Plan generation failed. Select Generate plan to try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  /* The explicit activation step (FC6): the plan becomes the dashboard's
+     plan only on confirmation here — generate → edit → make active. */
+  const handleMakeActive = async () => {
+    if (!plan) return;
+    setActivating(true);
+    setActivateError('');
+    try {
+      await activatePlan(plan.plan_id);
+      setActivated(true);
+    } catch (error) {
+      setActivateError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setActivating(false);
     }
   };
 
@@ -158,7 +206,28 @@ export default function PlanGenerator({ onNavigateBack, loadDependencies, genera
                 Choose your major and specialization, then select Generate plan.
               </p>
             ) : null}
-            {plan ? <PlanRoadmap plan={plan} catalog={data.catalog} note={MOCK_PREVIEW_NOTE} /> : null}
+            {plan ? (
+              <>
+                <PlanRoadmap
+                  plan={plan}
+                  catalog={data.catalog}
+                  note={plan.notes?.length ? plan.notes.join(' · ') : undefined}
+                />
+                {activateError ? (
+                  <p className="plan-generator-alert" role="alert">{activateError}</p>
+                ) : null}
+                <div className="plan-generator-actions">
+                  <Button onClick={handleMakeActive} disabled={activating}>
+                    {activating ? 'Activating…' : activated ? 'Active ✓' : 'Make active'}
+                  </Button>
+                  {onOpenPlan ? (
+                    <Button variant="secondary" onClick={onOpenPlan}>
+                      Keep editing in timeline →
+                    </Button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
           </>
         ) : null}
       </main>

@@ -7,6 +7,11 @@ description: Testing conventions for the Academic AI Advisor — write and revie
 
 The test surface is **business logic**. No unit tests for UI.
 
+**POC fidelity (2026-10-22):** test the spec'd behavior and the deterministic
+paths — skip exhaustive edge-case matrices, negative-permutation testing, and
+robustness suites the assignment doesn't require. A lean suite that pins the
+engine semantics and endpoint contracts beats a sprawling one.
+
 ## In scope (pytest; tests mirror `src/` zones)
 
 ```text

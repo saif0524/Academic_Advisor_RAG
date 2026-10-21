@@ -21,6 +21,7 @@
  *   the search endpoints' role, not the LLM.
  */
 
+import { request } from './client';
 import { COURSES, PREREQ_FIXTURE, STUDENT_PROGRESS, getMeeting, getCourse } from './catalog';
 import type {
   CourseDetail,
@@ -167,28 +168,30 @@ export async function searchCourses(query: string): Promise<SearchResponse> {
  * draft; verdicts come from verdictFlagsFor. Candidates exist only for the
  * Spring 2027 fixture — other terms resolve to an explicit empty list.
  */
-export async function getCourseSuggestions(termId: string, alreadyPlannedIds: string[] = []): Promise<CourseSuggestion[]> {
-  await sleep(MOCK_LATENCY_MS);
-  if (termId !== 's27') return [];
-  const candidates = ['4308', '4309', '4344', '4351', '4360', '4333'];
-  return candidates
-    .filter((id) => !alreadyPlannedIds.includes(id))
-    .map((id): CourseSuggestion | null => {
-      const course = getCourse(id);
-      if (!course) return null;
-      const badgeFlag = verdictFlagsFor(id)[0];
-      const isConflict = id === '4344';
-      return {
-        id,
-        title: course.title,
-        creditHours: course.creditHours,
-        meeting: meetingLine(id),
-        badge: isConflict ? 'Conflicts with CSE 4382' : (badgeFlag?.label ?? 'Prerequisites met'),
-        badgeVariant: isConflict ? 'danger' : (badgeFlag?.variant ?? 'success'),
-        conflict: isConflict ? 'Conflicts with CSE 4382' : null,
-      };
-    })
-    .filter((suggestion): suggestion is CourseSuggestion => suggestion !== null);
+/**
+ * Candidate suggestions for the timeline "Add a course" search (FC8) — LIVE:
+ * keyword search against GET /courses (SQLite, FC33). Candidates already in
+ * the draft are filtered out. Prerequisite/eligibility verdicts are NOT
+ * computed here — the plan-check banner grades the whole draft through
+ * POST /plans/review (FC29–FC32); badges stay neutral until then.
+ */
+export async function getCourseSuggestions(_termId: string, alreadyPlannedIds: string[] = [], query = ''): Promise<CourseSuggestion[]> {
+  const path = query
+    ? `/courses?q=${encodeURIComponent(query)}`
+    : '/courses';
+  const body = await request<{ results: Array<{ course_id: string; title: string; credit_hours: number | null }> }>(path);
+  return body.results
+    .filter((course) => !alreadyPlannedIds.includes(course.course_id))
+    .slice(0, 12)
+    .map((course): CourseSuggestion => ({
+      id: course.course_id,
+      title: course.title,
+      creditHours: course.credit_hours ?? 0,
+      meeting: null, // sections live behind GET /courses/{id}/sections (FC12)
+      badge: 'Add to plan',
+      badgeVariant: 'neutral',
+      conflict: null,
+    }));
 }
 
 /**

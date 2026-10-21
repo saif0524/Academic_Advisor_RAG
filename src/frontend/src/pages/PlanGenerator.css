@@ -64,6 +64,13 @@
   padding: var(--space-2);
 }
 
+.plan-generator-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
 .plan-generator-error {
   display: grid;
   gap: var(--space-1);

@@ -1,4 +1,4 @@
-"""Student profile routes (FC1, FC7, FC16–FC17, FC19, FC36)."""
+"""Student profile routes (FC1, FC7, FC16–FC17, FC19, FC25/FC32 prefs, FC36)."""
 from fastapi import APIRouter, Depends
 
 from server.controllers import students as students_controller
@@ -8,6 +8,7 @@ from server.schemas.students import (
     DegreeProgressResponse,
     MajorHistoryResponse,
     MajorUpdateRequest,
+    PlanningPreferences,
     SelectDegreeRequest,
     StudentIdentity,
     StudentProfile,
@@ -89,3 +90,31 @@ def get_degree_progress(
 ) -> DegreeProgressResponse:
     """Track progress toward the selected degree only (FC19)."""
     return students_controller.get_degree_progress(student, service)
+
+
+@router.get(
+    "/me/preferences",
+    response_model=PlanningPreferences,
+    operation_id="get_my_planning_preferences",
+)
+def get_preferences(
+    student: StudentIdentity = Depends(get_current_student),
+    service: StudentService = Depends(get_student_service),
+) -> PlanningPreferences:
+    """Planning-preference inputs (FC25 summer toggle, FC32 cap) — honest
+    defaults when nothing was saved yet."""
+    return students_controller.get_preferences(student, service)
+
+
+@router.put(
+    "/me/preferences",
+    response_model=PlanningPreferences,
+    operation_id="update_my_planning_preferences",
+)
+def update_preferences(
+    payload: PlanningPreferences,
+    student: StudentIdentity = Depends(get_current_student),
+    service: StudentService = Depends(get_student_service),
+) -> PlanningPreferences:
+    """Save planning preferences; plan generation consumes them (FC25/FC32)."""
+    return students_controller.update_preferences(student, payload, service)

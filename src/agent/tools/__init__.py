@@ -72,6 +72,10 @@ class AdvisorToolkit:
     def degree_audit(self, student_id: str, degree_id: Optional[str] = None):
         return self._plan.degree_audit(student_id, degree_id)
 
+    def generate_plan(self, student_id: str, params: Optional[dict] = None) -> dict:
+        """""FC2/FC25 — deterministic engine output, persisted."""
+        return self._plan.generate_plan(student_id, params)
+
     # ------------------------------------------------- FC23 propose / decide
 
     def propose_action(self, student_id: str, session_id: str, action_type: str,

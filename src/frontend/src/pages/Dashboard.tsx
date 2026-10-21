@@ -8,7 +8,11 @@ import CurrentSemesterPanel from '../components/planner/CurrentSemesterPanel/Cur
 import SemesterCard from '../components/planner/SemesterCard/SemesterCard';
 import type { CurrentSemesterCourse } from '../components/planner/CurrentSemesterPanel/CurrentSemesterPanel';
 import PlanGenerator from './PlanGenerator';
-import { getActivePlan, getCourseCatalog } from '../api/plans';
+import {
+  getActivePlan,
+  getCourseCatalog,
+} from '../api/plans';
+import { getDegreeProgress } from '../api/students';
 import type { ActivePlanData, CourseCatalog } from '../api/types';
 import './Dashboard.css';
 
@@ -32,8 +36,11 @@ interface DashboardProps {
 
 const EMPTY_CATALOG: CourseCatalog = {};
 
+/** Live defaults (plan reads FC6, degree progress FC19, catalog FC8): the
+    active plan drives the page; 404 (nothing active yet) → honest empty state. */
 async function defaultLoadDependencies(): Promise<DashboardDependencies> {
-  const [plan, catalog] = await Promise.all([getActivePlan(), getCourseCatalog()]);
+  const [catalog, progress] = await Promise.all([getCourseCatalog(), getDegreeProgress()]);
+  const plan = await getActivePlan(progress); // null when nothing is active
   return { plan, catalog };
 }
 
@@ -41,8 +48,9 @@ async function defaultLoadDependencies(): Promise<DashboardDependencies> {
  * Home page (wireframes 01/06): the active degree plan summary, this
  * semester's classes (FC14/FC21 display), and the "My semesters" roadmap
  * grid (FC25) with Edit actions into the Timeline (FC3). The FC2 planner
- * overlay opens from the section header. All data flows through the api
- * mock seams; statuses/verdicts are display fields, never computed here.
+ * overlay opens from the section header. Data comes from the live api
+ * (GET /plans/active + degree progress); statuses are display fields, never
+ * computed here.
  */
 export default function Dashboard({
   active = 'home',
@@ -135,7 +143,15 @@ export default function Dashboard({
             </p>
           )}
         </section>
-        {plannerOpen && <PlanGenerator onNavigateBack={() => setPlannerOpen(false)} />}
+        {plannerOpen && (
+          <PlanGenerator
+            onNavigateBack={() => setPlannerOpen(false)}
+            onOpenPlan={() => {
+              setPlannerOpen(false);
+              onNavigate?.('timeline');
+            }}
+          />
+        )}
       </main>
     </AppShell>
   );

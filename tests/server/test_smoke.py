@@ -102,14 +102,16 @@ def test_class_crud_wired(client):
     assert removed.status_code == 200 and removed.json()["removed"] is True
 
 
-def test_plan_generation_not_wired(client):
-    """FC2 needs DegreePlanGenerator (core) — stays 501 honest."""
+def test_plan_generation_wired(client):
+    """FC2 now goes through the built DegreePlanGenerator — engine-backed."""
     response = client.post(
         "/plans/generate",
-        json={"major_name": "BS in Computer Science", "concentration": "AI", "include_summer": False},
+        json={"major_name": "Bachelor of Science in Computer Science",
+              "concentration": "General", "include_summer": False},
     )
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "not_wired"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["plan_id"] and body["semesters"]
 
 
 def test_audits_wired(client):

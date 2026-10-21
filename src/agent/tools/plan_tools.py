@@ -8,10 +8,13 @@ acting gate: deterministic prechecks at proposal time, persistence in the
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Dict, List, Optional, Sequence
 
+from core.engine.generator import DegreePlanGenerator, semesters_payload
 from core.entities.course import Course, CourseSection
 from core.entities.degree import DegreeRequirement
+from core.entities.student import Student
 from core.engine.progress import compute_degree_progress
 from core.engine.results import ConstraintCheck
 from core.engine.validator import CourseRecommendationValidator
@@ -124,6 +127,67 @@ class PlanTools:
             "outstanding_requirements": totals["outstanding_requirements"],
             "checks": checks,
         }
+
+    # ------------------------------------------------------- FC2/FC25 plans
+
+    def generate_plan(self, student_id: str, params: Optional[dict] = None) -> dict:
+        """"Generate a degree plan" requests — DegreePlanGenerator owns the
+        math (FC2/FC25); this only assembles inputs from stores, persists the
+        result, and reports grounded notes. Never the LLM's job."""
+        params = dict(params or {})
+        student = self._sql.get_student_record(student_id)
+        if student is None:
+            student = Student(student_id=student_id)
+        student.completed_courses = self._sql.list_student_classes(student_id)
+
+        target_major = params.get("target_major")
+        degree = (self._resolve_major(target_major) if target_major
+                  else self._selected_degree(student_id))
+        if degree is None:
+            names = "; ".join(sorted(d.major_name for d in self._sql.list_degrees()))
+            refusal = (
+                f"I couldn't match a degree plan to {target_major!r} — offered "
+                f"majors: {names}." if target_major
+                else ("You don't have a major or selected degree on record yet — "
+                      "set your major first (FC1) and I can generate from there."))
+            return {"plan": None, "notes": [], "refusal": refusal}
+
+        catalog = self._catalog_dict()
+        prefs = self._sql.get_student_preferences(student_id) or {}
+        include_summer = bool(params.get("include_summer")) or bool(prefs.get("include_summer"))
+        cap = params.get("max_credits_per_semester") or prefs.get("max_credits_per_semester")
+        result = DegreePlanGenerator.generate_multi_year_plan(
+            student, degree, catalog,
+            include_summer=include_summer, max_credits_per_sem=cap)
+        result.plan.plan_id = f"plan-{uuid.uuid4().hex[:10]}"
+        payload = {
+            "semesters": semesters_payload(result.plan.semesters, catalog),
+            "includes_summer": result.plan.includes_summer,
+            "notes": list(result.notes),
+        }
+        self._sql.save_degree_plan(result.plan, payload=payload)
+        return {
+            "plan": {
+                "plan_id": result.plan.plan_id,
+                "target_major": result.plan.target_major,
+                "concentration": result.plan.concentration,
+                "includes_summer": result.plan.includes_summer,
+                "semesters": payload["semesters"],
+            },
+            "notes": list(result.notes),
+            "refusal": None,
+        }
+
+    def _catalog_dict(self):
+        """course_id → Course snapshot incl. prerequisite rows (FC29 fuel)."""
+        by_id = {c.course_id: c for c in self._sql.list_courses()}
+        for row in self._sql.execute_query(
+                "SELECT course_id, required_course_id FROM course_prerequisites "
+                "WHERE kind = 'prereq'"):
+            course = by_id.get(row["course_id"])
+            if course is not None and row["required_course_id"] not in course.prerequisites:
+                course.prerequisites.append(row["required_course_id"])
+        return by_id
 
     # ----------------------------------------------------- FC23 proposals
 
@@ -420,7 +484,7 @@ class PlanTools:
 
     def _resolve_major(self, raw: str) -> Optional[DegreeRequirement]:
         text = (raw or "").strip().upper()
-        if not text:
+        if len(text) < 4:  # POC guard: pronouns/short fragments match nothing
             return None
         for degree in self._sql.list_degrees():
             if text in degree.major_name.upper():
