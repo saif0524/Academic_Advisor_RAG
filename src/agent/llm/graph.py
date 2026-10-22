@@ -49,6 +49,16 @@ INTENT_ROUTES: Dict[str, str] = {
 }
 
 
+def _student_context(toolkit, student_id: str) -> dict:
+    """FC27: routing hints for the classifier (never a source of facts)."""
+    profile = toolkit.student_profile(student_id)
+    return {
+        "student_id": student_id,
+        "major": getattr(profile, "current_major", None),
+        "has_active_plan": toolkit.active_plan(student_id) is not None,
+    }
+
+
 def build_advisor_graph(toolkit, classifier, summarizer):
     """Build the advisor StateGraph over the injected toolkit + LLM parts."""
 
@@ -65,7 +75,7 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         classification = classifier.classify(
             state["user_input"],
             history=history,
-            student_context={"student_id": state["student_id"]},
+            student_context=_student_context(toolkit, state["student_id"]),
         )
         return {
             "history": history,
@@ -109,7 +119,10 @@ def build_advisor_graph(toolkit, classifier, summarizer):
                 }
                 for s in toolkit.sections(course.course_id)
             ]
-        if not mentions:
+        if not mentions and params.get("topic") == "plan":
+            # FC22/FC27: the ACTIVE plan (FC6), SQLite only (FC33); None → honest "no plan".
+            payload["plan"] = toolkit.plan_context(state["student_id"])
+        elif not mentions:
             student = toolkit.student_profile(state["student_id"])
             if student is not None:
                 payload["profile"] = {
@@ -138,8 +151,11 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         """FC22 suggestions — every candidate validated by the engine
         (FC29–FC32) inside `recommend_candidates`."""
         params = state.get("params") or {}
+        plan = toolkit.active_plan(state["student_id"])
+        planned = {cid for sem in (plan or {}).get("semesters", [])
+                   for cid in sem.get("courses", [])}
         result = toolkit.recommend_candidates(
-            state["student_id"], params.get("query"), k=6)
+            state["student_id"], params.get("query"), k=6, exclude_ids=sorted(planned))
         return {"tool_payload": result}
 
     def audit_tools_node(state: AdvisorState) -> dict:
@@ -154,7 +170,8 @@ def build_advisor_graph(toolkit, classifier, summarizer):
             return {"tool_payload": {"course": audit["course"], "result": audit["result"],
                                      "progress": None}}
         progress = toolkit.degree_audit(state["student_id"], None)
-        return {"tool_payload": {"course": None, "result": None, "progress": progress}}
+        return {"tool_payload": {"course": None, "result": None, "progress": progress,
+                                 "plan": toolkit.plan_context(state["student_id"])}}
 
     def plan_tools_node(state: AdvisorState) -> dict:
         """FC2/FC25 — plan generation runs through the deterministic engine

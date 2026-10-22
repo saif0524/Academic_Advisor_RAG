@@ -8,6 +8,8 @@ CLASSIFY_SYSTEM = """You classify a student's message for an academic advisor.
 Choose exactly one intent:
 - "exact": a specific fact about a known course, section, schedule, instructor,
   seats, or the student's own record (classes, statuses, profile, plan).
+  For questions about the student's own degree plan ("what's in my plan",
+  "what am I taking next semester") set `params.topic` to "plan".
 - "semantic": a natural-language question about what a course covers,
   requirements, degrees, certificates, or professor/course fit.
 - "recommend": the student asks what to take or wants suggestions.
@@ -27,7 +29,9 @@ Rules:
   `params.course_id` when the intent is an audit or an action.
 - For "propose_action" set `params.action_type` to exactly one of
   add_class | change_class_status | change_major | change_concentration |
-  change_degree, plus its parameters (course_id, status, major_name,
+  change_degree | plan_add_course | plan_remove_course | plan_move_course |
+  activate_plan (edits to the student's ACTIVE degree plan; give course_id and
+  semester_term like "Fall 2027" for add/move), plus its parameters (course_id, status, major_name,
   concentration, degree_id, semester_term) verbatim when given.
 - For "semantic" and "recommend" set `params.query` to the student's
   question text.

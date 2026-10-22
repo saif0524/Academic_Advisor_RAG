@@ -53,6 +53,10 @@ class AdvisorToolkit:
     def active_plan(self, student_id: str) -> Optional[dict]:
         return self._schedule.active_plan(student_id)
 
+    def plan_context(self, student_id: str) -> Optional[dict]:
+        """FC22/FC24/FC27 — the ACTIVE plan + progress, or None (FC6)."""
+        return self._schedule.plan_context(student_id)
+
     # ------------------------------------------------------ semantic (Chroma)
 
     def semantic_courses(self, query: str, k: int = 6) -> List[dict]:
@@ -66,8 +70,9 @@ class AdvisorToolkit:
     def course_audit(self, student_id: str, course_raw: str, section_id=None):
         return self._plan.course_audit(student_id, course_raw, section_id)
 
-    def recommend_candidates(self, student_id: str, query: Optional[str], k: int = 6) -> dict:
-        return self._plan.recommend_candidates(student_id, query, k=k)
+    def recommend_candidates(self, student_id: str, query: Optional[str], k: int = 6,
+                             exclude_ids=()) -> dict:
+        return self._plan.recommend_candidates(student_id, query, k=k, exclude_ids=exclude_ids)
 
     def degree_audit(self, student_id: str, degree_id: Optional[str] = None):
         return self._plan.degree_audit(student_id, degree_id)

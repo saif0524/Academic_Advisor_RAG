@@ -23,6 +23,21 @@ export const Advisor = {
   },
 };
 
+/** Advisor reply with markdown + single-newline breaks (FC27 plan shifts). */
+export const AdvisorMarkdown = {
+  args: {
+    message: {
+      id: 'm2b',
+      role: 'advisor' as const,
+      text:
+        'That works, and graduation doesn\'t move. **Two courses shift** into later semesters:\n\n' +
+        '- Spring 2027: 15 hrs \u2192 **9 hrs**\n' +
+        '- Fall 2027: 12 hrs \u2192 **15 hrs**\n\n' +
+        'CSE 4380 stays in Spring.\nCSE 4385 requires it in Fall 2027.',
+    },
+  },
+};
+
 /** FC23 proposal embedded in an advisor turn, awaiting decision. */
 export const WithPendingAction = {
   args: {

@@ -1,22 +1,101 @@
-/* Timeline "Add a course" search (wireframe 02). */
+/* Timeline "Add a course" card (wireframe 02). */
 
 .add-course-search {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: var(--space-1);
-  border-top: 1px solid var(--color-border);
+  gap: 12px;
 }
 
 .add-course-search-title {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+/* Pill-shaped, filled search field per the wireframe. */
+.add-course-search .search-input-box {
+  border-color: transparent;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+}
+
+.add-course-search .search-input-field {
+  background: transparent;
+}
+
+.add-course-search-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.add-course-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.add-course-search-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.add-course-search-meta {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.add-course-search-verdict {
+  font-size: 0.85rem;
   font-weight: 700;
+}
+
+.add-course-search-verdict--success {
+  color: var(--color-success);
+}
+
+.add-course-search-verdict--warning {
+  color: var(--color-warning);
+}
+
+.add-course-search-verdict--danger {
+  color: var(--color-danger);
+}
+
+/* Round lime "+" add button (wireframe 02). */
+.add-course-search-add {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  cursor: pointer;
+}
+
+.add-course-search-add:hover {
+  background: var(--color-accent-hover);
+}
+
+.add-course-search-add:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .add-course-search-state {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
 }
 

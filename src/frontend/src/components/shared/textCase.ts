@@ -10,11 +10,23 @@ const SMALL_WORDS = new Set([
 ]);
 const DISPLAY_ACRONYMS: Record<string, string> = { cse: 'CSE', iot: 'IoT', 'c++': 'C++', soc: 'SoC', sql: 'SQL' };
 
+const ROMAN_NUMERALS = new Set(['ii', 'iii', 'iv', 'vi', 'vii']);
+
 function displayWord(word: string, isFirst: boolean): string {
   const acronym = DISPLAY_ACRONYMS[word];
   if (acronym) return acronym;
+  if (ROMAN_NUMERALS.has(word)) return word.toUpperCase();
   if (!isFirst && SMALL_WORDS.has(word)) return word;
   return word.replace(/(^|[-/])(\w)/g, (_, separator: string, letter: string) => separator + letter.toUpperCase());
+}
+
+/**
+ * Display code for a canonical course id: catalog-backed CSE courses are
+ * stored as 4-digit corpus ids ("3310" → "CSE 3310"); every other id is
+ * already a full code ("HIST 1311") and is returned unchanged.
+ */
+export function formatCourseCode(id: string): string {
+  return /^\d{4}$/.test(id) ? `CSE ${id}` : id;
 }
 
 /** "INFORMATION SECURITY" → "Information Security"; leaves acronyms intact. */

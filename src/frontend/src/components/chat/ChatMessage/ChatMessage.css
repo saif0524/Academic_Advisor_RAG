@@ -41,5 +41,11 @@
 .chat-message-text {
   margin: 0;
   font-size: 0.9rem;
-  white-space: pre-line; /* canned replies use newlines for plan shifts (FC27) */
+  white-space: pre-line; /* user text keeps its newlines */
+}
+
+/* Advisor markdown: line breaks come from remark-breaks, not pre-line. */
+.chat-message-text--markdown {
+  white-space: normal;
+  line-height: 1.5;
 }

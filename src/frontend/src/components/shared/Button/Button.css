@@ -1,9 +1,9 @@
 /* Shared Button primitive — kebab-case classes prefixed with the component name. */
 
 .button {
-  padding: var(--space-1) var(--space-2);
+  padding: 10px 20px;
   border: 1px solid transparent;
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -21,12 +21,12 @@
 }
 
 .button--primary {
-  background: var(--color-primary);
-  color: var(--color-surface);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .button--primary:not(:disabled):hover {
-  background: #0a347d;
+  background: var(--color-accent-hover);
 }
 
 .button--secondary {
@@ -55,7 +55,7 @@
 }
 
 .button--danger:not(:disabled):hover {
-  background: #99201a;
+  background: var(--color-danger-hover);
 }
 
 /* Square padding for icon-only round buttons (e.g. row remove, panel close). */

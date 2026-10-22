@@ -98,6 +98,34 @@ export const Bookmarked = { args: { bookmarked: true } };
 - `title` = `Components/<domain>/<ComponentName>`.
 - Components needing Context are wrapped by a decorator with a stub provider; components that fetch receive data through props in stories (or a context decorator with fixtures) — stories must not hit the real API.
 
+## Wireframe check — required for any visual change
+
+`docs/wireframes/*.png` are the visual spec. Storybook stories are what you compare against them. Any change that alters how a page or component looks must be compared with its wireframe before the work counts as done. Don't skip this because you think the change is small. No MCP or new dependencies are needed; Playwright is already a devDependency.
+
+1. Run Storybook (`npm run storybook`, port 6006) if it isn't already running: `curl -s localhost:6006 >/dev/null`.
+2. Screenshot the story (from `src/frontend/`):
+   ```bash
+   npx playwright screenshot --viewport-size=1440,1100 --full-page --wait-for-timeout=2500 \
+     "http://localhost:6006/iframe.html?id=<story-id>&viewMode=story" ../../var/shots/<name>.png
+   ```
+   Get story ids from `curl -s localhost:6006/index.json`. `var/` is gitignored.
+3. Open both the screenshot and the wireframe PNG with the `read` tool. List the differences in layout, hierarchy, palette, spacing, copy, and controls. Ignore the wireframe's title caption and the sage canvas around the mockup.
+4. Fix the differences, take a new screenshot, and repeat until the two match. Report any differences you leave on purpose and why. Examples: data the wireframe shows but the API doesn't have (grounded-UI rule), or a wireframe badge with no backing status.
+
+| Wireframe | Story id |
+| --- | --- |
+| `01-home-active-degree-plan.png` | `pages-dashboard--default` (chat dock: `pages-advisorapp--chat-drawer`) |
+| `02-timeline-semester-detail.png` | `pages-timelinepage--default` |
+| `03-timeline-prerequisite-warning.png` | `pages-timelinepage--remove-prereq-flags-warnings` |
+| `04-search-advisor-answer.png` | `pages-coursesearch--search-flow` |
+| `05-account-change-major.png` | `pages-accountpage--change-program-flow` |
+| `06-chat-previous-conversations.png` | `pages-advisorapp--chat-drawer` |
+
+Rules:
+- Compare against **stories, not the live app.** The dev server shows "Failed to fetch" when the API is down. A story used for a wireframe comparison must render from injected fixtures.
+- Use **design tokens** from `src/index.css`. The palette there was sampled from the wireframes: dark green `--color-primary`, lime `--color-accent`, and so on. Don't hardcode hex values in component CSS.
+- When you add a page or a new wireframe, add a row to the table above.
+
 ## Grounded UI (repo rules)
 
 - **POC fidelity (2026-10-22):** components should be simple and working — explicit loading/empty/error states where data comes from the api, but don't gold-plate skeletons, optimistic updates, or retry/backoff machinery.
@@ -107,4 +135,4 @@ export const Bookmarked = { args: { bookmarked: true } };
 
 ## Review checklist
 
-Folder has component + CSS + story · default export · typed props (TS interface; `import type` from `api/types` for domain shapes) · story title/controls correct · data states rendered · plain-CSS naming rule · no cross-domain imports outside `shared/` · no external state libs · `api/client.ts` used for all HTTP · FC citations present · confirmation dialog for FC23-style actions · `npm run typecheck` + lint clean.
+Folder has component + CSS + story · default export · typed props (TS interface; `import type` from `api/types` for domain shapes) · story title/controls correct · data states rendered · plain-CSS naming rule · no cross-domain imports outside `shared/` · no external state libs · `api/client.ts` used for all HTTP · FC citations present · confirmation dialog for FC23-style actions · `npm run typecheck` + lint clean · wireframe check done (screenshot vs `docs/wireframes/` PNG, differences resolved or explained).

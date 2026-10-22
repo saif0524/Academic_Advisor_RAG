@@ -5,7 +5,7 @@ import './SemesterTimeline.css';
 const STATUS_VARIANTS: Record<SemesterStatus, 'success' | 'info' | 'primary' | 'neutral'> = {
   completed: 'success',
   'in-progress': 'info',
-  planned: 'primary',
+  planned: 'neutral',
   optional: 'neutral',
 };
 
@@ -25,8 +25,9 @@ interface SemesterTimelineProps {
 }
 
 /**
- * Horizontal semester chips strip (wireframes 02/03; FC25 roadmap
- * navigation). One chip per semester: term, hours + course count, lifecycle
+ * Horizontal semester strip (wireframes 02/03; FC25 roadmap navigation):
+ * a dot rail (filled = in progress/completed, lime = selected) above
+ * equal-width semester tabs. One chip per semester: term, hours + course count, lifecycle
  * status, and an issue badge when the engine flags it (FC29/FC32 verdict
  * counts come from the api layer — display only). Selecting a chip drives
  * the detail panel below.
@@ -57,6 +58,16 @@ export default function SemesterTimeline({ semesters, selectedId, onSelect, load
   }
   return (
     <section className="semester-timeline" aria-label="Semesters in order">
+      <ol className="semester-timeline-rail" aria-hidden="true">
+        {semesters.map((semester) => (
+          <li
+            key={semester.id}
+            className={`semester-timeline-dot semester-timeline-dot--${semester.status}${
+              selectedId === semester.id ? ' semester-timeline-dot--selected' : ''
+            }`}
+          />
+        ))}
+      </ol>
       <ul className="semester-timeline-list">
         {semesters.map((semester) => (
           <li key={semester.id}>
@@ -72,11 +83,11 @@ export default function SemesterTimeline({ semesters, selectedId, onSelect, load
                 {semester.term} {semester.year}
               </span>
               <span className="semester-timeline-chip-meta">
-                {semester.credits} hrs · {semester.courseCount} course{semester.courseCount === 1 ? '' : 's'}
+                {semester.courseCount === 0
+                  ? 'No courses'
+                  : `${semester.credits} hrs · ${semester.courseCount} course${semester.courseCount === 1 ? '' : 's'}`}
               </span>
-              <Badge variant={STATUS_VARIANTS[semester.status]} dot>
-                {STATUS_LABELS[semester.status]}
-              </Badge>
+              <Badge variant={STATUS_VARIANTS[semester.status]}>{STATUS_LABELS[semester.status]}</Badge>
               {semester.issueCount > 0 ? (
                 <Badge variant="warning">
                   {semester.issueCount} issue{semester.issueCount === 1 ? '' : 's'}

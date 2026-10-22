@@ -2,38 +2,48 @@
    every component keeps its own <Component>.css. */
 
 :root {
-  --color-primary: #0b3d97;
-  --color-primary-soft: #e8eef9;
-  --color-text: #1f2430;
-  --color-text-muted: #5a6472;
-  --color-background: #f7f8fa;
+  /* Palette sampled from docs/wireframes/*.png (sage + lime). */
+  --color-primary: #14261c;          /* dark green: headings, links, strong UI */
+  --color-primary-hover: #24392c;
+  --color-primary-soft: #e9eee4;     /* sage: active nav, hover fills */
+  --color-accent: #b9e46e;           /* lime: primary buttons, logo, send */
+  --color-accent-hover: #a6d65a;
+  --color-accent-soft: #e3f2cc;      /* user chat bubble, soft chips */
+  --color-accent-strip: #cdee96;     /* "In progress" semester header strip */
+  --color-on-accent: #14261c;
+  --color-text: #14261c;
+  --color-text-muted: #5b675e;
+  --color-background: #ffffff;       /* app frame is white; sage is only the mockup canvas */
   --color-surface: #ffffff;
-  --color-border: #d9dee6;
+  --color-surface-muted: #f3f5f1;    /* this-semester panel, chat background */
+  --color-border: #e1e6dd;
   --color-danger: #b3261e;
+  --color-danger-hover: #99201a;
 
   /* status + verdict colors (FC25/FC29–FC32 displays) */
-  --color-success: #157347;
-  --color-success-soft: #e2f3e8;
+  --color-success: #3f6b1f;
+  --color-success-soft: #e3f2cc;
   --color-warning: #8a5a00;
   --color-warning-soft: #fdf2d5;
-  --color-info: #1d4fa8;
-  --color-info-soft: #dde8fb;
+  --color-info: #1d3b6b;
+  --color-info-soft: #dde6f5;
   --color-danger-soft: #f9e4e2;
 
   /* plan progress segments: completed / in progress / planned (FC19) */
-  --color-progress-completed: #0b3d97;
-  --color-progress-inprogress: #e39d2c;
-  --color-progress-planned: #b3bfce;
+  --color-progress-completed: #14261c;
+  --color-progress-inprogress: #b9e46e;
+  --color-progress-planned: #e4e8e1;
 
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2rem;
-  --radius: 8px;
-  --radius-lg: 14px;
+  --radius: 10px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
-  --shadow-1: 0 1px 3px rgba(15, 23, 42, 0.1), 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-2: 0 8px 24px rgba(15, 23, 42, 0.18);
+  --shadow-1: none;
+  --shadow-2: 0 8px 24px rgba(20, 38, 28, 0.16);
+  --color-overlay: rgba(20, 38, 28, 0.45);
 }
 
 *,

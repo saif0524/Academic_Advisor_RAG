@@ -57,8 +57,8 @@
 
 | ID | Title | Additional Notes |
 | --- | --- | --- |
-| **FC22** | Users shall be able to speak with an AI assistant to ask questions about degree plans, degrees, classes, professors, classes taken, degree progress and any other relevant data relating to classes | |
-| **FC23** | With user approval, assistant shall be able to take actions on the users behalf | • Adding classes<br>• Changing class status<br>• Changing major<br>• Changing concentration<br>• Changing degrees |
+| **FC22** | Users shall be able to speak with an AI assistant to ask questions about degree plans, degrees, classes, professors, classes taken, degree progress and any other relevant data relating to classes | • The assistant reads the student's ACTIVE degree plan (FC6) from SQLite (FC33) — never Chroma; with no active plan it says so rather than describing a draft<br>• Course recommendations skip courses already on the active plan |
+| **FC23** | With user approval, assistant shall be able to take actions on the users behalf | • Adding classes<br>• Changing class status<br>• Changing major<br>• Changing concentration<br>• Changing degrees<br>• Editing the active degree plan (add / remove / move a course between semesters — FC3) and making a generated plan active (FC6); engine-prechecked (FC30/FC32), saved as a new plan version (FC4) |
 | **FC24** | Users shall be able to request an audit for ability to take a class, or request status regarding degree requirements | |
 | **FC27** | System shall maintain conversation state across dialogue turns | • Enables contextual follow-up questions (e.g., "What if I take 3 classes next semester instead?") without repeating prior context [6] |
 | **FC28** | Assistant shall engage users in multi-turn guidance for major/plan changes | • Interactively clarifies student needs before confirming major, concentration, or degree modifications [5] |

@@ -1,5 +1,6 @@
 import Badge from '../../shared/Badge/Badge';
 import Icon from '../../shared/Icon/Icon';
+import Markdown from '../../shared/Markdown/Markdown';
 import './AdvisorAnswerCard.css';
 
 interface AdvisorAnswerCardProps {
@@ -51,7 +52,7 @@ export default function AdvisorAnswerCard({ answer, loading = false, error = nul
           </Badge>
         ) : null}
       </header>
-      <p className="advisor-answer-card-text">{answer.text}</p>
+      <Markdown className="advisor-answer-card-text" text={answer.text} />
     </section>
   );
 }

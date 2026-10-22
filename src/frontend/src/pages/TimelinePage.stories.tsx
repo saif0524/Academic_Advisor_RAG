@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import TimelinePage from './TimelinePage';
 import type { TimelineDependencies } from './TimelinePage';
-import type { PlanReview, Semester } from '../api/types';
+import type { CourseSuggestion, PlanReview, Semester } from '../api/types';
 import { expect, userEvent } from 'storybook/test';
 
 /* Instant fixtures (real seed records from api/catalog + plans) — stories
@@ -93,9 +93,32 @@ const FIXTURES: TimelineDependencies = {
   catalog: CATALOG,
 };
 
+/* Add-course candidates from the seed catalog (live default: GET /courses).
+   No meeting times or prerequisite verdicts — the live endpoint doesn't
+   return them, so the story doesn't invent them either. */
+const CANDIDATE_IDS = ['4308', '4321', '3341', '4392', '3340'];
+function fixtureSearchCourses(_semesterId: string, plannedIds: string[], query: string): Promise<CourseSuggestion[]> {
+  const q = query.trim().toLowerCase();
+  return Promise.resolve(
+    CANDIDATE_IDS.filter((id) => !plannedIds.includes(id))
+      .map((id) => CATALOG[id as keyof typeof CATALOG])
+      .filter((course) => !q || course.id.includes(q) || course.title.toLowerCase().includes(q))
+      .map((course) => ({
+        id: course.id,
+        title: course.title,
+        creditHours: course.creditHours,
+        meeting: null,
+        badge: 'Add to plan',
+        badgeVariant: 'neutral' as const,
+        conflict: null,
+      })),
+  );
+}
+
 const SEAMS = {
   loadDependencies: () => Promise.resolve(FIXTURES),
   reviewFn: fixtureReview,
+  searchCourses: fixtureSearchCourses,
 };
 
 const meta = {

@@ -102,6 +102,15 @@ export default function Dashboard({
     }));
   }, [plan, catalog]);
 
+  // Wireframe 01: optional (not-in-plan) semesters sit after the planned ones.
+  const orderedSemesters = useMemo(
+    () => [
+      ...(plan?.semesters ?? []).filter((semester) => semester.status !== 'optional'),
+      ...(plan?.semesters ?? []).filter((semester) => semester.status === 'optional'),
+    ],
+    [plan],
+  );
+
   const currentTerm = useMemo(() => {
     const inProgress = plan?.semesters.find((semester) => semester.status === 'in-progress');
     return inProgress ? `${inProgress.term} ${inProgress.year}` : (plan?.currentTerm ?? '');
@@ -111,7 +120,14 @@ export default function Dashboard({
     <AppShell active={active} onNavigate={onNavigate} chatOpen={chatOpen} onToggleChat={onToggleChat} chatSlot={chatSlot}>
       <main className="dashboard">
         <PlanProgressHeader plan={plan} loading={loading} error={error} />
-        <CurrentSemesterPanel term={currentTerm} courses={currentSemesterCourses} loading={loading} error={error} />
+        <CurrentSemesterPanel
+          term={currentTerm}
+          courses={currentSemesterCourses}
+          loading={loading}
+          error={error}
+          onViewSchedule={onNavigate ? () => onNavigate('timeline') : undefined}
+          onAddOrDrop={onNavigate ? () => onNavigate('timeline') : undefined}
+        />
         <section className="dashboard-semesters" aria-label="My semesters">
           <header className="dashboard-semesters-header">
             <h2 className="dashboard-semesters-title">My semesters</h2>
@@ -121,7 +137,7 @@ export default function Dashboard({
           </header>
           {plan?.semesters.length ? (
             <div className="dashboard-semesters-grid">
-              {plan.semesters.map((semester) => (
+              {orderedSemesters.map((semester) => (
                 <SemesterCard
                   key={semester.id}
                   semester={{
@@ -133,7 +149,7 @@ export default function Dashboard({
                   catalog={catalog}
                   status={semester.status}
                   onEdit={() => onNavigate?.('timeline')}
-                  emptyNote={semester.status === 'optional' ? 'Optional — not in your plan' : undefined}
+                  emptyNote={semester.status === 'optional' ? 'Optional · not in your plan' : undefined}
                 />
               ))}
             </div>

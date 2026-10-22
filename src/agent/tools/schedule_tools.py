@@ -96,6 +96,38 @@ class ScheduleTools:
         return self._sql.list_degrees()
 
     def active_plan(self, student_id: str) -> Optional[dict]:
-        """FC6: the student's newest saved plan (if any) — read only."""
-        rows = self._sql.list_plans(student_id)
-        return rows[0] if rows else None
+        """FC6: the student's ACTIVE plan (is_active = 1) — read only. Newer
+        unactivated drafts are deliberately ignored; None when nothing is active."""
+        return self._sql.get_active_plan(student_id)
+
+    def plan_context(self, student_id: str) -> Optional[dict]:
+        """FC22/FC24/FC27: the active plan as a compact, grounded payload for
+        the assistant — full semester roadmap, catalog titles, credit totals
+        and degree progress. SQLite only (FC33); None when no plan is active."""
+        plan = self.active_plan(student_id)
+        if plan is None:
+            return None
+        semesters = [
+            {"term": s.get("term"), "year": s.get("year"),
+             "courses": list(s.get("courses") or []), "credits": s.get("credits")}
+            for s in plan.get("semesters") or []
+        ]
+        ids = sorted({cid for s in semesters for cid in s["courses"]})
+        titles: Dict[str, str] = {}
+        for cid in ids:
+            try:
+                titles[cid] = self._sql.get_course(cid).title
+            except Exception:
+                continue  # not in the catalog — shown by id only, never invented
+        return {
+            "plan_id": plan["plan_id"],
+            "degree_id": plan.get("degree_id"),
+            "target_major": plan.get("target_major"),
+            "concentration": plan.get("concentration"),
+            "includes_summer": bool(plan.get("includes_summer")),
+            "version_number": plan.get("version_number"),
+            "semesters": semesters,
+            "course_titles": titles,
+            "total_planned_credits": sum((s["credits"] or 0) for s in semesters),
+            "progress": self.degree_progress(student_id),
+        }

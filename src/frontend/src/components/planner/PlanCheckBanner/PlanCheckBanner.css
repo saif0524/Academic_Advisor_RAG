@@ -12,8 +12,11 @@
 }
 
 .plan-check-banner--ok {
-  background: var(--color-success-soft);
+  padding: var(--space-1) 0 0;
+  align-items: center;
+  background: none;
   color: var(--color-success);
+  font-weight: 500;
 }
 
 .plan-check-banner--issues {

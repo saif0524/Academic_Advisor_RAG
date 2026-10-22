@@ -8,6 +8,7 @@ acting gate: deterministic prechecks at proposal time, persistence in the
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from typing import Dict, List, Optional, Sequence
 
@@ -20,6 +21,8 @@ from core.engine.results import ConstraintCheck
 from core.engine.validator import CourseRecommendationValidator
 
 _FC21_STATUSES = ("not_taken", "in_progress", "passed", "failed", "taken")
+_PLAN_EDIT_OPS = ("plan_add_course", "plan_remove_course", "plan_move_course")
+_TERM_RE = re.compile(r"(Fall|Spring|Summer)\s+(\d{4})", re.IGNORECASE)
 
 
 class PlanTools:
@@ -67,11 +70,16 @@ class PlanTools:
         )
         return {"course": self._course_payload(course), "result": result.payload()}
 
-    def recommend_candidates(self, student_id: str, query: Optional[str], k: int = 6) -> dict:
+    def recommend_candidates(self, student_id: str, query: Optional[str], k: int = 6,
+                             exclude_ids: Sequence[str] = ()) -> dict:
         """What should I take? (FC22, safeguarded) — semantic candidates when
         a query is given, the selected degree's remaining courses otherwise.
         EVERY candidate is validated (FC29–FC32); eligibility is code-owned."""
-        pool = self._recommendation_pool(student_id, query, pool_size=k)
+        pool = self._recommendation_pool(student_id, query, pool_size=k + len(exclude_ids))
+        excluded = set(exclude_ids)
+        # FC22: courses already on the active plan aren't re-suggested.
+        already_planned = [c.course_id for c in pool if c.course_id in excluded]
+        pool = [c for c in pool if c.course_id not in excluded][:k]
         records = self._sql.list_student_classes(student_id)
         degree = self._selected_degree(student_id)
         hours_by_id = self._hours_for(
@@ -99,7 +107,8 @@ class PlanTools:
                 "checks": payload["checks"],
                 "reason": blocking["reason"] if blocking else "Eligible on every record check",
             })
-        return {"query": query, "candidates": candidates}
+        return {"query": query, "candidates": candidates,
+                "already_planned": already_planned}
 
     def degree_audit(self, student_id: str, degree_id: Optional[str] = None) -> Optional[dict]:
         """Degree-requirements status (FC24, FC19 counting via core)."""
@@ -300,6 +309,17 @@ class PlanTools:
                                    f"({degree.major_name})")
                     return self._create(student_id, session_id, "change_degree", description,
                                         {"degree_id": degree.degree_id})
+        elif action_type in _PLAN_EDIT_OPS:
+            proposal, refusal = self._precheck_plan_edit(student_id, action_type, params)
+            if proposal is not None:
+                return self._create(student_id, session_id, action_type,
+                                    proposal["description"], proposal["payload"])
+
+        elif action_type == "activate_plan":
+            proposal, refusal = self._precheck_activation(student_id, params)
+            if proposal is not None:
+                return self._create(student_id, session_id, action_type,
+                                    proposal["description"], proposal["payload"])
         else:
             refusal = f"Unsupported action {action_type!r} on your behalf (FC23)."
 
@@ -386,7 +406,131 @@ class PlanTools:
                               "(FC16) — nothing was changed.")
             self._sql.set_selected_degree(student_id, degree.degree_id)
             return f"Your tracked degree is now {degree.degree_id}.", None
+        if action_type in _PLAN_EDIT_OPS:
+            return self._execute_plan_edit(student_id, action_type, payload)
+        if action_type == "activate_plan":
+            if not self._sql.activate_plan(student_id, payload["plan_id"]):
+                return None, f"Plan {payload['plan_id']!r} is no longer on record."
+            return f"Plan {payload['plan_id']} is now your active plan.", None
         return None, f"Unknown action type {action_type!r}."
+
+    # ------------------------------------------------ FC3 plan edits (FC23)
+
+    def _apply_plan_edit(self, student_id: str, op: str, params: dict):
+        """Pure edit of the ACTIVE plan's semesters + deterministic review.
+        Returns (plan, new_semesters, description, normalized_payload, refusal).
+        Blocking engine verdicts (FC30 completed course, FC32 cap) that the
+        edit INTRODUCES are refusals; pre-existing/advisory issues are not."""
+        plan = self._sql.get_active_plan(student_id)
+        if plan is None:
+            return None, None, None, None, (
+                "You have no active plan (FC6) — ask me to generate one and make "
+                "it active first.")
+        sems = [[s["term"], int(s["year"]), list(s.get("courses") or [])]
+                for s in plan["semesters"]]
+        raw = (params.get("course_id") or "").strip()
+        course = self._schedule.find_course(raw)
+        in_plan = {cid for s in sems for cid in s[2]}
+        course_id = (raw if raw in in_plan
+                     else (course.course_id if course else raw))
+        if op != "plan_remove_course" and course is None and course_id not in in_plan:
+            return None, None, None, None, (
+                f"There is no course on record for {raw!r} — nothing will be changed.")
+
+        target = None
+        if op in ("plan_add_course", "plan_move_course"):
+            match = _TERM_RE.search(params.get("semester_term") or "")
+            if not match:
+                return None, None, None, None, "Which semester of your plan (e.g. Fall 2027)?"
+            target = (match.group(1).capitalize(), int(match.group(2)))
+            if not any((s[0], s[1]) == target for s in sems):
+                offered = ", ".join(f"{s[0]} {s[1]}" for s in sems)
+                return None, None, None, None, (
+                    f"{target[0]} {target[1]} isn't a semester in your active plan — "
+                    f"its semesters are: {offered}.")
+
+        located = next((s for s in sems if course_id in s[2]), None)
+        label = f"{course_id}" + (f" ({course.title})" if course else "")
+        if op == "plan_remove_course":
+            if located is None:
+                return None, None, None, None, f"{course_id} isn't in your active plan."
+            located[2].remove(course_id)
+            description = f"Remove {label} from your plan ({located[0]} {located[1]})"
+        elif op == "plan_add_course":
+            if located is not None:
+                return None, None, None, None, (
+                    f"{course_id} is already in your plan ({located[0]} {located[1]}).")
+            next(s for s in sems if (s[0], s[1]) == target)[2].append(course_id)
+            description = f"Add {label} to your plan for {target[0]} {target[1]}"
+        else:  # plan_move_course
+            if located is None:
+                return None, None, None, None, f"{course_id} isn't in your active plan."
+            if (located[0], located[1]) == target:
+                return None, None, None, None, f"{course_id} is already in {target[0]} {target[1]}."
+            located[2].remove(course_id)
+            next(s for s in sems if (s[0], s[1]) == target)[2].append(course_id)
+            description = (f"Move {label} from {located[0]} {located[1]} "
+                           f"to {target[0]} {target[1]}")
+
+        records = self._sql.list_student_classes(student_id)
+        catalog = self._catalog_dict()
+        try:
+            cap = self._sql.get_degree(plan["degree_id"]).max_semester_credits
+        except Exception:
+            cap = None
+        before = DegreePlanGenerator.review_plan_semesters(
+            [(s["term"], int(s["year"]), list(s.get("courses") or [])) for s in plan["semesters"]],
+            records, catalog, max_credits_per_sem=cap).blocking()
+        after = DegreePlanGenerator.review_plan_semesters(
+            [tuple(s) for s in sems], records, catalog, max_credits_per_sem=cap).blocking()
+        known = {i["text"] for i in before}
+        new_blocking = [i["text"] for i in after if i["text"] not in known]
+        if new_blocking:
+            return None, None, None, None, " / ".join(new_blocking) + " — nothing will be changed."
+        normalized = {"plan_id": plan["plan_id"], "course_id": course_id,
+                      "semester_term": f"{target[0]} {target[1]}" if target else None}
+        return plan, sems, description, normalized, None
+
+    def _precheck_plan_edit(self, student_id: str, op: str, params: dict):
+        plan, _, description, payload, refusal = self._apply_plan_edit(student_id, op, params)
+        if refusal:
+            return None, refusal
+        return {"description": description, "payload": payload}, None
+
+    def _precheck_activation(self, student_id: str, params: dict):
+        rows = self._sql.list_plans(student_id)
+        wanted = params.get("plan_id")
+        inactive = [r for r in rows if not r.get("is_active")]
+        if wanted:
+            row = next((r for r in rows if r["plan_id"] == wanted), None)
+            if row is None:
+                return None, f"No plan {wanted!r} on record."
+        elif inactive:
+            row = inactive[0]  # newest unactivated draft (list is newest-first)
+        elif rows:
+            return None, "Your latest plan is already active — nothing to change."
+        else:
+            return None, "You have no plans yet — ask me to generate one first."
+        if row.get("is_active"):
+            return None, f"Plan {row['plan_id']} is already active."
+        return {"description": (f"Make plan {row['plan_id']} "
+                                f"({row.get('target_major')}) your active plan"),
+                "payload": {"plan_id": row["plan_id"]}}, None
+
+    def _execute_plan_edit(self, student_id: str, op: str, payload: dict):
+        """Confirmed turn: re-run the same deterministic edit on the CURRENT
+        plan (state may have changed since the proposal) and save a new
+        version (FC4)."""
+        plan, sems, description, _, refusal = self._apply_plan_edit(student_id, op, payload)
+        if refusal:
+            return None, refusal
+        catalog = self._catalog_dict()
+        self._sql.create_plan_version(plan["plan_id"], {
+            "semesters": semesters_payload([tuple(s) for s in sems], catalog),
+            "includes_summer": bool(plan.get("includes_summer")),
+            "notes": plan.get("notes") or [],
+        }, note="edited via assistant (FC3/FC23)")
+        return f"Done — {description[0].lower() + description[1:]}.", None
 
     def _create(self, student_id: str, session_id: str, action_type: str,
                 description: str, params: dict) -> dict:

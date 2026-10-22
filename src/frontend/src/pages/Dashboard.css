@@ -3,14 +3,14 @@
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  max-width: 900px;
+  gap: var(--space-4);
+  max-width: 780px;
 }
 
 .dashboard-semesters {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .dashboard-semesters-header {
@@ -22,14 +22,14 @@
 
 .dashboard-semesters-title {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
 }
 
 .dashboard-semesters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-1);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
 .dashboard-semesters-empty {

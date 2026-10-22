@@ -22,7 +22,7 @@ export default function PlanCheckBanner({
   if (status !== 'issues') {
     return (
       <p className="plan-check-banner plan-check-banner--ok" role="status">
-        <Icon name="checkCircle" size={16} /> {okMessage}
+        <Icon name="check" size={16} /> {okMessage}
       </p>
     );
   }

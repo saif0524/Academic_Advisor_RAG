@@ -1,7 +1,6 @@
 import Badge from '../../shared/Badge/Badge';
-import Button from '../../shared/Button/Button';
 import Icon from '../../shared/Icon/Icon';
-import { toTitleCase } from '../../shared/textCase';
+import { formatCourseCode, toTitleCase } from '../../shared/textCase';
 import type { SemesterCourse } from '../../../api/types';
 import './PlannedCourseRow.css';
 
@@ -25,9 +24,9 @@ export default function PlannedCourseRow({ course, warning = null, statusNote, o
   return (
     <li className="planned-course-row">
       <div className="planned-course-row-main">
-        <span className="planned-course-row-code">{course.id}</span>
         <span className="planned-course-row-text">
           <span className="planned-course-row-title">
+            <strong className="planned-course-row-code">{formatCourseCode(course.id)}</strong>{' '}
             {course.title ? toTitleCase(course.title) : 'Course details unavailable'}
           </span>
           <span className="planned-course-row-meta">
@@ -41,14 +40,14 @@ export default function PlannedCourseRow({ course, warning = null, statusNote, o
           </Badge>
         ) : null}
         {onRemove ? (
-          <Button
-            variant="ghost"
-            iconOnly
+          <button
+            type="button"
+            className="planned-course-row-remove"
             onClick={() => onRemove(course.id)}
-            aria-label={`Remove CSE ${course.id}`}
+            aria-label={`Remove ${formatCourseCode(course.id)}`}
           >
-            <Icon name="close" size={14} />
-          </Button>
+            <Icon name="minus" size={16} />
+          </button>
         ) : null}
       </div>
       {warning ? (
