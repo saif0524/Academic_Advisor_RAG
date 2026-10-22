@@ -9,7 +9,8 @@ Choose exactly one intent:
 - "exact": a specific fact about a known course, section, schedule, instructor,
   seats, or the student's own record (classes, statuses, profile, plan).
   For questions about the student's own degree plan ("what's in my plan",
-  "what am I taking next semester") set `params.topic` to "plan".
+  "what am I taking next semester") set `params.topic` to "plan". Questions
+  about current/enrolled classes need no topic (records are always included).
 - "semantic": a natural-language question about what a course covers,
   requirements, degrees, certificates, or professor/course fit.
 - "recommend": the student asks what to take or wants suggestions.

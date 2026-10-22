@@ -38,17 +38,48 @@ class AIAdvisorAgent:
         """§3 main entry: one advising turn. Returns
         {reply, pending_action (FC23 proposal or None), session_id}."""
         result = self._graph.invoke(
-            {
-                "messages": [],
-                "user_input": user_input,
-                "student_id": student_id,
-                "session_id": session_id,
-                "confirmed_action_id": confirmed_action_id,
-                "cancelled_action_id": cancelled_action_id,
-                "history": [],
-            },
+            self._initial_state(student_id, user_input, session_id,
+                                confirmed_action_id, cancelled_action_id),
             config={"recursion_limit": 25},
         )
+        return self._turn_result(result, session_id)
+
+    def process_query_stream(
+        self, student_id: str, user_input: str, session_id: Optional[str] = None,
+        confirmed_action_id: Optional[str] = None,
+        cancelled_action_id: Optional[str] = None,
+    ):
+        """FC39: same turn as `process_query`, yielding events as they happen —
+        `check` (deterministic validator results), `token` (answer text), then
+        a final `done` {reply, pending_action, session_id}."""
+        final: dict = {}
+        for mode, data in self._graph.stream(
+            self._initial_state(student_id, user_input, session_id,
+                                confirmed_action_id, cancelled_action_id),
+            config={"recursion_limit": 25},
+            stream_mode=["custom", "values"],
+        ):
+            if mode == "custom":
+                yield data
+            else:
+                final = data
+        yield {"type": "done", **self._turn_result(final, session_id)}
+
+    @staticmethod
+    def _initial_state(student_id, user_input, session_id, confirmed_action_id,
+                       cancelled_action_id) -> dict:
+        return {
+            "messages": [],
+            "user_input": user_input,
+            "student_id": student_id,
+            "session_id": session_id,
+            "confirmed_action_id": confirmed_action_id,
+            "cancelled_action_id": cancelled_action_id,
+            "history": [],
+        }
+
+    @staticmethod
+    def _turn_result(result: dict, session_id: Optional[str]) -> dict:
         pending = result.get("pending_action")
         if pending is not None:
             pending = {

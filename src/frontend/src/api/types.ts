@@ -223,10 +223,21 @@ export interface ProposedAction {
   actionId?: string;
 }
 
+/** One deterministic validator check streamed while the advisor works (FC39; FC29–FC32). */
+export interface StreamCheck {
+  kind: 'check' | 'step'; // 'step' = a data lookup (SQLite/Chroma), not a validator check
+  course: string | null;
+  checkId: string;
+  description: string;
+  passed: boolean | null; // null = unknown (needs data not on record); steps carry null
+  reason: string | null;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'advisor';
   text: string;
+  checks?: StreamCheck[]; // deterministic checks run for this reply (FC39)
   action?: ProposedAction; // FC23 proposal awaiting explicit decision
 }
 
