@@ -26,9 +26,6 @@ class Classification:
     params: Dict = field(default_factory=dict)
     followup: Optional[str] = None
 
-    def as_dict(self) -> dict:
-        return {"intent": self.intent, "params": self.params, "followup": self.followup}
-
 
 def _rules_fallback(user_input: str, history: Optional[List[str]] = None,
                     student_context: Optional[dict] = None) -> Classification:
@@ -51,7 +48,6 @@ class LLMClassifier:
             params: dict = {}
             clarification_question: Optional[str] = None
 
-        self._schema = IntentSchema
         self._structured = llm.with_structured_output(IntentSchema, method="json_schema")
 
     def classify(
@@ -90,13 +86,11 @@ class LLMClassifier:
         """Free-form `params` → the graph contract (course_mentions list,
         query string): one normalization point keeps downstream nodes stable.
         Action params (course_id/status/major…) pass through untouched."""
-        from agent.tools.course_ids import course_mentions as extract
-
         mentions = params.get("course_mentions")
         if isinstance(mentions, str):
             mentions = [mentions]
         if not mentions:
-            mentions = extract(user_input) or None  # ids verbatim from the message
+            mentions = course_mentions(user_input) or None  # ids verbatim from the message
         if mentions:
             params["course_mentions"] = mentions
         if params.get("action_type") in {"add_class", "change_class_status"} and not params.get("course_id") and mentions:

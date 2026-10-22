@@ -31,6 +31,8 @@ import type {
   SemesterHydrated,
   SemesterSummary,
 } from '../api/types';
+import { useClassStatuses } from '../state/useClassStatuses';
+import type { ClassStatus, ClassStatusMap } from '../api/classes';
 import './TimelinePage.css';
 
 export interface TimelineDependencies {
@@ -53,6 +55,9 @@ interface TimelinePageProps {
   reviewFn?: (semesters: Array<Pick<Semester, 'id' | 'term' | 'year' | 'courseIds' | 'credits'>>) => Promise<PlanReview>;
   /** DI seam for add-course candidates (FC8; stories inject fixtures, the
       live default is GET /courses). */
+  /** DI seams for FC21 class statuses (stories inject fixtures; live default is /classes). */
+  loadClassStatuses?: () => Promise<ClassStatusMap>;
+  saveClassStatus?: (courseId: string, status: ClassStatus) => Promise<ClassStatus>;
   searchCourses?: (semesterId: string, alreadyPlannedIds: string[], query: string) => Promise<CourseSuggestion[]>;
 }
 
@@ -102,9 +107,12 @@ export default function TimelinePage({
   loadDependencies,
   reviewFn,
   searchCourses,
+  loadClassStatuses,
+  saveClassStatus,
 }: TimelinePageProps) {
   const loadData = loadDependencies ?? defaultLoadDependencies;
   const review = reviewFn ?? reviewPlanDraft;
+  const { statuses: classStatuses, changeStatus } = useClassStatuses(loadClassStatuses, saveClassStatus);
   const fetchCandidates = searchCourses ?? getCourseSuggestions;
   const [plans, setPlans] = useState<PlanListItem[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -463,6 +471,8 @@ export default function TimelinePage({
               creditCap={18}
               check={check}
               onRemoveCourse={handleRemoveCourse}
+              classStatuses={classStatuses}
+              onStatusChange={changeStatus}
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               candidates={showCandidatesLoading ? null : selectedIsEditable ? candidates : null}

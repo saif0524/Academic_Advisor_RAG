@@ -5,6 +5,7 @@ import ChatComposer from '../ChatComposer/ChatComposer';
 import ChatMessageList from '../ChatMessageList/ChatMessageList';
 import ConversationHistory from '../ConversationHistory/ConversationHistory';
 import {
+  createConversation as createConversationViaApi,
   getConversations as getConversationsViaApi,
   getMessages as getMessagesViaApi,
   respondToProposal as respondToProposalViaApi,
@@ -16,6 +17,7 @@ import './ChatPanel.css';
 export interface ChatSeams {
   /** DI seams defaulting to the api service (stories inject fixtures). */
   loadConversations?: () => Promise<Conversation[]>;
+  createConversation?: () => Promise<string>;
   loadMessages?: (conversationId: string) => Promise<ChatMessage[]>;
   sendMessage?: (text: string, conversationId?: string) => Promise<ChatMessage>;
   respondToProposal?: (
@@ -43,13 +45,13 @@ type ThreadState = {
  * FC23 confirmation gate lives in the thread via ChatMessageList's proposal
  * state — actions only proceed after an explicit decision.
  *
- * Data comes through the api seam (mocked in api/chat — no live LLM until
- * the agent zone is wired). Stories inject instant fixtures via the DI props.
+ * Data comes from api/chat; stories inject fixtures via the props.
  */
 export default function ChatPanel({
   onClose,
   loadConversations = getConversationsViaApi,
   loadMessages = getMessagesViaApi,
+  createConversation = createConversationViaApi,
   sendMessage = sendMessageViaApi,
   respondToProposal = respondToProposalViaApi,
   initialConversationId = '',
@@ -65,8 +67,7 @@ export default function ChatPanel({
   const [sending, setSending] = useState(false);
 
   /* FC23 decision state for whichever message carries `action` — holds the
-     server pending-action id (`actionId`) decisions travel with, falling
-     back to the message id for mock fixtures. */
+     server pending-action id (`actionId`), falling back to the message id. */
   const [proposal, setProposal] = useState<{
     messageId: string;
     actionId?: string;
@@ -122,6 +123,20 @@ export default function ChatPanel({
     }
   };
 
+  /* New chat: server creates an empty session; the thread effect loads it. */
+  const startNewChat = async () => {
+    try {
+      const id = await createConversation();
+      setActiveId(id);
+      setThread({ id, messages: null, loading: true, error: null });
+      setProposal(null);
+      setConversations(null); // history list reloads next time it opens
+      setMode('conversation');
+    } catch (error) {
+      setThread((current) => ({ ...current, error: error instanceof Error ? error.message : String(error) }));
+    }
+  };
+
   const handleSend = async (text: string) => {
     setSending(true);
     setThread((current) => ({
@@ -147,8 +162,7 @@ export default function ChatPanel({
   };
 
   /* FC23 gate: the deterministic side only "acts" on the explicit decision.
-     Decisions carry the server pending-action id (FC23); fixtures fall back
-     to the message id. The mock resolves with a follow-up advisor turn either way. */
+     The server replies with a follow-up advisor turn either way. */
   const decide = async (decision: ProposalDecision) => {
     if (!proposal) return;
     setProposal({ ...proposal, busy: true });
@@ -174,6 +188,9 @@ export default function ChatPanel({
           Advisor
         </span>
         <div className="chat-panel-header-actions">
+          <Button variant="ghost" onClick={startNewChat} aria-label="Start a new chat">
+            <Icon name="plus" size={14} /> New chat
+          </Button>
           <Button variant="ghost" onClick={mode === 'conversation' ? openHistory : () => setMode('conversation')}>
             {mode === 'conversation' ? (
               <>

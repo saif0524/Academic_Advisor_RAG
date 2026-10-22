@@ -1,9 +1,8 @@
-"""HTTP transport for the Academic AI Advisor (proposed FC-new-rest-api).
+"""HTTP layer for the Academic AI Advisor (FC37).
 
-Its own top-level zone (`src/server/`): a thin adapter over `agent`,
-`database`, and `core` — and nothing in `agent`/`database`/`core` may import
-this package. Conventions live in `.pi/skills/fastapi/SKILL.md`:
+A thin adapter over `agent`, `database`, and `core` (none of which import
+this package):
 
-    routers (HTTP shape) → controllers (orchestration) → services
-    (business logic wrapping agent/database/core) → schemas (Pydantic contracts)
+    routers (HTTP shape) → services (logic over agent/database/core)
+    schemas = Pydantic request/response contracts
 """

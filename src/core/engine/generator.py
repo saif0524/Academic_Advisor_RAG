@@ -1,18 +1,14 @@
-"""§2 DegreePlanGenerator (FC2, FC25, FC26) — the deterministic planning engine.
+"""DegreePlanGenerator (§2; FC2, FC25, FC26) — the deterministic planning engine.
 
-Pure code, entity-passed (monorepo dependency rule: no db/LLM imports here).
-The LLM layer may call this through tools but can never bypass it, and plan
-*writes* always flow through this module or the persisted validators.
+Pure code: no database or LLM imports. Callers pass in the student, the
+degree, and a catalog dict (course_id → Course).
 
-Implemented adjustments vs. the domain-model outline (documented in the
-domain-model notes):
-- `generate_multi_year_plan` takes the student, the target degree, and a
-  catalog dict (course_id → Course) instead of a db-backed `course_catalog`
-  attribute — core stays offline.
-- Returns a `PlanGenerationResult` (plan + grounded `notes`) so honest
-  caveats ride with the plan instead of being invented away.
-- `review_plan_semesters` gives the HTTP/API layer the FC29–FC32 verdicts
-  for unsaved drafts (the deterministic stand-in the mock UI used to fake).
+- `generate_multi_year_plan` builds a semester-by-semester roadmap (FC2/FC25).
+- `review_plan_semesters` checks a draft plan against FC29–FC32.
+- `compare_plans` / `simulate_major_switch` support "what if I switch majors?" (FC26).
+
+Anything the engine can't satisfy from real data is reported in `notes`,
+never filled in with invented courses.
 """
 from __future__ import annotations
 
@@ -21,7 +17,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from core.entities.course import Course
-from core.entities.degree import DegreeBlock, DegreePlan, DegreeRequirement, SemesterPlan
+from core.entities.degree import DegreePlan, DegreeRequirement, SemesterPlan
 from core.entities.student import EnrollmentRecord, Student
 
 _COMPLETED_STATUSES = frozenset({"passed", "taken"})
@@ -146,13 +142,11 @@ class DegreePlanGenerator:
         # 2. elective buckets filled from the grounded catalog pool.
         electives = DegreePlanGenerator._elective_picks(
             target_degree, courses_by_id, completed, set(required), hours_for, notes)
-        placement_order = DegreePlanGenerator._order_courses(
-            required + electives, courses_by_id)
+        placement_order = DegreePlanGenerator._order_courses(required + electives)
 
-        # 3. semester-by-semester placement from the current term onwards.
-        # FC29 (planning semantics): a course enters a semester only when every
-        # prerequisite is satisfied by records or an EARLIER semester — pending
-        # or same-semester prerequisites defer it.
+        # 3. Place courses semester by semester from the current term onwards.
+        # FC29: a course goes in a semester only once all its prerequisites are
+        # done or placed in an EARLIER semester.
         start = current_term or _parse_term(
             DegreePlanGenerator._latest_in_progress_term(records)) or _DEFAULT_START_TERM
         plan = DegreePlan(
@@ -164,11 +158,10 @@ class DegreePlanGenerator:
             includes_summer=bool(include_summer),
         )
         semesters: List[SemesterPlan] = []
-        placed_before: set = set(in_progress)
         if in_progress:
             semesters.append(SemesterPlan(term=start[0], year=start[1],
                                           course_ids=list(in_progress), max_credit_limit=cap))
-        # placement starts after the in-progress semester when there is one
+        # If there's an in-progress semester, new courses start the term after it.
         terms = DegreePlanGenerator._term_sequence(start, include_summer)[1 if in_progress else 0:]
         remaining = list(placement_order)
         unknown_hours: List[str] = []
@@ -188,9 +181,9 @@ class DegreePlanGenerator:
                         continue  # prerequisite still pending — wait for a later term
                     if any(p in semester.course_ids for p in prereqs):
                         continue  # prerequisite lands in this same semester — defer (FC29)
-                    if hours is None and cid not in unknown_hours:
-                        unknown_hours.append(cid)  # FC32 unverifiable — reported later
-                    elif cap is not None and semester_hours + hours > cap:
+                    if hours is None:
+                        unknown_hours.append(cid)  # FC32 can't be checked — reported in notes
+                    elif semester_hours + hours > cap:
                         continue  # doesn't fit this term; other courses still might
                     semester.course_ids.append(cid)
                     remaining.remove(cid)
@@ -198,14 +191,13 @@ class DegreePlanGenerator:
                     progress = True
             if semester.course_ids:
                 semesters.append(semester)
-                placed_before.update(semester.course_ids)
             term_index += 1
         if unknown_hours:
             shown = ", ".join(sorted(unknown_hours)[:6]) + ("…" if len(unknown_hours) > 6 else "")
             notes.append(
                 f"Credit hours are not on record for {len(unknown_hours)} planned "
                 f"course(s) ({shown}) — FC32 could not verify their semesters.")
-        if remaining:  # defensive: sequence is sized not to trigger
+        if remaining:  # shouldn't happen: the term sequence is long enough
             notes.append(
                 f"{len(remaining)} requirement course(s) could not be placed within "
                 "the generated roadmap window.")
@@ -225,19 +217,18 @@ class DegreePlanGenerator:
         Deterministic set arithmetic over the two roadmaps plus grounded
         trade-off lines; hours come from the catalog, never guesswork.
         """
-        flat_existing = [cid for s in DegreePlanGenerator._as_semesters(existing_semesters) for cid in s.course_ids]
-        flat_new = [cid for s in DegreePlanGenerator._as_semesters(new_semesters) for cid in s.course_ids]
-        existing_set, new_set = set(flat_existing), set(flat_new)
         existing_semesters = DegreePlanGenerator._as_semesters(existing_semesters)
         new_semesters = DegreePlanGenerator._as_semesters(new_semesters)
+        existing_set = {cid for s in existing_semesters for cid in s.course_ids}
+        new_set = {cid for s in new_semesters for cid in s.course_ids}
 
         def hours(ids: Iterable[str]) -> int:
             return sum((courses_by_id.get(cid).credit_hours or 0) for cid in ids
                        if courses_by_id.get(cid))
 
-        retained = sorted(existing_set & new_set, key=lambda cid: DegreePlanGenerator._level(cid))
-        lost = sorted(existing_set - new_set, key=lambda cid: DegreePlanGenerator._level(cid))
-        added = sorted(new_set - existing_set, key=lambda cid: DegreePlanGenerator._level(cid))
+        retained = sorted(existing_set & new_set, key=DegreePlanGenerator._level)
+        lost = sorted(existing_set - new_set, key=DegreePlanGenerator._level)
+        added = sorted(new_set - existing_set, key=DegreePlanGenerator._level)
 
         comparison = PlanComparisonResult(
             retained=retained, lost=lost, added=added,
@@ -438,42 +429,13 @@ class DegreePlanGenerator:
         )
 
     @staticmethod
-    def _order_courses(
-        course_ids: List[str], courses_by_id: Dict[str, Course]
-    ) -> List[str]:
-        """Kahn topological order over prerequisite edges (only when both
-        endpoints are being placed), tie-broken by course level then id —
-        deterministic and stable when prerequisite data is empty."""
-        wanted = list(dict.fromkeys(course_ids))
-        edges: Dict[str, List[str]] = {cid: [] for cid in wanted}
-        indegree: Dict[str, int] = {cid: 0 for cid in wanted}
-        for cid in wanted:
-            course = courses_by_id.get(cid)
-            for prereq in (course.prerequisites if course else []):
-                if prereq in indegree and prereq != cid:
-                    edges[prereq].append(cid)
-                    indegree[cid] += 1
-        ordered: List[str] = []
-        ready = [cid for cid in wanted if indegree[cid] == 0]
-        while ready:
-            ready.sort(key=lambda cid: (DegreePlanGenerator._level(cid), cid))
-            batch = ready[:]
-            ready = []
-            for cid in batch:
-                ordered.append(cid)
-                for dependent in edges[cid]:
-                    indegree[dependent] -= 1
-                    if indegree[dependent] == 0:
-                        ready.append(dependent)
-            ready = [cid for cid in ready if cid not in ordered]
-        leftovers = [cid for cid in wanted if cid not in ordered]
-        leftovers.sort(key=lambda cid: (DegreePlanGenerator._level(cid), cid))
-        ordered = ordered + leftovers  # cycle remnants keep a deterministic spot
-        # Re-sort by course level — prerequisite edges in this corpus run from
-        # lower to higher numbered courses, so a stable re-sort keeps FC29
-        # ordering while producing sane level-progressive roadmaps.
-        ordered.sort(key=lambda cid: (DegreePlanGenerator._level(cid), cid))
-        return ordered
+    def _order_courses(course_ids: List[str]) -> List[str]:
+        """De-duplicate and sort by course level (1000s before 2000s…), then id.
+
+        In this catalog prerequisites are always lower-numbered, so level order
+        already respects them; the placement loop enforces FC29 regardless.
+        """
+        return sorted(dict.fromkeys(course_ids), key=lambda cid: (DegreePlanGenerator._level(cid), cid))
 
     @staticmethod
     def _as_semesters(semesters) -> List[SemesterPlan]:

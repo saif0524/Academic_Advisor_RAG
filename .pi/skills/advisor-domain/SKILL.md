@@ -27,13 +27,13 @@ The `AIAdvisorAgent` classify → tool-call → summarize loop is in `docs/plann
 
 ## Seed data
 
-- `data/course-desc.jsonl` — 75 lines, one JSON object per line: `{"id", "title", "description"}`. IDs are 4-digit numbers (e.g. `1105` = Intro to CS&E). This is the initial Chroma ingest corpus; `Course.to_document_chunk()` defines the chunk format.
+- `data/course-desc.json` — JSON array of 75 objects: `{"id", "title", "description"}`. IDs are 4-digit numbers (e.g. `1105` = Intro to CS&E). This is the initial Chroma ingest corpus; `Course.to_document_chunk()` defines the chunk format.
 - `data/cse_undergrad_courses.pdf` — CSE undergraduate degree requirements. Parse into `DegreeRequirement` records (core, concentration courses, elective rules, credit totals).
 
 ## Stack decisions
 
 - React frontend, built-in state management only (no Redux/Zustand/etc.). Component anatomy (per-component folder with `.jsx` + plain `.css` + required Storybook story), atomic decomposition, and state rules live in `.pi/skills/react-component/SKILL.md`.
-- Python + LangChain/LangGraph backend; current entry point `src/main/AI_Assistant.py`. Ignore `AI_Assistant 5.java` — early-design leftover. FastAPI HTTP conventions (routers/controllers/services, DI, Pydantic): `.pi/skills/fastapi/SKILL.md`. Testing scope (business logic only, no UI tests): `.pi/skills/tester/SKILL.md`.
+- Python + LangChain/LangGraph backend; entry point is the FastAPI app `src/server/app.py`. FastAPI HTTP conventions (routers/services, DI, Pydantic): `.pi/skills/fastapi/SKILL.md`. Testing scope (business logic only, no UI tests): `.pi/skills/tester/SKILL.md`.
 - Embeddings/ingest flow through `VectorDatabaseManager.ingest_documents`; assume pluggable embedding model choice.
 
 ## Baseline assumptions

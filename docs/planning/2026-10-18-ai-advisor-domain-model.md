@@ -51,10 +51,11 @@ Stories keep deterministic DI fixtures (`reviewFn` seam) and never hit HTTP.
 built in `src/core/engine/` — `CourseRecommendationValidator` (FC29–FC32)
 as pure functions taking entities + the data they need as arguments (per the
 monorepo dependency rule, no `sql_db` attribute in core), plus
-`compute_degree_progress` (FC19/FC24 — moved verbatim from the student
-service, which now delegates to it); `check_fulfills_degree_requirement`
+`compute_degree_progress` (FC19/FC24 — the single implementation; the
+student service and the agent tools both call it — a leftover duplicate in
+the service was removed 2026-10-23); `check_fulfills_degree_requirement`
 (§2 Req 4c) rides along informationally and never blocks eligibility.
-Still unbuilt: `DegreePlanGenerator` (FC2/FC25/FC26).
+`DegreePlanGenerator` (FC2/FC25/FC26) followed on 2026-10-22.
 The §3 layer is live in `src/agent/` — `AIAdvisorAgent` (LangGraph
 classify → route → tools → summarize; the four §3 `handle_*` functions are
 groups of graph nodes), `ConversationSession` (history is the durable

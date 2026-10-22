@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class ErrorDetail(BaseModel):
     """Machine-readable failure detail ("errors come with a reason")."""
 
-    code: str = Field(description="Stable error code, e.g. 'not_wired'.")
+    code: str = Field(description="Stable error code, e.g. 'not_found'.")
     message: str = Field(description="Human-readable explanation of the failure.")
     details: Optional[List[str]] = Field(
         default=None, description="Optional per-item details, e.g. failed constraint checks."

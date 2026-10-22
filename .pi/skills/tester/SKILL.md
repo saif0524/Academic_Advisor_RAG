@@ -24,7 +24,7 @@ tests/
 - **`src/core/engine/` — the priority.** Every validator check (`CourseRecommendationValidator`: FC29–FC32), plan generation invariants (`DegreePlanGenerator`: FC2, FC25–FC26), major-switch/comparison logic — pure Python, must pass with no LLM and no stores: if a core test needs a mock, the architecture is wrong — flag it instead of mocking.
 - **`services/` (FastAPI layer)** — orchestration, error mapping, FC23 confirmation enforcement; db managers and agent faked or overridden via `app.dependency_overrides`.
 - **agent orchestration (`src/agent/`)** — routing and state transitions (`classify_query_intent`, FC22, FC33), LangGraph nodes/edges/interrupt flow, tool wiring — always with the **LLM stubbed**: never make live model calls; assert on routing outcomes, state transitions, and which tools were invoked, not on model wording. The confirmation gate (FC23) and clarification loop (FC27–28) are tested here with fake messages/tools.
-- **`src/database/`** — `SQLDatabaseManager` against in-memory SQLite fixtures; `VectorDatabaseManager` against an ephemeral Chroma client or fake embeddings; seed loaders against `data/` fixtures (`course-desc.jsonl` etc.).
+- **`src/database/`** — `SQLDatabaseManager` against in-memory SQLite fixtures; `VectorDatabaseManager` against an ephemeral Chroma client or fake embeddings; seed loaders against `data/` fixtures (`course-desc.json` etc.).
 
 For a `/build` feature whose plan spans layers: test the layers **below** the UI — e.g. a new React card backed by an endpoint + service tests the service rules; the component itself gets no tests, only its Storybook story.
 

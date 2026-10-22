@@ -31,9 +31,8 @@ interface ConversationHistoryProps {
 
 /**
  * Previous conversations panel (wireframe 06; FC34 persisted sessions):
- * search field (future SQLite lookup, FC33) + grouping by date. Selecting a
- * conversation loads its thread in the panel (FC27 continuity). Filtering is
- * client-side over the loaded list; the api layer owns the fixtures.
+ * search field + grouping by date. Selecting a conversation loads its thread
+ * (FC27 continuity). Filtering is client-side over the loaded list.
  */
 export default function ConversationHistory({
   conversations,

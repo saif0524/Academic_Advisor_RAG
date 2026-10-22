@@ -14,6 +14,8 @@ import {
 } from '../api/plans';
 import { getDegreeProgress } from '../api/students';
 import type { ActivePlanData, CourseCatalog } from '../api/types';
+import { useClassStatuses } from '../state/useClassStatuses';
+import type { ClassStatus, ClassStatusMap } from '../api/classes';
 import './Dashboard.css';
 
 export interface DashboardDependencies {
@@ -30,6 +32,9 @@ interface DashboardProps {
   chatSlot?: ReactNode;
   /** DI seam (stories inject instant fixtures); defaults to the api mock. */
   loadDependencies?: () => Promise<DashboardDependencies>;
+  /** DI seams for FC21 class statuses (stories inject fixtures; live default is /classes). */
+  loadClassStatuses?: () => Promise<ClassStatusMap>;
+  saveClassStatus?: (courseId: string, status: ClassStatus) => Promise<ClassStatus>;
   /** Lets the Storybook story show the planner overlay without interaction. */
   initialPlannerOpen?: boolean;
 }
@@ -60,8 +65,11 @@ export default function Dashboard({
   chatSlot = null,
   loadDependencies,
   initialPlannerOpen = false,
+  loadClassStatuses,
+  saveClassStatus,
 }: DashboardProps) {
   const loadData = loadDependencies ?? defaultLoadDependencies;
+  const { statuses: classStatuses, changeStatus } = useClassStatuses(loadClassStatuses, saveClassStatus);
   const [data, setData] = useState<DashboardDependencies | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +95,38 @@ export default function Dashboard({
     };
   }, [loadData]);
 
-  const plan = data?.plan ?? null;
+  // Active semester: user override of the engine-seeded current term, kept per
+  // plan in localStorage (display-only; earlier semesters show completed).
+  const [activeOverride, setActiveOverride] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('advisor.activeSemester') ?? '{}');
+    } catch {
+      return {};
+    }
+  });
+  const basePlan = data?.plan ?? null;
+  const plan = useMemo(() => {
+    const activeId = basePlan ? activeOverride[basePlan.plan_id] : undefined;
+    if (!basePlan || !activeId || !basePlan.semesters.some((s) => s.id === activeId)) return basePlan;
+    const activeIndex = basePlan.semesters.findIndex((s) => s.id === activeId);
+    const semesters = basePlan.semesters.map((s, index) =>
+      s.status === 'optional'
+        ? s
+        : { ...s, status: index < activeIndex ? ('completed' as const) : index === activeIndex ? ('in-progress' as const) : ('planned' as const) },
+    );
+    const active = semesters[activeIndex];
+    return { ...basePlan, semesters, currentTerm: `${active.term} ${active.year}` };
+  }, [basePlan, activeOverride]);
+  const setActiveSemester = (semesterId: string) => {
+    if (!basePlan) return;
+    const next = { ...activeOverride, [basePlan.plan_id]: semesterId };
+    setActiveOverride(next);
+    try {
+      localStorage.setItem('advisor.activeSemester', JSON.stringify(next));
+    } catch {
+      /* storage unavailable — selection lasts for this session only */
+    }
+  };
   // Stable identity so useMemos below don't recompute every render.
   const catalog = data?.catalog ?? EMPTY_CATALOG;
 
@@ -125,6 +164,8 @@ export default function Dashboard({
           courses={currentSemesterCourses}
           loading={loading}
           error={error}
+          statuses={classStatuses}
+          onStatusChange={changeStatus}
           onViewSchedule={onNavigate ? () => onNavigate('timeline') : undefined}
           onAddOrDrop={onNavigate ? () => onNavigate('timeline') : undefined}
         />
@@ -147,8 +188,10 @@ export default function Dashboard({
                     credits: semester.credits,
                   }}
                   catalog={catalog}
+                  collapsible
                   status={semester.status}
                   onEdit={() => onNavigate?.('timeline')}
+                  onSetActive={() => setActiveSemester(semester.id)}
                   emptyNote={semester.status === 'optional' ? 'Optional · not in your plan' : undefined}
                 />
               ))}

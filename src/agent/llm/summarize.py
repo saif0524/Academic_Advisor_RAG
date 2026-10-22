@@ -4,6 +4,7 @@ payload; empty tool results stay empty in the wording."""
 from __future__ import annotations
 
 import json
+from typing import Optional
 
 
 class LLMSummarizer:

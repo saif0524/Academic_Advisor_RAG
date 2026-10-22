@@ -2,7 +2,7 @@ import type { Meta } from '@storybook/react-vite';
 import PlanRoadmap from './PlanRoadmap';
 import type { CourseCatalog, PlanDetail } from '../../../api/types';
 
-/** Real seed data; credit hours are mock metadata (api/catalog). */
+/** Real seed data; credit hours are mock metadata. */
 const CATALOG_FIXTURE: CourseCatalog = {
   '1105': { id: '1105', title: 'INTRODUCTION TO COMPUTER SCIENCE AND ENGINEERING.', creditHours: 2 },
   '1311': { id: '1311', title: 'INTRODUCTION TO PROGRAMMING FOR ENGINEERS', creditHours: 3 },
@@ -36,6 +36,7 @@ const meta = {
 export default meta;
 
 export const Default = {};
+export const Editable = { args: { onEditSemester: () => {} } };
 export const WithNote = { args: { note: 'Mock preview: CSE coursework only — the full plan adds general education, math, and physics.' } };
 export const NoPlan = { args: { plan: null } };
 export const EmptyPlan = {

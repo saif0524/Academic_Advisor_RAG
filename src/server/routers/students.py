@@ -1,9 +1,7 @@
 """Student profile routes (FC1, FC7, FC16–FC17, FC19, FC25/FC32 prefs, FC36)."""
 from fastapi import APIRouter, Depends
 
-from server.controllers import students as students_controller
 from server.dependencies import get_current_student, get_student_service
-from server.schemas.common import ErrorResponse
 from server.schemas.students import (
     DegreeProgressResponse,
     MajorHistoryResponse,
@@ -18,25 +16,17 @@ from server.services.students import StudentService
 router = APIRouter(prefix="/students", tags=["students"])
 
 
-@router.get("/me", response_model=StudentProfile, operation_id="get_my_profile")
+@router.get("/me")
 def get_profile(
     student: StudentIdentity = Depends(get_current_student),
     service: StudentService = Depends(get_student_service),
 ) -> StudentProfile:
-    """Pre-authenticated student identity (FC36 — auth is out of scope).
-
-    Implemented scaffold method: echoes the header identity; profile fields
-    stay None until SQLite is wired (never fabricated).
-    """
-    return students_controller.get_profile(student, service)
+    """The current student's profile (FC36 — auth is out of scope).
+    Fields with no data on record are None, never filled in."""
+    return service.get_profile(student.student_id)
 
 
-@router.patch(
-    "/me/major",
-    response_model=StudentProfile,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="update_my_major",
-)
+@router.patch("/me/major")
 def update_major(
     payload: MajorUpdateRequest,
     student: StudentIdentity = Depends(get_current_student),
@@ -45,29 +35,19 @@ def update_major(
     """Set major + specialization — one of each (FC1); prior combos kept in
     history (FC7). When the assistant initiates this, it carries a FC23
     confirmation from the chat flow instead of a direct patch."""
-    return students_controller.update_major(student, payload, service)
+    return service.update_major(student.student_id, payload)
 
 
-@router.get(
-    "/me/major-history",
-    response_model=MajorHistoryResponse,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="get_my_major_history",
-)
+@router.get("/me/major-history")
 def get_major_history(
     student: StudentIdentity = Depends(get_current_student),
     service: StudentService = Depends(get_student_service),
 ) -> MajorHistoryResponse:
     """Current + previous major/specialty combinations (FC7)."""
-    return students_controller.get_major_history(student, service)
+    return service.get_major_history(student.student_id)
 
 
-@router.put(
-    "/me/degree",
-    response_model=StudentProfile,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="select_my_degree",
-)
+@router.put("/me/degree")
 def select_degree(
     payload: SelectDegreeRequest,
     student: StudentIdentity = Depends(get_current_student),
@@ -75,46 +55,33 @@ def select_degree(
 ) -> StudentProfile:
     """Select the tracked degree — one at a time (FC17); alignment to the
     student's major enforced server-side (FC16)."""
-    return students_controller.select_degree(student, payload, service)
+    return service.select_degree(student.student_id, payload)
 
 
-@router.get(
-    "/me/degree/progress",
-    response_model=DegreeProgressResponse,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="get_my_degree_progress",
-)
+@router.get("/me/degree/progress")
 def get_degree_progress(
     student: StudentIdentity = Depends(get_current_student),
     service: StudentService = Depends(get_student_service),
 ) -> DegreeProgressResponse:
     """Track progress toward the selected degree only (FC19)."""
-    return students_controller.get_degree_progress(student, service)
+    return service.get_degree_progress(student.student_id)
 
 
-@router.get(
-    "/me/preferences",
-    response_model=PlanningPreferences,
-    operation_id="get_my_planning_preferences",
-)
+@router.get("/me/preferences")
 def get_preferences(
     student: StudentIdentity = Depends(get_current_student),
     service: StudentService = Depends(get_student_service),
 ) -> PlanningPreferences:
     """Planning-preference inputs (FC25 summer toggle, FC32 cap) — honest
     defaults when nothing was saved yet."""
-    return students_controller.get_preferences(student, service)
+    return service.get_preferences(student.student_id)
 
 
-@router.put(
-    "/me/preferences",
-    response_model=PlanningPreferences,
-    operation_id="update_my_planning_preferences",
-)
+@router.put("/me/preferences")
 def update_preferences(
     payload: PlanningPreferences,
     student: StudentIdentity = Depends(get_current_student),
     service: StudentService = Depends(get_student_service),
 ) -> PlanningPreferences:
     """Save planning preferences; plan generation consumes them (FC25/FC32)."""
-    return students_controller.update_preferences(student, payload, service)
+    return service.update_preferences(student.student_id, payload)

@@ -15,7 +15,7 @@ interface ChatComposerProps {
 /**
  * Prompt composer (FC35 prompt-based queries, FC22 chat input). Enter sends;
  * Shift+Enter inserts a newline. Empty drafts disable the send action; the
- * busy flag pins it while the (mock) turn resolves.
+ * busy flag pins it while a turn is in flight.
  */
 export default function ChatComposer({
   onSend,

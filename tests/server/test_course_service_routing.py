@@ -21,7 +21,7 @@ class RecordingFakeSQL:
         self.calls.append(("get_course", course_id))
         from database.errors import RecordNotFoundError
 
-        raise RecordNotFoundError(f"Unknown course '9999'")
+        raise RecordNotFoundError("Unknown course '9999'")
 
     def list_course_prerequisites(self, course_id):
         self.calls.append(("list_course_prerequisites", course_id))

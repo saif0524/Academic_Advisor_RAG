@@ -1,10 +1,11 @@
+import type { ClassStatus } from '../api/classes';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import TimelinePage from './TimelinePage';
 import type { TimelineDependencies } from './TimelinePage';
 import type { CourseSuggestion, PlanReview, Semester } from '../api/types';
 import { expect, userEvent } from 'storybook/test';
 
-/* Instant fixtures (real seed records from api/catalog + plans) — stories
+/* Instant fixtures (real seed records) — stories
    never hit the real api. Course ids/titles are seed-grounded; warnings come
    from the deterministic review (api/plans reviewPlanDraft). */
 const CATALOG = {
@@ -117,6 +118,8 @@ function fixtureSearchCourses(_semesterId: string, plannedIds: string[], query: 
 
 const SEAMS = {
   loadDependencies: () => Promise.resolve(FIXTURES),
+  loadClassStatuses: () => Promise.resolve({}),
+  saveClassStatus: (_id: string, status: ClassStatus) => Promise.resolve(status),
   reviewFn: fixtureReview,
   searchCourses: fixtureSearchCourses,
 };

@@ -1,5 +1,5 @@
 """Chat service — conversation flow via AIAdvisorAgent (FC22–FC24, FC27–FC28,
-FC34) — wired: the agent zone is live.
+FC34).
 
 Flow per turn: resolve/verify the session → validate any FC23 decision proof
 → persist the user turn (FC34) → `AIAdvisorAgent.process_query` (classify →
@@ -7,9 +7,8 @@ route → deterministic tools → summarize) → persist the assistant turn →
 map the FC23 proposal, if any, into the reply contract."""
 from typing import List, Optional
 
-from agent.errors import LLMError
 from database.errors import RecordNotFoundError
-from server.errors import InvalidRequestError, NotWiredError
+from server.errors import InvalidRequestError
 from server.schemas.chat import (
     ChatHistoryMessage,
     ChatHistoryResponse,
@@ -36,12 +35,6 @@ class ChatService:
         the deterministic executor only for a validated decision. LLM
         failures surface as 503 `llm_unavailable` (never a fabricated answer).
         """
-        if self._sql_db_manager is None:
-            raise RuntimeError("SQLDatabaseManager missing — cannot persist (FC34)")
-        if self._advisor_agent is None:
-            raise NotWiredError(
-                "Chat is not wired yet: needs AIAdvisorAgent (agent/llm).")
-
         session_id = self._resolve_session(student_id, request.session_id)
         self._validate_decision(student_id, session_id, request)
 
@@ -64,6 +57,11 @@ class ChatService:
             reply=reply_text,
             pending_action=PendingAction(**pending) if pending else None,
         )
+
+    def create_session(self, student_id: str) -> ChatHistoryResponse:
+        """Start a new, empty conversation (FC27/FC34)."""
+        session_id = self._sql_db_manager.create_chat_session(student_id)
+        return ChatHistoryResponse(session_id=session_id, student_id=student_id, messages=[])
 
     def list_sessions(self, student_id: str) -> ChatSessionsResponse:
         """Sessions view for the drawer's history list (FC34, FC35)."""

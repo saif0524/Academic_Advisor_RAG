@@ -33,11 +33,6 @@ import type {
   Semester,
 } from './types';
 
-/** Canonical semester id — keeps client keys aligned with engine review keys. */
-export function semesterKey(semester: Pick<Semester, 'term' | 'year'>): string {
-  return `${semester.term.toLowerCase()}-${semester.year}`;
-}
-
 export async function getPlanOptions(): Promise<{ majors: PlanOption[] }> {
   return await request<{ majors: PlanOption[] }>('/plans/options');
 }

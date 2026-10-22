@@ -1,0 +1,337 @@
+{
+  "degree_id": "BS-SE",
+  "major_name": "Bachelor of Science in Software Engineering",
+  "total_credits_required": 120,
+  "max_semester_credits": 18,
+  "institution": "UT Arlington",
+  "blocks": [
+    {
+      "name": "Communication",
+      "kind": "general_core",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "ENGL 1301",
+          "title": "RHETORIC AND COMPOSITION I",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "ENGL 1302",
+          "title": "RHETORIC AND COMPOSITION II",
+          "credit_hours": 3,
+          "option_group": null
+        }
+      ]
+    },
+    {
+      "name": "Language, Philosophy & Culture",
+      "kind": "general_core",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "HNRS 2300",
+          "title": "HUMANITIES",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "PHIL 1301",
+          "title": "INTRODUCTION TO PHILOSOPHY",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "PHIL 1304",
+          "title": "CRITICAL THINKING",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "PHIL 2300",
+          "title": "INTRODUCTION TO ETHICS",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "PHIL 2314",
+          "title": "ETHICS IN BUSINESS",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "PHIL 2320",
+          "title": "INTRO TO SCIENCE, TECHNOLOGY & SOCIETY",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        }
+      ]
+    },
+    {
+      "name": "Political Science / Government",
+      "kind": "general_core",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "POLS 2311",
+          "title": "GOVERNMENT OF THE UNITED STATES",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "POLS 2312",
+          "title": "STATE AND LOCAL GOVERNMENT",
+          "credit_hours": 3,
+          "option_group": null
+        }
+      ]
+    },
+    {
+      "name": "US History",
+      "kind": "general_core",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "HIST 1301",
+          "title": "HISTORY OF THE UNITED STATES TO 1877",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "HIST 1302",
+          "title": "HISTORY OF THE UNITED STATES SINCE 1877",
+          "credit_hours": 3,
+          "option_group": null
+        }
+      ]
+    },
+    {
+      "name": "Creative Arts",
+      "kind": "general_core",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "ARCH 1301",
+          "title": "BASIC DESIGN AND DRAWING I",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "ART 1301",
+          "title": "ART APPRECIATION",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "ART 1309",
+          "title": "ART OF THE WESTERN WORLD I",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "ART 1310",
+          "title": "ART OF THE WESTERN WORLD II",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "DNCE 1300",
+          "title": "DANCE APPRECIATION",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "MUSI 1300",
+          "title": "MUSIC APPRECIATION",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "MUSI 1302",
+          "title": "JAZZ APPRECIATION",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "THEA 1310",
+          "title": "INTRODUCTION TO THEATRE",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        }
+      ]
+    },
+    {
+      "name": "Social & Behavioral Sciences",
+      "kind": "general_core",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "IE 2308",
+          "title": "ECONOMICS FOR ENGINEERS",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "ECON 2305",
+          "title": "PRINCIPLES OF MACROECONOMICS",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        }
+      ]
+    },
+    {
+      "name": "Mathematics",
+      "kind": "math_science",
+      "credits_required": 11,
+      "courses": [
+        {
+          "course_code": "MATH 1426",
+          "title": "CALCULUS I",
+          "credit_hours": 4,
+          "option_group": null
+        },
+        {
+          "course_code": "MATH 2425",
+          "title": "CALCULUS II",
+          "credit_hours": 4,
+          "option_group": null
+        },
+        {
+          "course_code": "MATH 3330",
+          "title": "INTRODUCTION TO LINEAR ALGEBRA",
+          "credit_hours": 3,
+          "option_group": null
+        }
+      ]
+    },
+    {
+      "name": "Life & Physical Sciences",
+      "kind": "math_science",
+      "credits_required": 8,
+      "courses": [
+        {
+          "course_code": "PHYS 1443",
+          "title": "GENERAL TECHNICAL PHYSICS I",
+          "credit_hours": 4,
+          "option_group": null
+        },
+        {
+          "course_code": "PHYS 1444",
+          "title": "GENERAL TECHNICAL PHYSICS II",
+          "credit_hours": 4,
+          "option_group": null
+        }
+      ]
+    },
+    {
+      "name": "Software Engineering Core",
+      "kind": "major_core",
+      "credits_required": 49,
+      "courses": [
+        {
+          "course_code": "CSE 1105",
+          "title": "INTRODUCTION TO COMPUTER SCIENCE AND ENGINEERING",
+          "credit_hours": 1,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 1310",
+          "title": "INTRODUCTION TO COMPUTERS AND PROGRAMMING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 1320",
+          "title": "INTERMEDIATE PROGRAMMING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 1325",
+          "title": "OBJECT-ORIENTED PROGRAMMING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 2315",
+          "title": "DISCRETE STRUCTURES",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 2320",
+          "title": "ALGORITHMS AND DATA STRUCTURES",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 2381",
+          "title": "SOFTWARE ENGINEERING I",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 3310",
+          "title": "FUNDAMENTALS OF SOFTWARE ENGINEERING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 3311",
+          "title": "OBJECT-ORIENTED SOFTWARE ENGINEERING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 3320",
+          "title": "OPERATING SYSTEMS",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 3330",
+          "title": "DATABASE SYSTEMS AND FILE STRUCTURES",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4321",
+          "title": "SOFTWARE TESTING & MAINTENANCE",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4322",
+          "title": "SOFTWARE PROJECT MANAGEMENT",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4361",
+          "title": "SOFTWARE DESIGN PATTERNS",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4391",
+          "title": "SENIOR DESIGN I",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4392",
+          "title": "SENIOR DESIGN II",
+          "credit_hours": 3,
+          "option_group": null
+        }
+      ]
+    },
+    {
+      "name": "CSE 3000-level or 4000-level Technical Electives",
+      "kind": "electives",
+      "credits_required": 12,
+      "elective_bucket": "CSE 3000-level or 4000-level Technical Electives",
+      "courses": []
+    }
+  ]
+}

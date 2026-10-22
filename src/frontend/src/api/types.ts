@@ -1,8 +1,6 @@
 /**
- * Shared domain-shape types for the frontend mock api seams (typed DTOs).
- * These mirror the future FastAPI Pydantic contracts (src/server/schemas/*,
- * proposed FC-new-rest-api) — hand-written until OpenAPI codegen lands.
- * Components import these with `import type` only (data, never functions).
+ * Shared frontend types (hand-written to match src/server/schemas/*).
+ * Components import these with `import type` only.
  */
 
 /* ─── Course catalog / discovery (FC8–FC12, FC33) ─────────────────────── */
@@ -58,7 +56,7 @@ export interface CourseSuggestion {
 export interface CoursePrereqStatus {
   id: string;
   title: string | null;
-  status: 'met' | 'in-progress' | 'missing'; // mock of FC29 verdicts
+  status: 'met' | 'in-progress' | 'missing'; // FC29
 }
 
 export interface CourseDetail {
@@ -189,11 +187,6 @@ export interface PlanVersionInfo {
   version_id: string;
   created_at: string | null;
   label: string | null;
-}
-
-export interface ComparisonRow {
-  current: string;
-  proposed: string;
 }
 
 export interface ProgramComparison {

@@ -11,7 +11,7 @@ _NUMBER = re.compile(r"^(\d{3,4})$")
 _FULL = re.compile(r"^([A-Z]{2,5})\s+(\d{3,4})$")
 _COMPACT = re.compile(r"^([A-Z]{2,5})(\d{3,4})$")
 
-# Department tokens seen in the catalog (data/*.md) — used only to decide
+# Department tokens seen in the catalog (data/**/*.json) — used only to decide
 # whether a capitalized word before a number is a course code; unknown words
 # are NOT departments, so digits-only ids remain the fallback (never mis-scoped).
 DEPARTMENT_TOKENS = frozenset({

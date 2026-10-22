@@ -1,7 +1,6 @@
 """Classes-on-profile routes (FC13–FC14, FC20–FC21)."""
 from fastapi import APIRouter, Depends, Path
 
-from server.controllers import classes as classes_controller
 from server.dependencies import get_class_service, get_current_student
 from server.schemas.classes import (
     AddClassRequest,
@@ -10,34 +9,22 @@ from server.schemas.classes import (
     StudentClassListResponse,
     UpdateClassRequest,
 )
-from server.schemas.common import ErrorResponse
 from server.schemas.students import StudentIdentity
 from server.services.classes import ClassService
 
 router = APIRouter(prefix="/classes", tags=["classes"])
 
 
-@router.get(
-    "",
-    response_model=StudentClassListResponse,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="list_classes",
-)
+@router.get("")
 def list_classes(
     student: StudentIdentity = Depends(get_current_student),
     service: ClassService = Depends(get_class_service),
 ) -> StudentClassListResponse:
     """All classes on the profile with their statuses (FC14, FC21)."""
-    return classes_controller.list_classes(student, service)
+    return service.list_classes(student.student_id)
 
 
-@router.post(
-    "",
-    response_model=StudentClass,
-    status_code=201,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="add_class",
-)
+@router.post("", status_code=201)
 def add_class(
     payload: AddClassRequest,
     student: StudentIdentity = Depends(get_current_student),
@@ -48,15 +35,10 @@ def add_class(
     Unknown course ids fail against the catalog (404) — courses are never
     invented. Assistant-initiated adds go through chat with FC23 confirmation.
     """
-    return classes_controller.add_class(student, payload, service)
+    return service.add_class(student.student_id, payload)
 
 
-@router.patch(
-    "/{course_id}",
-    response_model=StudentClass,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="update_class",
-)
+@router.patch("/{course_id}")
 def update_class(
     payload: UpdateClassRequest,
     course_id: str = Path(..., description="Course id on the profile."),
@@ -65,19 +47,14 @@ def update_class(
 ) -> StudentClass:
     """Change a class's status (FC21: not_taken/in_progress/taken/passed/failed)
     or bookmark flag (FC13)."""
-    return classes_controller.update_class(student, course_id, payload, service)
+    return service.update_class(student.student_id, course_id, payload)
 
 
-@router.delete(
-    "/{course_id}",
-    response_model=DeleteClassResponse,
-    responses={501: {"model": ErrorResponse}},
-    operation_id="remove_class",
-)
+@router.delete("/{course_id}")
 def remove_class(
     course_id: str = Path(...),
     student: StudentIdentity = Depends(get_current_student),
     service: ClassService = Depends(get_class_service),
 ) -> DeleteClassResponse:
     """Remove a class from the profile (FC20)."""
-    return classes_controller.remove_class(student, course_id, service)
+    return service.remove_class(student.student_id, course_id)

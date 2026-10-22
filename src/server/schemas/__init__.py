@@ -1,5 +1,5 @@
-"""Pydantic v2 request/response contracts, grouped per resource.
+"""Pydantic request/response contracts, grouped per resource.
 
-Internal domain objects (core.entities) are never returned raw — schemas map
-explicitly from SQLite/Chroma/engine output once those zones are wired.
+Domain objects (core.entities) are never returned raw — services map them
+into these schemas.
 """

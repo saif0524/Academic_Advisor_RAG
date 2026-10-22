@@ -53,3 +53,6 @@ export const UnknownCourse = {
     semester: { term: 'Spring', year: 2029, courses: ['4380', '9999'], credits: 6 },
   },
 };
+/** Single-column roadmap variant: header toggles the course list. */
+export const Collapsible = { args: { collapsible: true, onEdit: () => {} } };
+export const Collapsed = { args: { collapsible: true, defaultCollapsed: true, onEdit: () => {} } };

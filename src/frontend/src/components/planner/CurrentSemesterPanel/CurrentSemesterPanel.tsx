@@ -1,3 +1,5 @@
+import ClassStatusSelect from '../../classes/ClassStatusSelect/ClassStatusSelect';
+import type { ClassStatus, ClassStatusMap } from '../../../api/classes';
 import Button from '../../shared/Button/Button';
 import { formatCourseCode, toTitleCase } from '../../shared/textCase';
 import './CurrentSemesterPanel.css';
@@ -18,6 +20,9 @@ interface CurrentSemesterPanelProps {
   onViewSchedule?: () => void;
   /** "Add or drop" action (FC20/FC21 entry point) — hidden when not given. */
   onAddOrDrop?: () => void;
+  /** Profile statuses + saver (FC21); the per-class select shows when the saver is given. */
+  statuses?: ClassStatusMap;
+  onStatusChange?: (courseId: string, next: ClassStatus) => Promise<unknown> | void;
 }
 
 /**
@@ -35,6 +40,8 @@ export default function CurrentSemesterPanel({
   error = null,
   onViewSchedule,
   onAddOrDrop,
+  statuses = {},
+  onStatusChange,
 }: CurrentSemesterPanelProps) {
   const hasCourses = !loading && !error && courses && courses.length > 0;
   const totalHours = (courses ?? []).reduce((sum, course) => sum + (course.creditHours ?? 0), 0);
@@ -66,6 +73,13 @@ export default function CurrentSemesterPanel({
                 <span className="current-semester-panel-hours">
                   {course.creditHours != null ? `${course.creditHours} hrs` : ''}
                 </span>
+                {onStatusChange ? (
+                  <ClassStatusSelect
+                    courseLabel={formatCourseCode(course.id)}
+                    status={statuses[course.id] ?? 'in_progress'}
+                    onChange={(next) => onStatusChange(course.id, next)}
+                  />
+                ) : null}
               </li>
             ))}
           </ul>

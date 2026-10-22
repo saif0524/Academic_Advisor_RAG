@@ -1,6 +1,15 @@
 # Proposal: Layered `src/` monorepo structure
 
-*Date: 2026-10-19 · Status: proposed → steps 1–3 largely done · Progress: the full wireframe UI (docs/wireframes/, all six screens) is built on `src/frontend/` (Vite + React **TypeScript** — converted from JS on 2026-10-21 — Storybook 10.6, strict tsconfig with `npm run typecheck`, oxlint, Vitest story tests with playwright; no MSW — no API endpoints exist yet, so every `api/*.ts` service is a labeled deterministic MOCK, stories inject fixtures via DI seams). Built surfaces: `pages/AdvisorApp` composition root (page state + advisor-chat drawer, no router), `Dashboard` (wireframe 01/06 — FC1/7/14/19/21/25 display + FC2 planner entry), `TimelinePage` (wireframes 02/03 — FC3 draft edits with FC29/FC32 engine-verdict display + Discard/Save), `CourseSearch` (wireframe 04 — FC8/FC9 query → FC22 answer + FC11/FC12 results, FC23-style Details dialog), `AccountPage` (wireframe 05 — FC26 comparison + FC23 ConfirmDialog + FC25/FC32 preferences), and the `chat/` drawer (FC22–24/27/34–35, canned replies, FC23 confirmation card). Step 4 done (2026-10-20): the agent zone is live — `src/core/engine/` validator (FC29–FC32) + progress math, `src/agent/` LangGraph graph (FC22–FC24/27–28, FC23 durable confirm gate, LLM seam `ADVISOR_LLM_PROVIDER=ollama|stub` degrading to deterministic stubs), chat send + `/chat/sessions` + audits wired over it (501 list shrank to the plan-write routes needing `DegreePlanGenerator`); the chat drawer and the search page's advisor answer now call the LIVE api (`api/chat.ts`, `api/liveSearch.ts`) while stories keep injecting mock fixtures via the same DI seams; other pages stay on mocks until their consumption pass. Step 3 done + step 2 partial (2026-10-21): the database zone is real — `src/core/entities/` (§1/§2 dataclasses), `src/database/` (ABC; `sql/sqlite_manager.py` + `migrations/0001_init.sql` + repositories; `vector/chroma_manager.py` + embeddings seam (ONNX default, hash for offline tests); `ingest/` loaders for the course corpus, degree-requirement markdown, catalog text, and labeled mock seeds `sections-mock.json`/`student-demo.json`; `seed.py` reloading every startup by default into `var/` — user-owned chat/plans survive reload per FC34). FastAPI data endpoints wired through DI (REST surface = FC37): courses exact/semantic/detail/sections (FC8–FC12), classes CRUD (FC13/14/20/21), students profile/major/history/degree-selection/progress (FC1/FC7/FC16/FC17/FC19), degrees (FC15/FC18), chat history/sessions + send (FC22, FC34), plan persistence reads (FC6/FC4 view), audits (FC24, validator-backed). Still 501 `not_wired`: plan generation/update/revert/compare (core §2 `DegreePlanGenerator`, step 2 remainder).*
+*Date: 2026-10-19 · Status: proposed → steps 1–3 largely done · Progress: the full wireframe UI (docs/wireframes/, all six screens) is built on `src/frontend/` (Vite + React **TypeScript** — converted from JS on 2026-10-21 — Storybook 10.6, strict tsconfig with `npm run typecheck`, oxlint, Vitest story tests with playwright; no MSW — no API endpoints exist yet, so every `api/*.ts` service is a labeled deterministic MOCK, stories inject fixtures via DI seams). Built surfaces: `pages/AdvisorApp` composition root (page state + advisor-chat drawer, no router), `Dashboard` (wireframe 01/06 — FC1/7/14/19/21/25 display + FC2 planner entry), `TimelinePage` (wireframes 02/03 — FC3 draft edits with FC29/FC32 engine-verdict display + Discard/Save), `CourseSearch` (wireframe 04 — FC8/FC9 query → FC22 answer + FC11/FC12 results, FC23-style Details dialog), `AccountPage` (wireframe 05 — FC26 comparison + FC23 ConfirmDialog + FC25/FC32 preferences), and the `chat/` drawer (FC22–24/27/34–35, canned replies, FC23 confirmation card). Step 4 done (2026-10-20): the agent zone is live — `src/core/engine/` validator (FC29–FC32) + progress math, `src/agent/` LangGraph graph (FC22–FC24/27–28, FC23 durable confirm gate, LLM seam `ADVISOR_LLM_PROVIDER=ollama|stub` degrading to deterministic stubs), chat send + `/chat/sessions` + audits wired over it (501 list shrank to the plan-write routes needing `DegreePlanGenerator`); the chat drawer and the search page's advisor answer now call the LIVE api (`api/chat.ts`, `api/liveSearch.ts`) while stories keep injecting mock fixtures via the same DI seams; other pages stay on mocks until their consumption pass. Step 3 done + step 2 partial (2026-10-21): the database zone is real — `src/core/entities/` (§1/§2 dataclasses), `src/database/` (ABC; `sql/sqlite_manager.py` + `migrations/0001_init.sql` + repositories; `vector/chroma_manager.py` + embeddings seam (ONNX default, hash for offline tests); `ingest/` loaders for the course corpus, degree-requirement markdown, catalog text, and labeled mock seeds `sections-mock.json`/`student-demo.json`; `seed.py` reloading every startup by default into `.runtime/` (renamed from `var/`) — user-owned chat/plans survive reload per FC34). FastAPI data endpoints wired through DI (REST surface = FC37): courses exact/semantic/detail/sections (FC8–FC12), classes CRUD (FC13/14/20/21), students profile/major/history/degree-selection/progress (FC1/FC7/FC16/FC17/FC19), degrees (FC15/FC18), chat history/sessions + send (FC22, FC34), plan persistence reads (FC6/FC4 view), audits (FC24, validator-backed). Still 501 `not_wired`: plan generation/update/revert/compare (core §2 `DegreePlanGenerator`, step 2 remainder).*
+
+> **Update (2026-10-23, simplification pass):** the tree below is the original
+> proposal. Where it differs from the code, the code and `AGENTS.md` win:
+> no `server/controllers/` layer (routers call services directly);
+> no `database/sql/repositories/` (all queries live in `sqlite_manager.py`);
+> agent tools are `lookups.py` → `engine_tools.py` → `actions.py` (not
+> schedule/search/plan tools); the frontend `api/` has no mock modules
+> (`catalog.ts`, `liveSearch.ts` removed); `src/main/` and its GitHub
+> workflow are deleted; nothing returns 501 `not_wired` anymore.
 
 ## Summary
 
@@ -60,7 +69,7 @@ database/
 │   ├── chroma_manager.py      # VectorDatabaseManager: ingest_documents, similarity_search (FC9, FC35)
 │   └── embeddings.py          # embedding-model choice behind one seam
 ├── ingest/
-│   ├── course_desc_loader.py  # data/course-desc.jsonl → documents (75-line seed corpus)
+│   ├── course_desc_loader.py  # data/course-desc.json → documents (75-course seed corpus)
 │   └── degree_pdf_ingest.py   # data/cse_undergrad_courses.pdf → DegreeRequirement records
 └── seed.py                    # build/refresh SQLite + Chroma from data/
 ```
@@ -124,7 +133,7 @@ frontend/
     ├── api/
     │   ├── client.ts          # single HTTP wrapper (components never call fetch)
     │   ├── types.ts           # shared domain shapes for all mock seams (typed DTOs)
-    │   ├── catalog.ts         # fixture data grounded in data/course-desc.jsonl (+ mock metadata)
+    │   ├── catalog.ts         # fixture data grounded in data/course-desc.json (+ mock metadata)
     │   ├── plans.ts           # FC1/2/3/7/19/25/26 plan service — MOCK of the FastAPI plan contract
     │   ├── courses.ts         # FC8–FC12 search/detail service — MOCK
     │   ├── chat.ts            # FC22–24/27/34 chat service (canned deterministic replies) — MOCK
@@ -176,7 +185,7 @@ frontend ──HTTP──▶ server ──▶ agent(llm,tools) + database(manage
 - **Created:** everything under `src/core`, `src/database`, `src/agent`, `src/server`, `src/frontend` per the trees above; tests mirroring each Python zone (`tests/core`, `tests/database`, `tests/agent`, `tests/server`).
 - **Moved:** `src/main/AI_Assistant.py` content split across `agent/llm/advisor_agent.py` + `server/app.py` (old file becomes a deprecation shim or is deleted).
 - **Deleted (in implementation):** `src/main/AI_Assistant 5.java` — early-design leftover, explicitly ignored by AGENTS.md.
-- **Read-only consumers:** `data/course-desc.jsonl` → `database/ingest/course_desc_loader.py`; `data/cse_undergrad_courses.pdf` → `database/ingest/degree_pdf_ingest.py`. `data/` itself is not modified.
+- **Read-only consumers:** `data/course-desc.json` → `database/ingest/course_desc_loader.py`; `data/cse_undergrad_courses.pdf` → `database/ingest/degree_pdf_ingest.py`. `data/` itself is not modified.
 
 ## Risks, open questions, out-of-scope
 

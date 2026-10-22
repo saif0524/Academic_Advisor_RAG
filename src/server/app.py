@@ -1,4 +1,4 @@
-"""FastAPI app factory + lifespan for the advisor HTTP API (proposed FC-new-rest-api).
+"""FastAPI app factory + lifespan for the advisor HTTP API (FC37).
 
 Thin adapter over the agent/database/core zones (`server → {agent, database,
 core}`); nothing in `agent`/`database`/`core` may import this package.
@@ -75,8 +75,7 @@ def create_app(settings: Optional[ServerSettings] = None) -> FastAPI:
         description=(
             "HTTP surface for the Academic AI Advisor: deterministic planning/audit "
             "engine (FC2, FC24–FC26, FC29–FC32), RAG course/degree search (FC8–FC12, FC15/FC18), "
-            "and the confirm-first conversational assistant (FC22–FC24, FC27–FC28). "
-            "Scaffold state (proposed FC-new-rest-api): unwired endpoints return 501 'not_wired'."
+            "and the confirm-first conversational assistant (FC22–FC24, FC27–FC28)."
         ),
         lifespan=lifespan,
         openapi_tags=_API_TAGS,

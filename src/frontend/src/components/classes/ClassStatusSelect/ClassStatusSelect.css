@@ -1,0 +1,39 @@
+/* Per-class status dropdown (FC21). */
+.class-status-select {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.class-status-select-field {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.class-status-select-field--in_progress { background: var(--color-info-soft); color: var(--color-info); }
+.class-status-select-field--taken,
+.class-status-select-field--passed { background: var(--color-success-soft); color: var(--color-success); }
+.class-status-select-field--failed { background: var(--color-danger-soft); color: var(--color-danger); }
+
+.class-status-select-field:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.class-status-select-field:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.class-status-select-error {
+  font-size: 0.75rem;
+  color: var(--color-danger);
+}

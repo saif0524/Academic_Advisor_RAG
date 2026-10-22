@@ -1,0 +1,40 @@
+{
+  "type": "CertificateRequirement",
+  "certificate_id": "CERT-AI",
+  "title": "Certificate in the Fundamentals of Artificial Intelligence",
+  "total_credits_required": 12,
+  "minimum_gpa_required": 3.0,
+  "awarded_concurrently": true,
+  "description": "The Certificate in the Fundamentals of Artificial Intelligence provides students with a foundational understanding of the mathematical and algorithmic properties of methods used in artificial intelligence, machine learning, computer vision, and neural networks.",
+  "admission_criteria": [
+    "The certificate is open to all degree-seeking students.",
+    "Students who are not part of an engineering professional program should contact a CSE advisor for permission."
+  ],
+  "completion_requirements": [
+    "Students must complete 12 credit hours of required coursework listed below.",
+    "A combined GPA of 3.0 or better must be earned across all courses used to satisfy the certificate requirements.",
+    "The certificate is awarded concurrently with an undergraduate degree."
+  ],
+  "courses": [
+    {
+      "course_code": "CSE 4308",
+      "title": "ARTIFICIAL INTELLIGENCE",
+      "credit_hours": 3
+    },
+    {
+      "course_code": "CSE 4309",
+      "title": "FUNDAMENTALS OF MACHINE LEARNING",
+      "credit_hours": 3
+    },
+    {
+      "course_code": "CSE 4310",
+      "title": "FUNDAMENTALS OF COMPUTER VISION",
+      "credit_hours": 3
+    },
+    {
+      "course_code": "CSE 4311",
+      "title": "NEURAL NETWORKS AND DEEP LEARNING",
+      "credit_hours": 3
+    }
+  ]
+}

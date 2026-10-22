@@ -14,7 +14,6 @@ from database.ingest.degree_requirements_loader import (
     derive_courses_from_requirements,
     load_degree_requirements,
 )
-from core.entities.degree import DegreeRequirement
 from core.entities.course import Course
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -22,8 +21,8 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 # ------------------------------------------------------- course corpus (FC35)
 
-def test_course_desc_loader_reads_all_75_seed_lines():
-    """FC33/FC35: the 75-line course-desc.jsonl corpus loads losslessly."""
+def test_course_desc_loader_reads_all_75_seed_courses():
+    """FC33/FC35: the 75-course course-desc.json corpus loads losslessly."""
     courses = load_course_desc(DATA_DIR)
     assert len(courses) == 75
     assert all(isinstance(c, Course) for c in courses)
@@ -49,8 +48,8 @@ def test_course_to_document_chunk_has_title_and_description():
 # ------------------------------------------- degree requirements (FC15/FC18)
 
 @pytest.mark.parametrize("degree_id,total,max_credits", [("BS-CS", 121, 18), ("BS-SE", 120, 18)])
-def test_degree_loader_parses_frontmatter_totals(degree_id, total, max_credits):
-    """FC18: YAML frontmatter totals parse exactly (no rounding, no invention)."""
+def test_degree_loader_parses_header_totals(degree_id, total, max_credits):
+    """FC18: JSON header totals parse exactly (no rounding, no invention)."""
     degrees = {d.degree_id: d for d in load_degree_requirements(DATA_DIR)}
     deg = degrees[degree_id]
     assert deg.total_credits_required == total
@@ -71,7 +70,7 @@ def test_degree_loader_bs_cs_core_contains_requirement_rows():
 
 
 def test_requirement_courses_missing_from_corpus_keep_full_code_ids():
-    """Grounded normalization: CSE 2320/CSE 2381 are NOT in course-desc.jsonl,
+    """Grounded normalization: CSE 2320/CSE 2381 are NOT in course-desc.json,
     so they keep their full code as identity — no silent invention of a
     4-digit id the catalog never had."""
     degrees = {d.degree_id: d for d in load_degree_requirements(DATA_DIR)}
@@ -84,7 +83,7 @@ def test_requirement_courses_missing_from_corpus_keep_full_code_ids():
 def test_degree_loader_blocks_carry_credits_and_option_groups():
     """FC18: select-one requirement rows keep their option-group linkage.
 
-    Creative Arts (BS-CS) has 8 options in the md — all must share a group.
+    Creative Arts (BS-CS) has 8 options in the JSON — all must share a group.
     """
     degrees = {d.degree_id: d for d in load_degree_requirements(DATA_DIR)}
     blocks = {b.name: b for d in degrees.values() for b in d.blocks}
@@ -126,10 +125,10 @@ def test_catalog_documents_cover_general_core_and_certificate():
     Chroma-side documents for semantic degree/requirement questions (FC22 fuel)."""
     docs = load_catalog_documents(DATA_DIR)
     ids = [doc["id"] for doc in docs]
-    assert "catalog:AICertification.md" in ids
-    assert "catalog:general-course.md" in ids
-    assert "catalog:CS-requirements-BCS.md" in ids
-    assert "catalog:SE-requirements-BSE.md" in ids
+    assert "catalog:AICertification" in ids
+    assert "catalog:general-core" in ids
+    assert "catalog:BS-CS" in ids
+    assert "catalog:BS-SE" in ids
     for doc in docs:
         assert doc["text"].strip(), "empty catalog chunk would be fabricated filler"
         assert "kind" in doc["metadata"] and "source" in doc["metadata"]

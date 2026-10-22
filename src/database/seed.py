@@ -60,7 +60,7 @@ def seed_sqlite(sql_manager: SQLDatabaseManager, data_dir: Path = DATA_DIR) -> N
 
     # degrees + requirement rows (blocks, bucket rules)
     for degree in degrees:
-        sql_manager.upsert_degree(degree, source_file=f"{degree.degree_id}.md")
+        sql_manager.upsert_degree(degree, source_file=f"degrees/{degree.degree_id}.json")
 
     # mock sections (labeled demo data; validated against the course catalog)
     known_ids = corpus_ids | {c.course_id for c in derived}
@@ -146,8 +146,8 @@ def run(
     default here; the server lifespan passes its configured mode)."""
     import os
 
-    sql_path = sql_path or os.getenv("ADVISOR_SQLITE_PATH", "var/advisor.db")
-    chroma_path = chroma_path or os.getenv("ADVISOR_CHROMA_PATH", "var/chroma")
+    sql_path = sql_path or os.getenv("ADVISOR_SQLITE_PATH", ".runtime/advisor.db")
+    chroma_path = chroma_path or os.getenv("ADVISOR_CHROMA_PATH", ".runtime/chroma")
     data_dir = data_dir or Path(os.getenv("ADVISOR_DATA_DIR", DATA_DIR))
 
     sql = SQLDatabaseManager(sql_path)

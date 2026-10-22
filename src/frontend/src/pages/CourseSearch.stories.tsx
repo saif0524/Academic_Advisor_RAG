@@ -3,7 +3,7 @@ import CourseSearch from './CourseSearch';
 import type { CourseDetail, SearchResponse } from '../api/types';
 import { expect, userEvent } from 'storybook/test';
 
-/* Canned seam fixtures — grounded course records (api/catalog) with mock
+/* Canned seam fixtures — grounded course records with mock
    engine verdicts (API-layer, never computed client-side). */
 const RESPONSE_FIXTURE: SearchResponse = {
   answer: {

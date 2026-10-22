@@ -3,6 +3,7 @@ import ProgressBar from '../../shared/ProgressBar/ProgressBar';
 import AddCourseSearch from '../AddCourseSearch/AddCourseSearch';
 import PlanCheckBanner from '../PlanCheckBanner/PlanCheckBanner';
 import PlannedCourseRow from '../PlannedCourseRow/PlannedCourseRow';
+import type { ClassStatus, ClassStatusMap } from '../../../api/classes';
 import type { CourseSuggestion, PlanReview, SemesterHydrated, SemesterStatus } from '../../../api/types';
 import './SemesterDetail.css';
 
@@ -15,11 +16,14 @@ const STATUS_LABELS: Record<SemesterStatus, string> = {
 
 interface SemesterDetailProps {
   semester: SemesterHydrated | null;
-  /** Per-semester credit cap (mock value from the api layer, FC32). */
+  /** Per-semester credit cap (FC32). */
   creditCap: number;
   /** Semester-scoped engine verdicts (FC29/FC32 display fields). */
   check?: PlanReview | null;
   onRemoveCourse?: (courseId: string) => void;
+  /** FC21 profile statuses + saver → per-row status select. */
+  classStatuses?: ClassStatusMap;
+  onStatusChange?: (courseId: string, next: ClassStatus) => Promise<unknown> | void;
   searchTerm?: string;
   onSearchChange?: (next: string) => void;
   candidates?: CourseSuggestion[] | null;
@@ -47,6 +51,8 @@ export default function SemesterDetail({
   creditCap,
   check = null,
   onRemoveCourse,
+  classStatuses = {},
+  onStatusChange,
   searchTerm = '',
   onSearchChange,
   candidates = null,
@@ -130,6 +136,8 @@ export default function SemesterDetail({
                   key={course.id}
                   course={course}
                   warning={course.warning ?? null}
+                  status={classStatuses[course.id]}
+                  onStatusChange={onStatusChange}
                   onRemove={status === 'in-progress' ? undefined : onRemoveCourse}
                 />
               ))}

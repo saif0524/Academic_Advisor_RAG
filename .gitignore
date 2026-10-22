@@ -1,16 +1,12 @@
 .env
-*.env
 !.env.example
 .idea/
 *.log
 node_modules/
-models.json
 .venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
 # Runtime stores (rebuilt from data/ by database.seed on startup)
-var/
-*.db
-*.db-shm
-*.db-wal
+.runtime/

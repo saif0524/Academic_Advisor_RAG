@@ -17,7 +17,7 @@ class StudentIdentity(BaseModel):
 
 
 class StudentProfile(BaseModel):
-    """Profile view. Optional fields are None until SQLite is wired (honest data)."""
+    """Profile view. Optional fields are None when there's no data on record."""
 
     student_id: str
     name: Optional[str] = None

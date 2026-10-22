@@ -181,6 +181,31 @@ export default function PlanGenerator({
         ) : null}
         {data ? (
           <>
+            {plan ? (
+              <>
+                {activateError ? (
+                  <p className="plan-generator-alert" role="alert">{activateError}</p>
+                ) : null}
+                <PlanRoadmap
+                  plan={plan}
+                  catalog={data.catalog}
+                  onEditSemester={onOpenPlan ? () => onOpenPlan() : undefined}
+                  note={plan.notes?.length ? plan.notes.join(' · ') : undefined}
+                  actions={
+                    <>
+                      <Button onClick={handleMakeActive} disabled={activating}>
+                        {activating ? 'Activating…' : activated ? 'Active ✓' : 'Make active'}
+                      </Button>
+                      {onOpenPlan ? (
+                        <Button variant="secondary" onClick={onOpenPlan}>
+                          Keep editing in timeline →
+                        </Button>
+                      ) : null}
+                    </>
+                  }
+                />
+              </>
+            ) : null}
             <MajorSpecSelector
               options={data.options}
               major={major}
@@ -205,28 +230,6 @@ export default function PlanGenerator({
               <p className="plan-generator-hint" role="status">
                 Choose your major and specialization, then select Generate plan.
               </p>
-            ) : null}
-            {plan ? (
-              <>
-                <PlanRoadmap
-                  plan={plan}
-                  catalog={data.catalog}
-                  note={plan.notes?.length ? plan.notes.join(' · ') : undefined}
-                />
-                {activateError ? (
-                  <p className="plan-generator-alert" role="alert">{activateError}</p>
-                ) : null}
-                <div className="plan-generator-actions">
-                  <Button onClick={handleMakeActive} disabled={activating}>
-                    {activating ? 'Activating…' : activated ? 'Active ✓' : 'Make active'}
-                  </Button>
-                  {onOpenPlan ? (
-                    <Button variant="secondary" onClick={onOpenPlan}>
-                      Keep editing in timeline →
-                    </Button>
-                  ) : null}
-                </div>
-              </>
             ) : null}
           </>
         ) : null}

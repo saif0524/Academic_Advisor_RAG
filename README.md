@@ -5,7 +5,7 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 | Layer | Choice |
 | --- | --- |
 | Frontend | React (built-in state management only) |
-| Agent / LLM | Python + LangChain (`src/main/AI_Assistant.py`) |
+| Agent / LLM | Python + LangChain/LangGraph (`src/agent/`), served by FastAPI (`src/server/`) |
 | Structured data | SQLite — students, sections, enrollments, plans, chat history |
 | Unstructured data | Chroma — course descriptions, catalog text, degree requirements (embeddings) |
 
@@ -15,12 +15,14 @@ RAG-based academic advising platform: course search/discovery, degree exploratio
 - `docs/planning/2026-10-18-functional-requirements.md` — FC1–FC36, single source of truth for scope
 - `docs/planning/2026-10-18-ai-advisor-domain-model.md` — class specs (§1 entities, §2 engine, §3 agent, §4 DB managers, §5 UI)
 - `docs/` — organized as `planning/` (requirements, domain model, dated proposals — new proposals go here), `process/` (git process, implementation log), `wireframes/` (UI wireframes for the frontend screens), `example-chats/` (exported example advising sessions)
-- `data/course-desc.jsonl` — seed RAG corpus (75 lines of `{"id", "title", "description"}`)
+- `data/course-desc.json` — seed RAG corpus (75 `{"id", "title", "description"}` objects)
 - `data/cse_undergrad_courses.pdf` — CSE undergraduate degree requirements
-- `src/agent/` — Python LangChain agent/LLM zone (per `docs/planning/2026-10-19-src-monorepo-structure.md`); legacy CLI entry in `src/main/`
-- `src/server/` — FastAPI HTTP transport scaffold (`FC-new-rest-api` proposed) — thin adapter over agent/database/core
-- `src/main/` — legacy backend entry point (`AI_Assistant_New.py`; `.java` leftover ignored)
-- `docker-compose.yml`, `Dockerfile`, `.dockerignore`, `src/frontend/Dockerfile` — containerized demo deployment (FC38): api + web via `docker compose up`
+- `src/core/` — pure entities + the deterministic engine (validator FC29–FC32, progress FC19, plan generator FC2/FC25/FC26)
+- `src/database/` — `SQLDatabaseManager` (all SQLite queries in one file) + Chroma manager + seed loaders
+- `src/agent/` — LangGraph advisor graph (`llm/`) + its tools (`tools/`: lookups → engine tools → FC23 actions)
+- `src/server/` — FastAPI HTTP layer (FC37): routers → services → schemas
+- `src/frontend/` — React + TypeScript UI with Storybook
+- `docker/` (`docker-compose.yml`, `Dockerfile`, `Dockerfile.dockerignore`) + `src/frontend/Dockerfile` — containerized demo deployment (FC38): api + web via `docker compose up`
 - `.pi/` — project-level pi configuration (see below)
 
 ## Documentation map
@@ -58,18 +60,18 @@ curl -fsSL https://pi.dev/install.sh | sh
 pi --version
 ```
 
-This repo also pins pi as a dev dependency (`package.json` → `@earendil-works/pi-coding-agent`); run `npm install` in the repo root to get it locally.
+This repo also pins pi as a dev dependency (`package.json` → `@earendil-works/pi-coding-agent`); run `npm install` in `.pi/` to get it locally.
 
 ### 3. Configure model access
 
 The repo uses an Ollama Cloud endpoint via a custom provider. Copy the committed template and fill in your key:
 
 ```bash
-cp models.json.example models.json
+cp .pi/models.json.example ~/.pi/agent/models.json
 export OLLAMA_API_KEY="your-key"
 ```
 
-- `models.json` is **gitignored** — never commit real keys. Use `$OLLAMA_API_KEY` env interpolation in the file (as the example does).
+- pi reads `models.json` from `~/.pi/agent/` (not the repo); a local `.pi/models.json` is **gitignored** — never commit real keys. Use `$OLLAMA_API_KEY` env interpolation in the file (as the example does).
 - `.pi/settings.json` sets the project default model/provider; switch at runtime with `/model` or `/login`.
 
 ### 4. Start pi in the repo
@@ -83,17 +85,15 @@ On first start pi asks you to **trust the project** — this is what enables the
 
 Useful daily commands: `/model`, `/login`, `/settings`, `/resume`, `/continue` (CLI: `pi --continue`), and `/reload` (see below).
 
-### 4. Run the advisor API scaffold (optional)
+### 4. Run the advisor API (optional)
 
-The FastAPI HTTP layer scaffold lives in `src/server/` (`docs/planning/2026-10-19-src-monorepo-structure.md` §server):
+The FastAPI HTTP layer lives in `src/server/`:
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 PYTHONPATH=src .venv/bin/uvicorn server.app:app --reload   # http://127.0.0.1:8000/docs
-.venv/bin/pytest                                                 # smoke tests (tests/server)
+.venv/bin/pytest                                                 # all backend tests
 ```
-
-Endpoints are 501 `not_wired` stubs until the `core`/`database`/`agent` zones are built.
 
 ### 5. Run the whole stack with Docker (FC38)
 
@@ -101,7 +101,7 @@ Builds and starts both services with one command — no local Python/Node setup 
 
 ```bash
 cp .env.example .env          # fill in OLLAMA_API_KEY (gitignored)
-docker compose up --build    # or: docker-compose up --build
+docker compose --env-file .env -f docker/docker-compose.yml up --build
 ```
 
 | Service | URL | Notes |
@@ -110,9 +110,9 @@ docker compose up --build    # or: docker-compose up --build
 | web (React + nginx) | http://localhost:3000 | Static production bundle; calls the api at `http://localhost:8000` |
 
 - **LLM access stays external:** the api container reaches the **host** machine's Ollama at `http://host.docker.internal:11434` (env `ADVISOR_LLM_BASE_URL`, model `ADVISOR_LLM_MODEL`, default `glm-5.3-flash:cloud`, key from `.env` `OLLAMA_API_KEY`). Fully offline demo: set `ADVISOR_LLM_PROVIDER=stub` in `.env`.
-- **Persistence:** seed-owned tables reload fresh each `up` (FC33); user-owned chat/plan data persists in the `advisor-var` volume across `down`/`up` (FC34). Wipe state with `docker compose down -v`.
+- **Persistence:** seed-owned tables reload fresh each `up` (FC33); user-owned chat/plan data persists in the `advisor-runtime` volume across `down`/`up` (FC34). Wipe state with `docker compose --env-file .env -f docker/docker-compose.yml down -v`.
 - **First start:** the api downloads the ONNX MiniLM embedding model once (~90 MB, cached in the `advisor-model-cache` volume). With no network it degrades to deterministic hash embeddings (weaker semantics, still grounded).
-- Override the browser-side api URL with `VITE_API_BASE_URL` in `.env` + `docker compose build web` if you move the api off `localhost:8000`.
+- Override the browser-side api URL with `VITE_API_BASE_URL` in `.env` + `docker compose --env-file .env -f docker/docker-compose.yml build web` if you move the api off `localhost:8000`.
 
 ## Using pi in this repo
 
@@ -160,9 +160,8 @@ Per-phase model defaults live in the committed `.pi/pipeline.json`; override per
 ## Data & assumptions
 
 - Courses, sections, prerequisites, credit limits, and degree requirements exist **only** in SQLite and Chroma — the assistant never invents them. Lookup failure is relayed, not papered over.
-- Seed corpus: `data/course-desc.jsonl` (Chroma ingest); degree requirements parsed from `data/cse_undergrad_courses.pdf`.
+- Seed corpus: `data/course-desc.json` (Chroma ingest); degree requirements parsed from `data/cse_undergrad_courses.pdf`.
 - Auth is out of scope (FC36): pre-authenticated student sessions are assumed.
-- `AI_Assistant 5.java` in `src/main/` is an early-design leftover — ignore it.
 
 ## References
 
