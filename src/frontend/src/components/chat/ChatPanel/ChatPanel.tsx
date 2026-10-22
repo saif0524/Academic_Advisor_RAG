@@ -19,7 +19,11 @@ export interface ChatSeams {
   loadConversations?: () => Promise<Conversation[]>;
   createConversation?: () => Promise<string>;
   loadMessages?: (conversationId: string) => Promise<ChatMessage[]>;
-  sendMessage?: (text: string, conversationId?: string) => Promise<ChatMessage>;
+  sendMessage?: (
+    text: string,
+    conversationId?: string,
+    onProgress?: (partial: ChatMessage) => void,
+  ) => Promise<ChatMessage>;
   respondToProposal?: (
     messageId: string, decision: ProposalDecision, conversationId?: string,
   ) => Promise<{ messageId: string; decision: ProposalDecision; reply: string }>;
@@ -144,8 +148,20 @@ export default function ChatPanel({
       messages: [...(current.messages ?? []), { id: `user-${Date.now()}`, role: 'user', text }],
     }));
     try {
-      const reply = await sendMessage(text, activeId || undefined);
-      setThread((current) => ({ ...current, messages: [...(current.messages ?? []), reply] }));
+      // FC39: the advisor bubble fills in live (checks, then text); the final
+      // reply replaces it by id.
+      const upsert = (message: ChatMessage) =>
+        setThread((current) => {
+          const list = current.messages ?? [];
+          return {
+            ...current,
+            messages: list.some((m) => m.id === message.id)
+              ? list.map((m) => (m.id === message.id ? message : m))
+              : [...list, message],
+          };
+        });
+      const reply = await sendMessage(text, activeId || undefined, upsert);
+      upsert(reply);
       if (reply.action) {
         setProposal({
           messageId: reply.id,

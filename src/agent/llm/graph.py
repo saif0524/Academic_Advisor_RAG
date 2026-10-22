@@ -19,6 +19,33 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
 
+def emit(event: dict) -> None:
+    """FC39: push a progress event to the stream consumer (custom stream
+    mode). A no-op for plain `invoke` runs — the non-streaming path is
+    unchanged."""
+    try:
+        from langgraph.config import get_stream_writer
+
+        get_stream_writer()(event)
+    except Exception:  # not inside a streaming graph run
+        pass
+
+
+def emit_step(description: str) -> None:
+    """FC39: a non-validator data step (SQLite / Chroma lookup) so every route
+    shows live progress — lookups are not constraint checks."""
+    emit({"type": "step", "description": description})
+
+
+def emit_checks(checks: list, course: Optional[str] = None) -> None:
+    """FC39: stream each deterministic validator check (FC29–FC32 payloads)
+    exactly as the engine produced them."""
+    for check in checks or []:
+        emit({"type": "check", "course": course, "check_id": check.get("check_id"),
+              "description": check.get("description"), "passed": check.get("passed"),
+              "reason": check.get("reason")})
+
+
 class AdvisorState(TypedDict, total=False):
     """One advising turn; nodes return partial updates (never mutate)."""
 
@@ -119,10 +146,9 @@ def build_advisor_graph(toolkit, classifier, summarizer):
                 }
                 for s in toolkit.sections(course.course_id)
             ]
-        if not mentions and params.get("topic") == "plan":
-            # FC22/FC27: the ACTIVE plan (FC6), SQLite only (FC33); None → honest "no plan".
-            payload["plan"] = toolkit.plan_context(state["student_id"])
-        elif not mentions:
+        if not mentions:
+            # Enrollment records always ride along (FC21/FC22) — "my current
+            # classes" must never be answered from the plan alone.
             student = toolkit.student_profile(state["student_id"])
             if student is not None:
                 payload["profile"] = {
@@ -135,15 +161,24 @@ def build_advisor_graph(toolkit, classifier, summarizer):
                      "grade": r.grade, "semester_taken": r.semester_taken}
                     for r in toolkit.student_classes(state["student_id"])
                 ]
+                emit_step(f"SQLite: read your enrollment records ({len(payload['classes'])} classes)")
+            if params.get("topic") == "plan":
+                # FC22/FC27: the ACTIVE plan (FC6), SQLite only (FC33); None → honest "no plan".
+                payload["plan"] = toolkit.plan_context(state["student_id"])
+                emit_step("SQLite: read your active degree plan")
+        else:
+            emit_step(f"SQLite: looked up course {mentions[0]}")
         return {"tool_payload": payload}
 
     def semantic_tools_node(state: AdvisorState) -> dict:
         """Chroma facts (FC9/FC22) — course corpus first, catalog text on a miss."""
         params = state.get("params") or {}
         query = params.get("query") or state["user_input"]
+        emit_step("Chroma: semantic search over course descriptions")
         payload: Dict = {"query": query, "hits": toolkit.semantic_courses(query, k=6),
                          "catalog_hits": []}
         if not payload["hits"]:
+            emit_step("Chroma: no course matches — searching catalog text")
             payload["catalog_hits"] = toolkit.catalog_search(query, k=3)
         return {"tool_payload": payload}
 
@@ -156,6 +191,8 @@ def build_advisor_graph(toolkit, classifier, summarizer):
                    for cid in sem.get("courses", [])}
         result = toolkit.recommend_candidates(
             state["student_id"], params.get("query"), k=6, exclude_ids=sorted(planned))
+        for cand in result.get("candidates", []):
+            emit_checks(cand.get("checks"), cand.get("course_id"))
         return {"tool_payload": result}
 
     def audit_tools_node(state: AdvisorState) -> dict:
@@ -164,6 +201,8 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         mentions = params.get("course_mentions") or []
         if mentions:
             audit = toolkit.course_audit(state["student_id"], mentions[0])
+            if audit is not None:
+                emit_checks(audit["result"].get("checks"), audit["course"]["course_id"])
             if audit is None:
                 return {"tool_payload": {"course": None, "result": None,
                                          "progress": None, "misses": mentions}}
@@ -178,7 +217,11 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         (DegreePlanGenerator); this node only assembles inputs and persists
         the built plan. It can never bypass the validator or invent courses."""
         params = dict(state.get("params") or {})
-        return {"tool_payload": toolkit.generate_plan(state["student_id"], params)}
+        payload = toolkit.generate_plan(state["student_id"], params)
+        emit({"type": "check", "course": None, "check_id": "plan_generation",
+              "description": "DegreePlanGenerator (FC2/FC25) built the plan",
+              "passed": payload.get("refusal") is None, "reason": payload.get("refusal")})
+        return {"tool_payload": payload}
 
     def propose_action_node(state: AdvisorState) -> dict:
         """FC23 — deterministic prechecks, then persist the proposal. The
@@ -225,11 +268,16 @@ def build_advisor_graph(toolkit, classifier, summarizer):
 
     def summarize_node(state: AdvisorState) -> dict:
         """§3 summarize — words the payload; never invents (grounded rule)."""
-        reply = summarizer.summarize(
-            state.get("intent") or "chitchat",
-            state.get("tool_payload") or {},
-            state.get("user_input") or "",
-        )
+        args = (state.get("intent") or "chitchat", state.get("tool_payload") or {},
+                state.get("user_input") or "")
+        if hasattr(summarizer, "stream"):  # FC39: stream the wording as it is produced
+            parts: List[str] = []
+            for chunk in summarizer.stream(*args):
+                parts.append(chunk)
+                emit({"type": "token", "text": chunk})
+            reply = "".join(parts)
+        else:
+            reply = summarizer.summarize(*args)
         return {"reply": reply, "messages": [AIMessage(content=reply)]}
 
     # ------------------------------------------------------------ routing

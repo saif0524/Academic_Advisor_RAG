@@ -78,3 +78,19 @@ export const WithDeclinedAction = {
     actionStatus: 'declined' as const,
   },
 };
+/** FC39: deterministic checks streamed in while the answer is still being written. */
+export const AdvisorWithChecks = {
+  args: {
+    message: {
+      id: 'm3',
+      role: 'advisor' as const,
+      text: '',
+      checks: [
+        { kind: 'step' as const, course: null, checkId: '', description: 'SQLite: read your enrollment records (7 classes)', passed: null, reason: null },
+        { kind: 'check' as const, course: '4380', checkId: 'FC29', description: 'Prerequisites met', passed: true, reason: null },
+        { kind: 'check' as const, course: '4380', checkId: 'FC30', description: 'Not already passed', passed: true, reason: null },
+        { kind: 'check' as const, course: '4385', checkId: 'FC29', description: 'Prerequisites met', passed: false, reason: 'Missing CSE 4380' },
+      ],
+    },
+  },
+};

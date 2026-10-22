@@ -58,6 +58,33 @@ class ChatService:
             pending_action=PendingAction(**pending) if pending else None,
         )
 
+    def send_message_stream(self, student_id: str, request: ChatMessageRequest):
+        """FC39: `send_message` as an event generator (check / token / done).
+
+        Session + FC23 decision validation run eagerly (errors stay normal
+        HTTP errors); the stream starts only once they pass."""
+        session_id = self._resolve_session(student_id, request.session_id)
+        self._validate_decision(student_id, session_id, request)
+        self._sql_db_manager.append_chat_message(session_id, student_id, "user", request.message)
+
+        def events():
+            try:
+                for event in self._advisor_agent.process_query_stream(
+                    student_id, request.message, session_id=session_id,
+                    confirmed_action_id=request.confirmed_action_id,
+                    cancelled_action_id=request.cancelled_action_id,
+                ):
+                    if event.get("type") == "done":
+                        reply_text = event.get("reply") or ""
+                        self._sql_db_manager.append_chat_message(
+                            session_id, student_id, "assistant", reply_text)
+                        event["session_id"] = event.get("session_id") or session_id
+                    yield event
+            except Exception as exc:  # mid-stream: HTTP status is already sent
+                yield {"type": "error", "message": str(exc)}
+
+        return events()
+
     def create_session(self, student_id: str) -> ChatHistoryResponse:
         """Start a new, empty conversation (FC27/FC34)."""
         session_id = self._sql_db_manager.create_chat_session(student_id)

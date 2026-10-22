@@ -67,3 +67,43 @@ export async function request<T = unknown>(path: string, options: RequestOptions
   }
   return (await response.json()) as T;
 }
+
+/**
+ * POST and read a newline-delimited-JSON event stream (FC39), calling
+ * `onEvent` for each parsed line as it arrives.
+ * @throws {ApiError} on non-2xx responses (before any event is delivered)
+ */
+export async function streamRequest<E>(
+  path: string,
+  body: unknown,
+  onEvent: (event: E) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok || !response.body) {
+    let errorBody: ErrorEnvelope = {};
+    try {
+      errorBody = (await response.json()) as ErrorEnvelope;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(path, 'POST', response.status, errorBody.error?.code ?? 'error',
+      errorBody.error?.message ?? `HTTP ${response.status}`);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split('\n');
+    buffer = done ? '' : (lines.pop() ?? '');
+    for (const line of lines) if (line.trim()) onEvent(JSON.parse(line) as E);
+    if (done) break;
+  }
+}

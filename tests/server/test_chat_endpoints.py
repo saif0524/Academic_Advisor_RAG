@@ -198,3 +198,30 @@ def test_chat_sessions_list_returns_real_sessions(client):
     results = response.json()["results"]
     assert results, "sessions created by the sends above must list"
     assert all("title" in s and "last_active_at" in s for s in results)
+
+# ------------------------------------------------------------------- FC39
+
+def test_stream_endpoint_emits_ndjson_and_persists(client):
+    import json
+
+    def fake_stream(student_id, user_input, session_id=None, **_):
+        yield {"type": "check", "course": "3330", "check_id": "FC29",
+               "description": "prereqs", "passed": True, "reason": None}
+        yield {"type": "token", "text": "hi"}
+        yield {"type": "done", "reply": "hi", "pending_action": None, "session_id": session_id}
+
+    client._agent.process_query_stream = fake_stream
+    response = client.post("/chat/messages/stream", json={"message": "stream me"})
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/x-ndjson")
+    events = [json.loads(line) for line in response.text.splitlines()]
+    assert [e["type"] for e in events] == ["check", "token", "done"]
+    history = client.get("/chat/messages",
+                         params={"session_id": events[-1]["session_id"]}).json()
+    assert [m["content"] for m in history["messages"][-2:]] == ["stream me", "hi"]
+
+
+def test_stream_unknown_session_is_404_before_streaming(client):
+    response = client.post("/chat/messages/stream",
+                           json={"message": "hi", "session_id": "sess-missing"})
+    assert response.status_code == 404

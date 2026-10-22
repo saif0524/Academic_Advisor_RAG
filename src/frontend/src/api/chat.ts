@@ -13,12 +13,13 @@
  * through an explicit decision request carrying the action id.
  */
 
-import { request } from './client';
+import { request, streamRequest } from './client';
 import type {
   ChatMessage,
   Conversation,
   ProposalDecision,
   ProposalResponse,
+  StreamCheck,
 } from './types';
 
 /** Server shapes (src/server/schemas/chat.py) — mirrors of the Pydantic DTOs. */
@@ -95,24 +96,58 @@ export async function getMessages(conversationId: string): Promise<ChatMessage[]
   return messages;
 }
 
-/** Send a user message; resolves with the advisor turn (FC22; FC27/FC34
-    continuity). `conversationId` selects the thread when the drawer is in a
-    restored conversation; omitted → the student's active session. */
-export async function sendMessage(text: string, conversationId?: string): Promise<ChatMessage> {
+/** Streamed turn events (POST /chat/messages/stream, FC39). */
+type StreamEvent =
+  | { type: 'check'; course: string | null; check_id: string; description: string;
+      passed: boolean | null; reason: string | null }
+  | { type: 'step'; description: string }
+  | { type: 'token'; text: string }
+  | { type: 'done'; reply: string; pending_action?: PendingActionDto | null; session_id?: string }
+  | { type: 'error'; message: string };
+
+/** Send a user message over the event stream (FC22, FC39). `onProgress`
+    receives the advisor turn-so-far — deterministic checks as they run, then
+    the answer text as it is written. Resolves with the final advisor turn
+    (FC27/FC34 continuity; `conversationId` omitted → the active session). */
+export async function sendMessage(
+  text: string,
+  conversationId?: string,
+  onProgress?: (partial: ChatMessage) => void,
+): Promise<ChatMessage> {
   const sessionTarget = conversationId ?? activeSessionId ?? undefined;
-  const response = await request<ChatMessageReplyDto>('/chat/messages', {
-    method: 'POST',
-    body: { message: text, session_id: sessionTarget },
-  });
-  if (response.session_id) activeSessionId = response.session_id;
-  return {
-    id: `advisor-${Date.now()}`,
-    role: 'advisor',
-    text: response.reply,
-    action: response.pending_action
-      ? { summary: response.pending_action.description, actionId: response.pending_action.action_id }
-      : undefined,
-  };
+  const id = `advisor-${Date.now()}`;
+  const checks: StreamCheck[] = [];
+  let answer = '';
+  let final: ChatMessage | null = null;
+  await streamRequest<StreamEvent>(
+    '/chat/messages/stream',
+    { message: text, session_id: sessionTarget },
+    (event) => {
+      if (event.type === 'check') {
+        checks.push({ kind: 'check', course: event.course, checkId: event.check_id,
+          description: event.description, passed: event.passed, reason: event.reason });
+      } else if (event.type === 'step') {
+        checks.push({ kind: 'step', course: null, checkId: '', description: event.description,
+          passed: null, reason: null });
+      } else if (event.type === 'token') {
+        answer += event.text;
+      } else if (event.type === 'error') {
+        throw new Error(event.message);
+      } else {
+        if (event.session_id) activeSessionId = event.session_id;
+        final = {
+          id, role: 'advisor', text: event.reply, checks: [...checks],
+          action: event.pending_action
+            ? { summary: event.pending_action.description, actionId: event.pending_action.action_id }
+            : undefined,
+        };
+        return;
+      }
+      onProgress?.({ id, role: 'advisor', text: answer, checks: [...checks] });
+    },
+  );
+  if (!final) throw new Error('The advisor stream ended before a reply arrived.');
+  return final;
 }
 
 /** FC23 gate — the deterministic side "acts" only on an explicit decision.

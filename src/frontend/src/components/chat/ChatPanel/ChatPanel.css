@@ -60,3 +60,16 @@
   color: var(--color-text-muted);
   text-align: center;
 }
+/* Header actions: icon + label on one line, compact so they fit the drawer. */
+.chat-panel-header-actions .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
+.chat-panel-header-actions .button--icon-only {
+  padding: 6px;
+}

@@ -49,3 +49,19 @@
   white-space: normal;
   line-height: 1.5;
 }
+
+/* FC39 streamed deterministic checks. */
+.chat-message-checks {
+  margin-bottom: var(--space-1);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.chat-message-checks ul {
+  margin: 4px 0 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.chat-message-check--pass span { color: var(--color-success, #1a7f37); }
+.chat-message-check--fail span { color: var(--color-danger, #c62828); }

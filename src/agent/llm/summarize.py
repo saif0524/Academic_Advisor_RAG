@@ -21,6 +21,29 @@ class LLMSummarizer:
         self._system = SUMMARIZE_SYSTEM
         self._log = logging.getLogger("agent.summarize")
 
+    def stream(self, intent: str, payload: dict, user_input: str = ""):
+        """FC39: token stream of the same grounded wording; any model failure
+        degrades to the deterministic rendering (as `summarize` does)."""
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        body = json.dumps({"intent": intent, "payload": payload, "user_question": user_input})
+        sent = False
+        try:
+            for chunk in self._model.stream([
+                SystemMessage(content=self._system), HumanMessage(content=body),
+            ]):
+                content = chunk.content if isinstance(chunk.content, str) else ""
+                if content:
+                    sent = True
+                    yield content
+        except Exception as exc:
+            self._log.warning("LLM stream unavailable (%s) — deterministic rendering", exc)
+            if not sent:
+                yield from StubSummarizer().stream(intent, payload, user_input)
+                return
+        if not sent:
+            yield "I couldn't generate a grounded answer — try again."
+
     def summarize(self, intent: str, payload: dict, user_input: str = "") -> str:
         from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -46,6 +69,12 @@ class LLMSummarizer:
 
 class StubSummarizer:
     """Deterministic, payload-grounded rendering (offline runs, tests, demos)."""
+
+    def stream(self, intent: str, payload: dict, user_input: str = ""):
+        """FC39: the rendered answer in word-sized chunks (joins to `summarize`)."""
+        import re
+
+        yield from (c for c in re.findall(r"\S+\s*", self.summarize(intent, payload, user_input)))
 
     def summarize(self, intent: str, payload: dict, user_input: str = "") -> str:
         handler = getattr(self, f"_render_{intent}", None)
