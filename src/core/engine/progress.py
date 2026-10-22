@@ -1,8 +1,7 @@
-"""§2 deterministic degree-progress counting (FC19, FC24).
+"""Deterministic degree-progress counting (§2; FC19, FC24).
 
-Pure, offline, moved verbatim-in-spirit from the student service during the
-agent build so both the HTTP layer and the agent tools count against the
-same rules (the service delegates; no drift).
+The single implementation used by both the HTTP student service and the
+agent tools, so the dashboard and the assistant always agree.
 """
 from __future__ import annotations
 

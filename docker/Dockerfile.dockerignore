@@ -1,0 +1,17 @@
+# Root build context (api image): ship only src/ + data/ + requirements.txt.
+# Never bake secrets or dev artifacts into the image (FC36, FC38).
+.git
+.pi
+.idea
+.venv
+.pytest_cache
+**/__pycache__
+**/*.pyc
+node_modules
+src/frontend
+tests
+docs
+docker
+.runtime
+*.log
+.env

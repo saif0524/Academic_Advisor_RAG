@@ -1,9 +1,7 @@
 """FastAPI data-endpoint wiring tests — seeded managers via the real DI.
 
 Boots the app against tmp SQLite/Chroma paths (env-configured), letting the
-lifespan seed from data/ exactly like production. Covers every endpoint that
-is fully data-backed after the database build; the still-unwired surface
-(core engine / LLM) must keep answering 501 `not_wired`.
+lifespan seed from data/ exactly like production. Covers the data-backed endpoints.
 """
 import os
 from pathlib import Path
@@ -204,17 +202,16 @@ def test_chat_history_wired_for_new_and_unknown_sessions(client):
     body = fresh.json()
     assert body["student_id"] == "STU-2026-9941" and body["messages"] == []
 
-    from database.sql.sqlite_manager import SQLDatabaseManager
 
     session_id = body["session_id"]
     assert client.get("/chat/messages", params={"session_id": session_id}).status_code == 200
     assert client.get("/chat/messages", params={"session_id": "nope"}).status_code == 404
 
 
-# ----------------------------------------------------- wired agent surface (FC22)
+# ------------------------------------------------------------ agent (FC22)
 
 def test_chat_send_message_wired_via_agent(client):
-    """FC22 wired: the stub agent answers with a clarifying question for an
+    """FC22: the stub agent answers with a clarifying question for an
     under-specified request (FC28) — honest, non-empty reply."""
     response = client.post("/chat/messages", json={"message": "What if I switch to AI?"})
     assert response.status_code == 200
@@ -237,11 +234,11 @@ def test_plan_writes_engine_backed_and_reads_wired(client):
     compare = client.post("/plans/compare", json={
         "existing_plan_id": created.json()["plan_id"], "target_major": OTHER_MAJOR,
         "target_concentration": "General"})
-    assert compare.status_code == 200  # FC26 wired via the engine
+    assert compare.status_code == 200  # FC26 via the engine
 
 
 def test_audits_wired_via_core_validator(client):
-    """FC24/FC29–FC32 audits run in core — wired and deterministic."""
+    """FC24/FC29–FC32 audits run in core — deterministic."""
     course = client.post("/audits/course-check", json={"course_id": "3330"})
     assert course.status_code == 200
     assert course.json()["eligible"] is True

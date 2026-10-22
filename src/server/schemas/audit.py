@@ -25,7 +25,7 @@ class ConstraintCheck(BaseModel):
     check_id: str = Field(examples=["FC29"], description="Owning FC id (FC29–FC32).")
     description: str
     passed: Optional[bool] = Field(
-        default=None, description="None when the check needs data that isn't wired yet."
+        default=None, description="None when the check has no data to decide on."
     )
     reason: Optional[str] = None
 

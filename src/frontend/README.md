@@ -29,7 +29,7 @@ src/
 ├── api/
 │   ├── client.ts             # single HTTP wrapper (components never call fetch)
 │   ├── types.ts              # shared domain DTOs (mirrors future FastAPI schemas)
-│   ├── catalog.ts            # fixture data grounded in data/course-desc.jsonl
+│   ├── catalog.ts            # fixture data grounded in data/course-desc.json
 │   ├── plans.ts              # MOCK: FC1–FC3, FC7, FC19, FC25–FC26 (plan routes 501 today)
 │   ├── courses.ts            # MOCK: FC8–FC12 search/detail + FC29–FC32 verdict displays
 │   ├── chat.ts               # MOCK: FC22–24, FC27 chat (canned deterministic replies)
@@ -67,7 +67,7 @@ src/
 - Built-in state only (hooks + Context). No Redux/Zustand/React Query.
 - All HTTP goes through `api/client.ts` via `request<T>()`; until the FastAPI
   endpoints are wired, the `api/*.ts` services are labeled MOCKs (deterministic
-  fixtures, real seed courses from `data/course-desc.jsonl`) — swap bodies for
+  fixtures, real seed courses from `data/course-desc.json`) — swap bodies for
   `request()` calls when the server lands.
 - Engine verdicts (prereqs, conflicts, credit caps — FC29–FC32) are always
   display fields supplied by the api layer; the frontend never computes

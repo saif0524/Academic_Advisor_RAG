@@ -1,7 +1,6 @@
 """Audit routes (FC24) — deterministic checks FC29–FC32 only."""
 from fastapi import APIRouter, Depends
 
-from server.controllers import audit as audit_controller
 from server.dependencies import get_audit_service, get_current_student
 from server.schemas.audit import (
     CourseAuditRequest,
@@ -15,11 +14,7 @@ from server.services.audit import AuditService
 router = APIRouter(prefix="/audits", tags=["audits"])
 
 
-@router.post(
-    "/course-check",
-    response_model=CourseAuditResponse,
-    operation_id="audit_course_eligibility",
-)
+@router.post("/course-check")
 def course_check(
     payload: CourseAuditRequest,
     student: StudentIdentity = Depends(get_current_student),
@@ -31,14 +26,10 @@ def course_check(
     already-passed (FC30), section schedule conflict when given (FC31),
     credit caps (FC32). Produced by the deterministic validator, never the LLM.
     """
-    return audit_controller.course_check(student, payload, service)
+    return service.course_check(student.student_id, payload)
 
 
-@router.post(
-    "/degree-check",
-    response_model=DegreeAuditResponse,
-    operation_id="audit_degree_progress",
-)
+@router.post("/degree-check")
 def degree_check(
     payload: DegreeAuditRequest,
     student: StudentIdentity = Depends(get_current_student),
@@ -46,4 +37,4 @@ def degree_check(
 ) -> DegreeAuditResponse:
     """Audit status toward degree requirements (FC24) — defaults to the
     selected degree (FC17), same numbers FC19 tracks. Deterministic only."""
-    return audit_controller.degree_check(student, payload, service)
+    return service.degree_check(student.student_id, payload)

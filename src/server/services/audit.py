@@ -1,11 +1,8 @@
 """Audit service (FC24) — deterministic checks only (FC29–FC32).
 
-Both endpoints answer by running the core engine's
-`CourseRecommendationValidator` / progress counting against SQLite state —
-the LLM never decides eligibility. WIRED: the validator zone exists (built
-alongside the agent)."""
-from core.entities.course import Course
-from core.engine.validator import CourseRecommendationValidator
+Uses the same `EngineTools` as the chat agent, so the HTTP audit and the
+assistant always give the same verdict. The LLM never decides eligibility."""
+from agent.tools.engine_tools import EngineTools
 from database.errors import RecordNotFoundError
 from server.schemas.audit import (
     ConstraintCheck,
@@ -28,9 +25,7 @@ class AuditService:
         """Can the student take this course? (FC24) → validator checks FC29
         (prereqs), FC30 (not already passed), FC31 (section conflict when the
         section is given), FC32 (credit caps)."""
-        from agent.tools.plan_tools import PlanTools
-
-        plan = PlanTools(self._sql_db_manager)
+        plan = EngineTools(self._sql_db_manager)
         course = plan.find_course(request.course_id)
         if course is None:
             raise RecordNotFoundError(f"Course {request.course_id!r} not found in the catalog")
@@ -50,9 +45,7 @@ class AuditService:
     def degree_check(self, student_id: str, request: DegreeAuditRequest) -> DegreeAuditResponse:
         """Degree-requirements status (FC24 second half) — remaining blocks +
         progress percent from the core counting (FC19)."""
-        from agent.tools.plan_tools import PlanTools
-
-        plan = PlanTools(self._sql_db_manager)
+        plan = EngineTools(self._sql_db_manager)
         audit = plan.degree_audit(student_id, request.degree_id)
         if audit is None:
             if request.degree_id:

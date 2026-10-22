@@ -22,8 +22,8 @@ interface CourseDetailDialogProps {
 
 /**
  * Minimal course-detail dialog (wireframe 04 "Details"; FC11 fields +
- * FC12 section/meeting line). Prereq statuses are mock FC29 verdicts from
- * the api layer; when no prereq records exist the dialog says so explicitly
+ * FC12 section/meeting line). Prereq statuses come from the
+ * student's class records; when no prereq records exist the dialog says so explicitly
  * instead of inventing requirements (grounded-UI rule).
  */
 export default function CourseDetailDialog({ open, detail, onClose, loading = false, error = null }: CourseDetailDialogProps) {

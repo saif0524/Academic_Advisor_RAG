@@ -14,7 +14,7 @@ class StudentClass(BaseModel):
 
     course_id: str
     title: Optional[str] = Field(
-        default=None, description="Resolved from the catalog when wired; None is honest 'unknown'."
+        default=None, description="From the catalog; None when unknown."
     )
     status: ClassStatus = Field(
         default="not_taken", description="Added classes default to not_taken (FC14)."

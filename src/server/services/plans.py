@@ -1,19 +1,18 @@
-"""Degree-plan service (FC1–FC7, FC25–FC26) — fully wired now.
+"""Degree-plan service (FC1–FC7, FC25–FC26).
 
-Every plan CREATION/mutation runs through the deterministic engine in `core`
-(`DegreePlanGenerator` — FC2/FC25/FC26 + FC29–FC32 semantics). This service
-only assembles inputs from the stores (FC33: SQLite owns courses/degrees/
-plans), maps engine output to HTTP schemas, and never asks an LLM to produce
-or modify plans. Plan writes follow the generate → edit → make-active flow
-(agreed in session): new plans start inactive; activation is explicit."""
+Every plan is created, checked, and compared by `DegreePlanGenerator` in
+`core` — never by an LLM. This service loads inputs from SQLite, calls the
+engine, saves the result, and maps it to HTTP schemas.
+
+Flow: generate → edit → make active. New plans start inactive.
+"""
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from core.engine.generator import DegreePlanGenerator, semesters_payload
-from core.entities.course import Course
-from core.entities.degree import DegreePlan, DegreeRequirement, SemesterPlan
+from core.entities.degree import DegreeRequirement, SemesterPlan
 from core.entities.student import Student
 from server.errors import InvalidRequestError, RecordNotFoundError
 from server.schemas.plans import (
@@ -37,8 +36,7 @@ from server.schemas.plans import (
 class PlanService:
     """Wiring: `sql_db_manager` (catalog/degrees/plans, FC33) + core engine."""
 
-    # Concentrations aren't modeled in the degrees seed — the honest default
-    # offering (any requested value is persisted as stored profile text).
+    # Concentrations aren't in the degree data yet, so "General" is the only option offered.
     GENERAL_CONCENTRATION = "General"
 
     def __init__(self, sql_db_manager: Any) -> None:
@@ -121,17 +119,20 @@ class PlanService:
         cap = request.max_credits_per_semester or prefs.get("max_credits_per_semester")
         include_summer = request.include_summer or bool(prefs.get("include_summer"))
 
-        catalog = self._catalog()
+        catalog = self._sql_db_manager.get_catalog()
         result = DegreePlanGenerator.generate_multi_year_plan(
             student, degree, catalog,
             include_summer=include_summer, max_credits_per_sem=cap,
         )
-        result.plan.concentration = (request.concentration or "").strip() or None
-        plan_id = f"plan-{uuid.uuid4().hex[:10]}"
-        result.plan.plan_id = plan_id
-        payload = self._payload(result.plan, catalog, result.notes)
-        self._sql_db_manager.save_degree_plan(result.plan, payload=payload)
-        return self.get_plan(student_id, plan_id)
+        plan = result.plan
+        plan.concentration = (request.concentration or "").strip() or None
+        plan.plan_id = f"plan-{uuid.uuid4().hex[:10]}"
+        self._sql_db_manager.save_degree_plan(plan, payload={
+            "semesters": semesters_payload(plan.semesters, catalog),
+            "includes_summer": plan.includes_summer,
+            "notes": list(result.notes),
+        })
+        return self.get_plan(student_id, plan.plan_id)
 
     def update_plan(
         self, student_id: str, plan_id: str, request: PlanUpdateRequest
@@ -144,13 +145,12 @@ class PlanService:
         row = self._sql_db_manager.get_plan(student_id, plan_id)
         if request.semesters is None and request.includes_summer is None:
             return self._to_detail(row)  # nothing to change (FC3 no-op)
-        catalog = self._catalog()
-        records = self._records(student_id)
+        catalog = self._sql_db_manager.get_catalog()
+        records = self._sql_db_manager.list_student_classes(student_id)
         cap = self._degree_cap(row.get("degree_id"))
 
-        semesters = self._entries_to_semesters(
-            request.semesters if request.semesters is not None else row["semesters"],
-            catalog)
+        semesters = self._to_engine_semesters(
+            request.semesters if request.semesters is not None else row["semesters"])
         includes_summer = (
             request.includes_summer if request.includes_summer is not None
             else bool(row.get("includes_summer")))
@@ -206,7 +206,7 @@ class PlanService:
         row = self._sql_db_manager.get_plan(student_id, existing_plan_id)  # 404 grounded
         degree = self._resolve_degree(target_major)
         student = self._student(student_id)
-        catalog = self._catalog()
+        catalog = self._sql_db_manager.get_catalog()
 
         new_result = DegreePlanGenerator.simulate_major_switch(
             student, degree, catalog)
@@ -234,20 +234,13 @@ class PlanService:
 
     def review_plan(self, student_id: str, request: PlanReviewRequest) -> PlanReviewResponse:
         """Engine verdicts over an unsaved draft (FC29–FC32 display surface)."""
-        records = self._records(student_id)
-        catalog = self._catalog()
+        records = self._sql_db_manager.list_student_classes(student_id)
+        catalog = self._sql_db_manager.get_catalog()
         cap = request.max_credits_per_semester or self._selected_degree_cap(student_id)
-        semesters = self._entries_to_semesters(request.semesters, catalog)
         review = DegreePlanGenerator.review_plan_semesters(
-            semesters, records, catalog, max_credits_per_sem=cap)
+            self._to_engine_semesters(request.semesters), records, catalog, max_credits_per_sem=cap)
         return PlanReviewResponse(
-            status=review.status,
-            issues=review.issues,
-            semester_issues={
-                key: [issue for issue in issues]
-                for key, issues in review.semester_issues.items()
-            },
-        )
+            status=review.status, issues=review.issues, semester_issues=review.semester_issues)
 
     # ------------------------------------------------------------ plumbing
 
@@ -258,21 +251,6 @@ class PlanService:
             return Student(student_id=student_id)
         student.completed_courses = self._sql_db_manager.list_student_classes(student_id)
         return student
-
-    def _records(self, student_id: str):
-        return self._sql_db_manager.list_student_classes(student_id)
-
-    def _catalog(self) -> Dict[str, Course]:
-        """course_id → Course snapshot incl. prerequisite rows (FC29 fuel)."""
-        courses = self._sql_db_manager.list_courses()
-        by_id = {c.course_id: c for c in courses}
-        prereq_rows = self._sql_db_manager.execute_query(
-            "SELECT course_id, required_course_id FROM course_prerequisites WHERE kind = 'prereq'")
-        for row in prereq_rows:
-            course = by_id.get(row["course_id"])
-            if course is not None and row["required_course_id"] not in course.prerequisites:
-                course.prerequisites.append(row["required_course_id"])
-        return by_id
 
     def _resolve_degree(self, major_name: str) -> DegreeRequirement:
         """Degree lookup by major name (case-insensitive); 404 when unknown."""
@@ -287,8 +265,8 @@ class PlanService:
             return None
         try:
             return self._sql_db_manager.get_degree(degree_id).max_semester_credits
-        except Exception:
-            return None  # unknown degree → honest uncapped review
+        except RecordNotFoundError:
+            return None  # unknown degree → review without a cap
 
     def _selected_degree_cap(self, student_id: str) -> Optional[int]:
         student = self._sql_db_manager.get_student_record(student_id)
@@ -296,8 +274,9 @@ class PlanService:
             return None
         return self._degree_cap(student.selected_degree_id)
 
-    def _entries_to_semesters(self, entries, catalog) -> List[tuple]:
-        """Schema entries → (term, year, courses) tuples for the engine."""
+    @staticmethod
+    def _to_engine_semesters(entries) -> List[tuple]:
+        """Schema entries or stored dicts → (term, year, courses) tuples for the engine."""
         tuples: List[Tuple[str, int, List[str]]] = []
         for entry in entries:
             if isinstance(entry, dict):
@@ -306,13 +285,6 @@ class PlanService:
                 term, year, courses = entry.term, entry.year, list(entry.courses)
             tuples.append((str(term), int(year), courses))
         return tuples
-
-    def _payload(self, plan: DegreePlan, catalog: Dict[str, Course], notes: List[str]) -> dict:
-        return {
-            "semesters": semesters_payload(plan.semesters, catalog),
-            "includes_summer": plan.includes_summer,
-            "notes": list(notes),
-        }
 
     def _to_detail(self, row: dict) -> PlanDetail:
         return PlanDetail(
@@ -334,4 +306,3 @@ class PlanService:
                 for semester in (row.get("semesters") or [])
             ],
         )
-    # ------------------------------------------------------------ plumbing

@@ -12,19 +12,33 @@
 }
 
 .app-shell-drawer {
-  width: 360px;
+  width: 0;
   flex-shrink: 0;
-  border-left: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  transition: width 0.25s ease-out;
+  border-left: 0 solid var(--color-border);
   background: var(--color-surface);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
 }
 
-/* Floating advisor pill (bottom-left on Search/Account wireframes). */
+.app-shell-drawer--open {
+  width: 360px;
+  border-left-width: 1px;
+}
+
+.app-shell-drawer-inner {
+  width: 360px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Floating advisor pill (bottom-right). */
 .app-shell-advisor-pill {
   position: fixed;
-  left: var(--space-4);
+  right: var(--space-4);
   bottom: var(--space-3);
   z-index: 40;
   display: inline-flex;
@@ -52,11 +66,24 @@
 
 @media (max-width: 900px) {
   .app-shell-drawer {
+    width: 360px;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
     position: fixed;
     right: 0;
     top: 0;
     bottom: 0;
     z-index: 60;
-    box-shadow: var(--shadow-2);
+    box-shadow: none;
   }
+  .app-shell-drawer--open { transform: translateX(0); box-shadow: var(--shadow-2); }
+}
+
+/* Pill sits above the drawer's composer area when open. */
+.app-shell-advisor-pill--open {
+  right: calc(360px + var(--space-3));
+}
+
+@media (max-width: 900px) {
+  .app-shell-advisor-pill--open { right: var(--space-4); z-index: 70; bottom: auto; top: var(--space-2); }
 }

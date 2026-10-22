@@ -1,7 +1,6 @@
 """Error envelope + global exception handlers for the advisor HTTP API.
 
 Domain failures must never surface as generic 500s:
-- `NotWiredError` → 501 `not_wired` (backing zone not built; no fake data)
 - database lookup misses → 404 `not_found` (grounded-answers rule)
 - `InvalidRequestError` → 422 `validation_failed` (e.g. FC16 misalignment)
 - agent `LLMError` → 503 `llm_unavailable` (no fabricated replies when the
@@ -15,19 +14,6 @@ from fastapi.responses import JSONResponse
 from database.errors import RecordNotFoundError
 from agent.errors import LLMError
 from server.schemas.common import ErrorDetail, ErrorResponse
-
-
-class NotWiredError(Exception):
-    """Raised by services whose backing component doesn't exist yet.
-
-    Maps to HTTP 501 so the frontend renders an explicit "feature not wired"
-    state instead of guessing at empty/fabricated data (grounded-answers-only
-    rule in AGENTS.md).
-    """
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-        self.message = message
 
 
 class InvalidRequestError(Exception):
@@ -53,13 +39,6 @@ def error_envelope(
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Attach app-wide exception handlers. Called once from `create_app()`."""
-
-    @app.exception_handler(NotWiredError)
-    async def not_wired_handler(request: Request, exc: NotWiredError) -> JSONResponse:
-        return JSONResponse(
-            status_code=501,
-            content=error_envelope("not_wired", exc.message),
-        )
 
     @app.exception_handler(RecordNotFoundError)
     async def record_not_found_handler(request: Request, exc: RecordNotFoundError) -> JSONResponse:

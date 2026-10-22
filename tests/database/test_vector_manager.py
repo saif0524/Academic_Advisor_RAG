@@ -7,7 +7,7 @@ persistent path via pytest tmp_path.
 from pathlib import Path
 
 import pytest
-from chromadb.api.types import Documents, Embeddings, EmbeddingFunction
+from chromadb.api.types import EmbeddingFunction
 
 from database.vector.chroma_manager import VectorDatabaseManager
 from database.vector.embeddings import HashEmbeddings

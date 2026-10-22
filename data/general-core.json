@@ -1,0 +1,238 @@
+{
+  "type": "CoreCurriculumRequirement",
+  "institution_id": "UTA",
+  "title": "General Core Requirements",
+  "state_framework": "Texas General Education Core Curriculum",
+  "description": "All students pursuing a baccalaureate degree at UT Arlington must complete the 42-hour Texas General Education Core Curriculum across nine foundational component areas.",
+  "total_credits_required": 42,
+  "areas": [
+    {
+      "code": "010",
+      "name": "Communication",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "ENGL 1301",
+          "title": "RHETORIC AND COMPOSITION I",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "ENGL 1302",
+          "title": "RHETORIC AND COMPOSITION II",
+          "credit_hours": 3
+        }
+      ]
+    },
+    {
+      "code": "020",
+      "name": "Mathematics",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "MATH 1301",
+          "title": "CONTEMPORARY MATHEMATICS",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MATH 1302",
+          "title": "COLLEGE ALGEBRA",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MATH 1303",
+          "title": "PRECALCULUS PREPARATION",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MATH 1308",
+          "title": "ELEMENTARY STATISTICS OF NORTH AMERICA",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MATH 1315",
+          "title": "COLLEGE ALGEBRA FOR ECONOMICS & BUSINESS",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MATH 1316",
+          "title": "MATHEMATICS FOR ECONOMICS & BUSINESS",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MATH 1426",
+          "title": "CALCULUS I",
+          "credit_hours": 4
+        }
+      ]
+    },
+    {
+      "code": "030",
+      "name": "Life and Physical Sciences",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "BIOL 1441",
+          "title": "CELL AND MOLECULAR BIOLOGY",
+          "credit_hours": 4
+        },
+        {
+          "course_code": "BIOL 1442",
+          "title": "STRUCTURE AND FUNCTION OF ORGANISMS",
+          "credit_hours": 4
+        },
+        {
+          "course_code": "CHEM 1441",
+          "title": "GENERAL CHEMISTRY I",
+          "credit_hours": 4
+        },
+        {
+          "course_code": "CHEM 1442",
+          "title": "GENERAL CHEMISTRY II",
+          "credit_hours": 4
+        },
+        {
+          "course_code": "PHYS 1443",
+          "title": "GENERAL TECHNICAL PHYSICS I",
+          "credit_hours": 4
+        },
+        {
+          "course_code": "PHYS 1444",
+          "title": "GENERAL TECHNICAL PHYSICS II",
+          "credit_hours": 4
+        }
+      ]
+    },
+    {
+      "code": "040",
+      "name": "Language, Philosophy, and Culture",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "ANTH 2322",
+          "title": "GLOBAL CULTURES",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "PHIL 1301",
+          "title": "INTRODUCTION TO PHILOSOPHY",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "PHIL 2300",
+          "title": "INTRODUCTION TO ETHICS",
+          "credit_hours": 3
+        }
+      ]
+    },
+    {
+      "code": "050",
+      "name": "Creative Arts",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "ART 1301",
+          "title": "ART APPRECIATION",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "MUSI 1300",
+          "title": "MUSIC APPRECIATION",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "THEA 1310",
+          "title": "INTRODUCTION TO THEATRE",
+          "credit_hours": 3
+        }
+      ]
+    },
+    {
+      "code": "060",
+      "name": "American History",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "HIST 1301",
+          "title": "HISTORY OF THE UNITED STATES TO 1877",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "HIST 1302",
+          "title": "HISTORY OF THE UNITED STATES SINCE 1877",
+          "credit_hours": 3
+        }
+      ]
+    },
+    {
+      "code": "070",
+      "name": "Government / Political Science",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "POLS 2311",
+          "title": "GOVERNMENT OF THE UNITED STATES",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "POLS 2312",
+          "title": "STATE AND LOCAL GOVERNMENT",
+          "credit_hours": 3
+        }
+      ]
+    },
+    {
+      "code": "080",
+      "name": "Social and Behavioral Sciences",
+      "credits_required": 3,
+      "courses": [
+        {
+          "course_code": "ECON 2305",
+          "title": "PRINCIPLES OF MACROECONOMICS",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "ECON 2306",
+          "title": "PRINCIPLES OF MICROECONOMICS",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "PSYC 1315",
+          "title": "GENERAL PSYCHOLOGY",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "SOCI 1301",
+          "title": "INTRODUCTION TO SOCIOLOGY",
+          "credit_hours": 3
+        }
+      ]
+    },
+    {
+      "code": "090",
+      "name": "Component Area Option",
+      "credits_required": 6,
+      "courses": [
+        {
+          "course_code": "COMS 1301",
+          "title": "FUNDAMENTALS OF PUBLIC SPEAKING",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "COMS 2302",
+          "title": "PROFESSIONAL AND TECHNICAL COMMUNICATION",
+          "credit_hours": 3
+        },
+        {
+          "course_code": "UNIV 1131",
+          "title": "STUDENT SUCCESS",
+          "credit_hours": 1
+        },
+        {
+          "course_code": "UNIV 1101",
+          "title": "CAREER AND MAJOR EXPLORATION",
+          "credit_hours": 1
+        }
+      ]
+    }
+  ]
+}

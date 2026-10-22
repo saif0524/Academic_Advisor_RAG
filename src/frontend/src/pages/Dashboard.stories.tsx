@@ -1,8 +1,9 @@
+import type { ClassStatus } from '../api/classes';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import Dashboard from './Dashboard';
 import { expect, fn, userEvent } from 'storybook/test';
 
-/* Instant fixtures (real seed records from api/catalog + plans) — stories
+/* Instant fixtures (real seed records) — stories
    never hit the real api (mock latency would slow review). */
 const FIXTURES = {
   plan: {
@@ -43,6 +44,8 @@ const FIXTURES = {
 
 const SEAMS = {
   loadDependencies: () => Promise.resolve(FIXTURES),
+  loadClassStatuses: () => Promise.resolve({}),
+  saveClassStatus: (_id: string, status: ClassStatus) => Promise.resolve(status),
   onNavigate: fn(),
 };
 

@@ -7,14 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from core.entities.course import Course, CourseSection
+from core.entities.course import CourseSection
 from core.entities.degree import DegreePlan, SemesterPlan
 from core.entities.student import EnrollmentRecord
 from database.errors import RecordNotFoundError
-from database.seed import seed_chroma, seed_sqlite
+from database.seed import seed_sqlite
 from database.sql.sqlite_manager import SQLDatabaseManager
-from database.vector.chroma_manager import VectorDatabaseManager
-from database.vector.embeddings import HashEmbeddings
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 MAJOR = "Bachelor of Science in Computer Science"
@@ -314,7 +312,7 @@ def test_chat_history_unknown_session_rejected(sql):
 
 
 def test_pending_action_store_and_resolve(sql):
-    """FC23 groundwork: proposed actions persist with open/confirmed state —
+    """FC23: proposed actions persist with open/confirmed state —
     attached to a real chat session (FC34 table FKs)."""
     session_id = sql.ensure_chat_session("STU-2")
     action_id = sql.create_pending_action(

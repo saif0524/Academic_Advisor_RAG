@@ -1,5 +1,5 @@
 /**
- * The single HTTP entry point for the frontend (proposed FC-new-rest-api).
+ * The single HTTP entry point for the frontend.
  * Components never call `fetch` inline — everything goes through this client,
  * per the react-component skill.
  *

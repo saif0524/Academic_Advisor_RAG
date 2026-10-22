@@ -8,7 +8,7 @@ import SearchFilterChips from '../components/search/SearchFilterChips/SearchFilt
 import type { SearchFilter } from '../components/search/SearchFilterChips/SearchFilterChips';
 import CourseResultCard from '../components/search/CourseResultCard/CourseResultCard';
 import CourseDetailDialog from '../components/search/CourseDetailDialog/CourseDetailDialog';
-import { getCourseDetailLive, searchLive } from '../api/liveSearch';
+import { getCourseDetail, searchCourses } from '../api/courses';
 import type { CourseDetail, SearchResponse } from '../api/types';
 import './CourseSearch.css';
 
@@ -37,8 +37,8 @@ export default function CourseSearch({
   chatOpen = false,
   onToggleChat,
   chatSlot = null,
-  searchFn = searchLive,
-  detailFn = getCourseDetailLive,
+  searchFn = searchCourses,
+  detailFn = getCourseDetail,
 }: CourseSearchProps) {
   const [submitted, setSubmitted] = useState('');
   const [response, setResponse] = useState<SearchResponse | null>(null);

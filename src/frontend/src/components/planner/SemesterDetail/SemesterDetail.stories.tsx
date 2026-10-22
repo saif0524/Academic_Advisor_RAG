@@ -2,7 +2,7 @@ import type { Meta } from '@storybook/react-vite';
 import SemesterDetail from './SemesterDetail';
 import type { CourseSuggestion, SemesterHydrated } from '../../../api/types';
 
-/** Real seed courses (api/catalog); warnings are mock FC29 verdicts. */
+/** Real seed courses; warnings are mock FC29 verdicts. */
 const COURSES_FIXTURE = [
   { id: '4380', title: 'INFORMATION SECURITY', creditHours: 3, meeting: 'TuTh 11:00–12:20' },
   { id: '4382', title: 'SECURE PROGRAMMING', creditHours: 3, meeting: 'MW 2:30–3:50' },

@@ -5,7 +5,7 @@ Degree requirement records are parsed/seeded from the catalog documents
 come from the requirement tables — no fabricated requirements; semantic
 degree text questions (FC22 fuel) stay on the Chroma side for the agent.
 """
-from typing import Any, Optional
+from typing import Any
 
 from server.schemas.degrees import DegreeDetail, DegreeListResponse, DegreeSummary
 

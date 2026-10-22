@@ -11,8 +11,8 @@ interface PlanComparisonTableProps {
 /**
  * Side-by-side plan comparison for a prospective program change (wireframe
  * 05; FC26). The comparison — hours that count, hours remaining, expected
- * graduation, and the trade-off notes — comes from the api layer (mock of
- * the deterministic compare + degree-audit path); this component renders it.
+ * graduation, and the trade-off notes — comes from the deterministic
+ * compare endpoint (POST /plans/compare); this component only renders it.
  */
 export default function PlanComparisonTable({ comparison, loading = false, error = null }: PlanComparisonTableProps) {
   if (loading) {

@@ -6,13 +6,13 @@ import { toTitleCase } from '../../shared/textCase';
 import type { PlanningPreferences as PlanningPreferencesData } from '../../../api/types';
 import './PlanningPreferences.css';
 
-/* Cap choices mirror the fixture demo range (mock of the degree's FC32 limit). */
+/* Credit-cap choices (FC32). */
 const CREDIT_OPTIONS = [12, 13, 14, 15, 16, 17, 18];
 const CLASS_TIME_OPTIONS = ['Any time', 'Mornings', 'Afternoons', 'Evenings'];
 
 interface PlanningPreferencesProps {
   preferences: PlanningPreferencesData | null;
-  /** Parent-owned async save (mock of PUT /students/me/preferences). */
+  /** Parent-owned async save (PUT /students/me/preferences). */
   onSave?: (draft: PlanningPreferencesData) => Promise<void>;
   saving?: boolean;
   saveError?: string | null;

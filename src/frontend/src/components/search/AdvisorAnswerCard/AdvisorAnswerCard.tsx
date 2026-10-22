@@ -11,8 +11,8 @@ interface AdvisorAnswerCardProps {
 
 /**
  * The advisor's answer to a search query (wireframe 04; FC22/FC24 answer
- * surface). The answer text + match count come from the api layer — a mock
- * of the agent's summarize step; the deterministic engine owns all verdicts.
+ * surface). The answer text + match count come from the advisor agent;
+ * the deterministic engine owns all verdicts.
  */
 export default function AdvisorAnswerCard({ answer, loading = false, error = null }: AdvisorAnswerCardProps) {
   if (loading) {

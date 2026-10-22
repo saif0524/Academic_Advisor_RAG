@@ -36,11 +36,13 @@ export default function AppShell({
     <div className="app-shell">
       <AppSidebar active={active} onNavigate={onNavigate} studentName={studentName} />
       <main className="app-shell-content">{children}</main>
-      {chatOpen ? (
-        <aside className="app-shell-drawer" aria-label="Advisor chat">
-          {chatSlot}
-        </aside>
-      ) : null}
+      <aside
+        className={`app-shell-drawer${chatOpen ? ' app-shell-drawer--open' : ''}`}
+        aria-label="Advisor chat"
+        aria-hidden={!chatOpen}
+      >
+        <div className="app-shell-drawer-inner">{chatOpen ? chatSlot : null}</div>
+      </aside>
       <button
         type="button"
         className={`app-shell-advisor-pill${chatOpen ? ' app-shell-advisor-pill--open' : ''}`}

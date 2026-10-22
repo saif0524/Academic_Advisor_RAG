@@ -1,9 +1,7 @@
 """Thin smoke tests for the advisor HTTP API (optional per fastapi skill).
 
-Scope: app factory boots, resources are mounted, identity works without auth,
-and the not-yet-wired surface returns the 501 `not_wired` envelope rather than
-fake data. Full data-backed behavior is covered by tests/database and
-tests/server/test_data_endpoints.py.
+Scope: app factory boots, resources are mounted, identity works without auth.
+Data-backed behavior is covered by tests/database and test_data_endpoints.py.
 """
 import os
 from pathlib import Path
@@ -78,7 +76,7 @@ def test_openapi_resources_mounted(client):
 
 
 def test_chat_send_message_wired(client):
-    """FC22 wired: the agent zone is live (stub provider in tests — no LLM)."""
+    """FC22: the agent answers (stub provider in tests — no LLM)."""
     response = client.post("/chat/messages", json={"message": "What time does CSE 3330 meet?"})
     assert response.status_code == 200
     body = response.json()
@@ -86,14 +84,14 @@ def test_chat_send_message_wired(client):
 
 
 def test_semantic_search_wired(client):
-    """FC9 wired: Chroma-backed semantic search answers (seed corpus)."""
+    """FC9: Chroma-backed semantic search answers (seed corpus)."""
     response = client.get("/courses/search/semantic", params={"q": "computer networks protocols"})
     assert response.status_code == 200
     assert response.json()["source"] == "chroma"
 
 
 def test_class_crud_wired(client):
-    """FC14/FC20/FC21 wired: SQLite-backed class management."""
+    """FC14/FC20/FC21: SQLite-backed class management."""
     added = client.post("/classes", json={"course_id": "3330"})
     assert added.status_code == 201 and added.json()["status"] == "not_taken"
     patched = client.patch("/classes/3330", json={"status": "passed"})
@@ -115,7 +113,7 @@ def test_plan_generation_wired(client):
 
 
 def test_audits_wired(client):
-    """FC24 wired: the core validator answers deterministic checks."""
+    """FC24: the core validator answers deterministic checks."""
     response = client.post("/audits/course-check", json={"course_id": "4308"})
     assert response.status_code == 200
     body = response.json()

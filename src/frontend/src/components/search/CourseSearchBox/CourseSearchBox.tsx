@@ -17,8 +17,8 @@ interface CourseSearchBoxProps {
 }
 
 /**
- * Search entry (wireframe 04): one box for course codes/titles (FC8 — future
- * SQLite path) or plain-language questions (FC9 — future Chroma path). The
+ * Search entry (wireframe 04): one box for course codes/titles (FC8)
+ * or plain-language questions (FC9). The
  * example chips (FC35 prompt-based queries) fill-and-submit the query.
  */
 export default function CourseSearchBox({ onSearch, busy = false }: CourseSearchBoxProps) {

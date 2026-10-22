@@ -4,6 +4,51 @@ Reverse-chronological entries for each implementation pass (what landed, which F
 
 ---
 
+## 2026-10-23 — Simplification pass for team review (no new FCs; FC19, FC37 docs touched)
+
+**Scope.** Make the code easier to read and review; keep behavior the same
+and keep the 254 tests passing. Deterministic engine, LangGraph flow, FC23
+gate, and the SQLite/Chroma split are unchanged.
+
+**Removed**
+- `src/server/controllers/` — every function just forwarded to a service;
+  routers now call services directly. Route decorators trimmed to
+  `@router.get("/path")` (response model inferred from the return type).
+- `NotWiredError` / 501 `not_wired` — nothing is unwired anymore.
+- `src/database/sql/repositories/` — merged into `sqlite_manager.py` so each
+  query is in one place; added `get_catalog()` (was copy-pasted in the plan
+  service and the agent tools).
+- Frontend mock code: `api/catalog.ts` and the mock half of `api/courses.ts`
+  (canned answers + fake verdicts); `api/liveSearch.ts` merged into
+  `api/courses.ts` (`searchCourses`, `getCourseDetail`, `getCourseSuggestions`).
+- `src/main/` legacy CLI (+ `.java` leftover) and `.github/workflows/run-ai.yml`.
+- `StudentService._progress_math` — a drifted copy of
+  `core.engine.progress.compute_degree_progress` (it missed 4-digit CSE ids
+  for elective buckets). The service now calls core, so the dashboard and the
+  assistant always agree (FC19).
+
+**Restructured**
+- `src/agent/tools/`: `schedule_tools` + `search_tools` + `plan_tools` + a
+  pass-through `AdvisorToolkit` → a layered chain `LookupTools`
+  (`lookups.py`) → `EngineTools` (`engine_tools.py`) → `ActionTools`
+  (`actions.py`, FC23) → `AdvisorToolkit`. Public method names unchanged.
+  FC23 actions are one `_propose_*` + one `_do_*` method per action type;
+  refusals are a `Refusal` exception instead of `None`-padded tuples.
+- `DegreePlanGenerator._order_courses`: the topological sort was
+  overwritten by a final level sort, so it is now just that sort (identical
+  output); removed the unused `placed_before` set.
+- `server/dependencies.py` rewritten shorter with accurate comments.
+
+**Docs** — AGENTS.md, README, fastapi/build/advisor-domain skills, FC37
+acceptance criteria (router → service; 404 instead of 501), domain-model §2
+note, and an update banner on the 2026-10-19 monorepo proposal.
+
+**Open finding (not changed).** `course_prerequisites` is never populated
+by the seed pipeline — no `data/` file carries prerequisite data — so FC29
+prerequisite checks currently always pass.
+
+---
+
 ## 2026-10-22 — DegreePlanGenerator + plan/account/dashboard end to end (FC2/FC3/FC4/FC5/FC6/FC25/FC26 + FC29–FC32 semantics, FC19, FC25/FC32 prefs, FC23 gate, FC33/FC37)
 
 **Scope.** `/build` pass: built the missing §2 engine (plan generation,
@@ -181,3 +226,25 @@ brings up api + web for testing (spec: new FC38 in FR section 7).
 **Tests.** `tests/agent/test_plan_context.py`, `tests/agent/test_plan_edits.py`; full suite 254 passed.
 
 **Decisions.** Plans stay in SQLite (not Chroma). The demo seed has no plan (plans are user-owned and persist across reseeds) — generate one in chat, then "make my plan active".
+
+## 2026-10-22 — Root config declutter (FC38)
+
+**Scope.** Minimize files in the repo root (tracked root files 9 → 5: `.env.example`, `.gitignore`, `AGENTS.md`, `README.md`, `requirements.txt`).
+
+**Modified**
+- `Dockerfile`, `docker-compose.yml`, `.dockerignore` → `docker/Dockerfile`, `docker/docker-compose.yml`, `docker/Dockerfile.dockerignore` (BuildKit per-Dockerfile ignore). Compose build contexts now `..` and `../src/frontend`; run from repo root with `docker compose --env-file .env -f docker/docker-compose.yml up --build` (`--env-file` because compose otherwise reads `.env` from `docker/`). This supersedes the root locations named in the FC38 entry above.
+- `pytest.ini` removed → `tests/conftest.py` adds `src/` to `sys.path`; pytest cache returns to a gitignored root `.pytest_cache/`.
+- `.idea/` untracked (`git rm --cached`); `.gitignore` and the docker ignore file trimmed of stale entries.
+- Docs: `README.md` (repo structure, §5 commands), `AGENTS.md` (repo map).
+
+**Verified** `pytest`: 254 passed; `docker compose config` validates. Images not rebuilt.
+
+## 2026-10-22 — `var/` renamed to `.runtime/`
+
+**Scope.** Rename the runtime-state directory (SQLite + Chroma stores, Playwright screenshots) to a self-describing, hidden name.
+
+**Modified**
+- Defaults in `src/database/seed.py` and `src/server/dependencies.py` (`.runtime/advisor.db`, `.runtime/chroma`; `ADVISOR_SQLITE_PATH`/`ADVISOR_CHROMA_PATH` still override); `.gitignore`; `docker/Dockerfile.dockerignore`; `docker/Dockerfile` comment; compose volume `advisor-var` → `advisor-runtime` mounted at `/app/.runtime` (an old `advisor-var` volume is orphaned — `docker volume rm` it; user chat/plan data in it is not migrated).
+- Docs: `README.md`, `AGENTS.md`, `.pi/skills/react-component/SKILL.md` (screenshots → `.runtime/shots/`). Earlier log entries keep the old `var/` name as history.
+
+**Verified** `pytest`: 254 passed. Images/volumes not rebuilt.

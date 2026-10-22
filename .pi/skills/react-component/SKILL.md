@@ -106,9 +106,9 @@ export const Bookmarked = { args: { bookmarked: true } };
 2. Screenshot the story (from `src/frontend/`):
    ```bash
    npx playwright screenshot --viewport-size=1440,1100 --full-page --wait-for-timeout=2500 \
-     "http://localhost:6006/iframe.html?id=<story-id>&viewMode=story" ../../var/shots/<name>.png
+     "http://localhost:6006/iframe.html?id=<story-id>&viewMode=story" ../../.runtime/shots/<name>.png
    ```
-   Get story ids from `curl -s localhost:6006/index.json`. `var/` is gitignored.
+   Get story ids from `curl -s localhost:6006/index.json`. `.runtime/` is gitignored.
 3. Open both the screenshot and the wireframe PNG with the `read` tool. List the differences in layout, hierarchy, palette, spacing, copy, and controls. Ignore the wireframe's title caption and the sage canvas around the mockup.
 4. Fix the differences, take a new screenshot, and repeat until the two match. Report any differences you leave on purpose and why. Examples: data the wireframe shows but the API doesn't have (grounded-UI rule), or a wireframe badge with no backing status.
 

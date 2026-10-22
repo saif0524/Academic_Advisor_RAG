@@ -1,3 +1,5 @@
+import ClassStatusSelect from '../../classes/ClassStatusSelect/ClassStatusSelect';
+import type { ClassStatus } from '../../../api/classes';
 import Badge from '../../shared/Badge/Badge';
 import Icon from '../../shared/Icon/Icon';
 import { formatCourseCode, toTitleCase } from '../../shared/textCase';
@@ -11,6 +13,9 @@ interface PlannedCourseRowProps {
   /** e.g. 'In progress' via a Badge variant (FC21 display). */
   statusNote?: string;
   onRemove?: (courseId: string) => void;
+  /** FC21 status control — shown when `onStatusChange` is given. */
+  status?: ClassStatus;
+  onStatusChange?: (courseId: string, next: ClassStatus) => Promise<unknown> | void;
 }
 
 /**
@@ -20,7 +25,7 @@ interface PlannedCourseRowProps {
  * prerequisite warning (FC29 verdict display). Unknown ids render the id
  * alone (grounded-UI).
  */
-export default function PlannedCourseRow({ course, warning = null, statusNote, onRemove }: PlannedCourseRowProps) {
+export default function PlannedCourseRow({ course, warning = null, statusNote, onRemove, status, onStatusChange }: PlannedCourseRowProps) {
   return (
     <li className="planned-course-row">
       <div className="planned-course-row-main">
@@ -38,6 +43,13 @@ export default function PlannedCourseRow({ course, warning = null, statusNote, o
           <Badge variant="info" dot>
             {statusNote}
           </Badge>
+        ) : null}
+        {onStatusChange ? (
+          <ClassStatusSelect
+            courseLabel={formatCourseCode(course.id)}
+            status={status}
+            onChange={(next) => onStatusChange(course.id, next)}
+          />
         ) : null}
         {onRemove ? (
           <button

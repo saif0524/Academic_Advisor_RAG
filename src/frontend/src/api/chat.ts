@@ -58,6 +58,13 @@ export async function getConversations(): Promise<Conversation[]> {
   }));
 }
 
+/** Start a new empty conversation and make it the send target (POST /chat/sessions). */
+export async function createConversation(): Promise<string> {
+  const response = await request<ChatHistoryResponse>('/chat/sessions', { method: 'POST' });
+  activeSessionId = response.session_id;
+  return response.session_id;
+}
+
 /** Load one conversation's turns (FC34) and remember it as the send target.
     An empty id means "the student's active session" (server-side FC27/FC34).
     The server's OPEN pending proposal (FC23) rides back on the last advisor

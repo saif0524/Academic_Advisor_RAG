@@ -43,7 +43,7 @@ Draft a plan, mapped to `docs/planning/2026-10-18-ai-advisor-domain-model.md`:
 - Component map per layer: React UI / LangChain agent / SQLite / Chroma / deterministic engine.
 - Domain-model impact: new classes vs methods/attributes on existing ones (§1–§5).
 - If the feature recommends or schedules courses: exactly which FC29–FC32 validator checks apply, and confirmation that the LLM path cannot bypass them.
-- File-level change list (files to create/modify — e.g. `src/main/AI_Assistant.py` — and their roles).
+- File-level change list (files to create/modify — e.g. `src/agent/tools/engine_tools.py` — and their roles).
 
 Then **end the reply with clarifying questions** — ask whatever would most change the implementation: ambiguous behavior, scope, seed-data needs, UI depth — and, if no test setup exists, the test-runner choice (propose pytest under `tests/`, one new dependency-light setup, as the default). **Wait for the user's answers. Do not write any code until they respond.**
 
@@ -58,7 +58,7 @@ Encode the agreed spec as executable tests before implementing, **scoped by the 
 
 ## Phase 4 — Build until green, then update docs
 
-1. Implement the plan file by file, citing FC IDs in code where requirements are implemented, and applying each loaded skill's conventions to the files it governs (component anatomy/CSS/stories; routers/controllers/services/DI/schemas; nodes/edges/tools/interrupts).
+1. Implement the plan file by file, citing FC IDs in code where requirements are implemented, and applying each loaded skill's conventions to the files it governs (component anatomy/CSS/stories; routers/services/DI/schemas; nodes/edges/tools/interrupts).
 2. Run the full test suite after each meaningful change. On failures: read them, fix the code, re-run. If a test itself was wrong, correct it — but only when it contradicts the agreed spec, and call that out explicitly. Never weaken a test just to make it pass.
 3. Repeat until every test passes.
 4. **Wireframe check (any frontend visual change):** green tests don't verify the UI. For every page or component the change affects visually, follow the `react-component` skill's *Wireframe check*: screenshot the story with Playwright, open it next to its `docs/wireframes/*.png` using `read`, and fix and re-screenshot until they match. List any differences you leave on purpose (for example, wireframe data the API doesn't have). Skip this step only when the change touches no `src/frontend/` visuals, and say so.

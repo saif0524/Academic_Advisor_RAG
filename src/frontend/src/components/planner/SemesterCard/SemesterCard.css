@@ -74,6 +74,11 @@
 .semester-card-chip {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
 }
 
 .semester-card-chip--unknown {
@@ -88,4 +93,54 @@
 .semester-card-chip-title {
   font-size: 0.9rem;
   color: var(--color-text-muted);
+}
+
+.semester-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Collapsible variant (single-column roadmap): clickable header with a
+   chevron + summary; courses flow horizontally across the full width. */
+.semester-card-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.semester-card-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm, 6px);
+}
+
+.semester-card-summary {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.semester-card--collapsible {
+  padding: var(--space-2) var(--space-3);
+}
+
+.semester-card--collapsible .semester-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px var(--space-2);
+}
+
+.semester-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
