@@ -3,21 +3,22 @@
 .timeline-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
   max-width: 980px;
 }
 
 .timeline-page-header h1 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 2.3rem;
+  line-height: 1.15;
   font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .timeline-page-program {
-  margin: 4px 0 0;
+  margin: 0 0 4px;
   color: var(--color-text-muted);
-  font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 
 .timeline-page-error {
@@ -25,16 +26,14 @@
   color: var(--color-danger);
   font-weight: 600;
 }
-/* Live plan controls: switch plans (FC6), make active, revert versions (FC5). */
+/* Live plan controls: switch plans (FC6), make active, revert versions (FC5).
+   Not in wireframe 02 — kept compact so the timeline stays the focus. */
 .timeline-page-plan-selector {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  gap: var(--space-2);
+  font-size: 0.9rem;
 }
 
 .timeline-page-active-note {

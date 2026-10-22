@@ -42,7 +42,7 @@
 }
 
 .app-shell-advisor-pill:hover {
-  background: #0a347d;
+  background: var(--color-primary-hover);
 }
 
 .app-shell-advisor-pill:focus-visible {

@@ -127,6 +127,39 @@ class StubClassifier:
             """Slice from the original text so extracted names keep case."""
             return text[match.start(1):match.end(1)].strip()
 
+        # ----- FC3/FC6 plan edits (FC23: still need explicit confirmation)
+        term = re.search(r"\b(FALL|SPRING|SUMMER)\s+(\d{4})\b", upper)
+        term_text = f"{term.group(1).capitalize()} {term.group(2)}" if term else None
+        plan_mentions = course_mentions(
+            upper.replace(term.group(0), " ") if term else upper)
+        if re.search(r"\bACTIVATE\b.*\bPLAN\b|\bMAKE\b.*\bPLAN\b.*\bACTIVE\b", upper):
+            return Classification("propose_action", {"action_type": "activate_plan"})
+        if re.search(r"\bPLAN\b", upper) and plan_mentions and not re.search(
+                r"\b(GENERATE|BUILD|CREATE)\b", upper):
+            if re.search(r"\b(REMOVE|DROP|DELETE|TAKE OUT)\b", upper):
+                return Classification("propose_action", {
+                    "action_type": "plan_remove_course", "course_id": plan_mentions[0]})
+            if re.search(r"\bMOVE\b|\bRESCHEDULE\b", upper):
+                if not term_text:
+                    return Classification("propose_action", {
+                        "action_type": "plan_move_course", "course_id": plan_mentions[0]},
+                        followup="Which semester of your plan should it move to (e.g. Fall 2027)?")
+                return Classification("propose_action", {
+                    "action_type": "plan_move_course", "course_id": plan_mentions[0],
+                    "semester_term": term_text})
+            if re.search(r"\bADD\b|\bPUT\b", upper):
+                if not term_text:
+                    return Classification("propose_action", {
+                        "action_type": "plan_add_course", "course_id": plan_mentions[0]},
+                        followup="Which semester of your plan should it go in (e.g. Fall 2027)?")
+                return Classification("propose_action", {
+                    "action_type": "plan_add_course", "course_id": plan_mentions[0],
+                    "semester_term": term_text})
+        if re.search(r"\bMOVE\b", upper) and plan_mentions and term_text:
+            return Classification("propose_action", {
+                "action_type": "plan_move_course", "course_id": plan_mentions[0],
+                "semester_term": term_text})
+
         # ----- FC23 proposals (actions need explicit confirmation later)
         change_status = re.search(
             r"\b(PASSED|TAKEN|FAILED|IN PROGRESS|IN-PROGRESS)\b", upper)
@@ -179,6 +212,12 @@ class StubClassifier:
                 r"\b(WHAT TIME|WHEN|WHO TEACH|WHO IS|HOW MANY|SEATS|SECTIONS"
                 r"|MEET|SCHEDULE|TEACH)", upper):
             return Classification("exact", {"course_mentions": mentions})
+
+        # ----- the student's own active plan (FC22/FC27; SQLite, FC33)
+        if re.search(r"\b(MY|THE)\s+(DEGREE\s+)?PLAN\b|\bPLANNED\b"
+                     r"|\bWHAT AM I TAKING\b", upper) and not re.search(
+                r"\b(GENERATE|BUILD|CREATE)\b", upper):
+            return Classification("exact", {"topic": "plan"})
 
         # ----- audits (FC24; deterministic)
         if re.search(r"\bWHAT (CLASSES|COURSES) (CAN|COULD|SHOULD) I\b", upper):

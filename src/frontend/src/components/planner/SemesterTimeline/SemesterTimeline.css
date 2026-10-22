@@ -1,17 +1,76 @@
-/* Horizontal semester chips strip (wireframes 02/03). */
+/* Horizontal semester strip: dot rail + equal-width tabs (wireframes 02/03). */
+
+.semester-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Dot rail — one dot per tab, connected by a line through the dot centers. */
+.semester-timeline-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+/* Each cell: the dot (::before) plus a connector (::after) to the next dot. */
+.semester-timeline-dot {
+  position: relative;
+  height: 16px;
+}
+
+.semester-timeline-dot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background: var(--color-surface);
+  z-index: 1;
+}
+
+.semester-timeline-dot:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 7px;
+  width: calc(100% + var(--space-1) - 16px);
+  height: 2px;
+  background: var(--color-border);
+}
+
+.semester-timeline-dot--in-progress::before,
+.semester-timeline-dot--completed::before {
+  background: var(--color-primary);
+}
+
+.semester-timeline-dot--optional::before {
+  border-color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.semester-timeline-dot--selected::before {
+  background: var(--color-accent);
+  border-color: var(--color-primary);
+  opacity: 1;
+}
 
 .semester-timeline-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--space-1);
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.semester-timeline-list li {
-  flex-shrink: 0;
 }
 
 .semester-timeline-chip {
@@ -19,59 +78,45 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  min-width: 150px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-top-width: 4px;
+  width: 100%;
+  min-height: 140px;
+  padding: 16px 14px;
+  border: 2px solid transparent;
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  background: var(--color-surface-muted);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
-}
-
-.semester-timeline-chip--in-progress {
-  border-top-color: var(--color-info);
-}
-
-.semester-timeline-chip--planned {
-  border-top-color: var(--color-primary);
-}
-
-.semester-timeline-chip--completed {
-  border-top-color: var(--color-success);
 }
 
 .semester-timeline-chip--optional {
-  border-top-color: var(--color-border);
-  border-style: dashed;
+  border-color: var(--color-border);
 }
 
 .semester-timeline-chip:hover {
-  box-shadow: var(--shadow-1);
+  border-color: var(--color-border);
 }
 
-/* Selected chip: status-colored ring (in-progress chip keeps its top bar). */
-.semester-timeline-chip--selected {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
-  box-shadow: var(--shadow-1);
+.semester-timeline-chip--selected,
+.semester-timeline-chip--selected:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
 }
 
 .semester-timeline-chip:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .semester-timeline-chip-term {
-  font-weight: 700;
-  font-size: 0.92rem;
+  font-weight: 800;
+  font-size: 1rem;
 }
 
 .semester-timeline-chip-meta {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--color-text-muted);
+  margin-bottom: 4px;
 }
 
 .semester-timeline-state {

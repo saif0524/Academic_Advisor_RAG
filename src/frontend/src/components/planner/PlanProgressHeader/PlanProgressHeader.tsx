@@ -1,5 +1,3 @@
-import Badge from '../../shared/Badge/Badge';
-import Icon from '../../shared/Icon/Icon';
 import ProgressBar from '../../shared/ProgressBar/ProgressBar';
 import Select from '../../shared/Select/Select';
 import type { ActivePlanData } from '../../../api/types';
@@ -59,9 +57,12 @@ export default function PlanProgressHeader({
         {program.concentration} concentration
         {program.catalogYear && program.catalogYear !== '—' ? ` · Catalog ${program.catalogYear}` : ''}
       </p>
-      <p className="plan-progress-header-credits">
-        {progress.completed} of {progress.total} credit hours
-      </p>
+      <div className="plan-progress-header-credits-row">
+        <p className="plan-progress-header-credits">
+          <strong>{progress.completed}</strong> of {progress.total} credit hours
+        </p>
+        {onTrackNote ? <p className="plan-progress-header-ontrack">{onTrackNote}</p> : null}
+      </div>
       <ProgressBar
         segments={[
           { key: 'completed', label: 'Completed', value: progress.completed, variant: 'completed' },
@@ -71,9 +72,6 @@ export default function PlanProgressHeader({
         showLegend
         label="Degree progress by status"
       />
-      <p className="plan-progress-header-ontrack">
-        <Icon name="checkCircle" size={16} /> {onTrackNote}
-      </p>
       {termOptions && termOptions.length > 0 && (
         <div className="plan-progress-header-term">
           <Select
@@ -84,9 +82,6 @@ export default function PlanProgressHeader({
           />
         </div>
       )}
-      {program.catalogYear && program.catalogYear !== '—' ? (
-        <Badge variant="neutral">{program.catalogYear} catalog</Badge>
-      ) : null}
     </section>
   );
 }

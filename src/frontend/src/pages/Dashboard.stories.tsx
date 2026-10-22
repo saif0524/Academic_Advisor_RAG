@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import Dashboard from './Dashboard';
-import { expect, userEvent } from 'storybook/test';
+import { expect, fn, userEvent } from 'storybook/test';
 
 /* Instant fixtures (real seed records from api/catalog + plans) — stories
    never hit the real api (mock latency would slow review). */
@@ -43,6 +43,7 @@ const FIXTURES = {
 
 const SEAMS = {
   loadDependencies: () => Promise.resolve(FIXTURES),
+  onNavigate: fn(),
 };
 
 const meta = {

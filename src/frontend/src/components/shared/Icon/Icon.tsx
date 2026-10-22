@@ -7,12 +7,13 @@ import './Icon.css';
 
 export type IconName =
   | 'search' | 'plus' | 'close' | 'check' | 'checkCircle' | 'warning' | 'info'
-  | 'edit' | 'chevronDown' | 'chevronRight' | 'calendar' | 'clock' | 'send'
+  | 'edit' | 'chevronDown' | 'chevronRight' | 'chevronLeft' | 'minus' | 'calendar' | 'clock' | 'send'
   | 'user' | 'cap' | 'chat' | 'bookOpen' | 'list';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   search: (<><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>),
   plus: <path d="M12 5v14M5 12h14" />,
+  minus: <path d="M5 12h14" />,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   check: <path d="m4 12 5 5L20 6" />,
   checkCircle: (<><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-5" /></>),
@@ -21,6 +22,7 @@ const GLYPHS: Record<IconName, ReactNode> = {
   edit: (<><path d="M4 20h4L19.5 8.5a2.12 2.12 0 0 0-3-3L5 17v3Z" /><path d="m13.5 6.5 3 3" /></>),
   chevronDown: <path d="m6 9 6 6 6-6" />,
   chevronRight: <path d="m9 6 6 6-6 6" />,
+  chevronLeft: <path d="m15 6-6 6 6 6" />,
   calendar: (<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /></>),
   clock: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   send: <path d="m3 11 18-8-6 18-3-7-9-3Z" />,

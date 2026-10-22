@@ -53,7 +53,7 @@ Encode the agreed spec as executable tests before implementing, **scoped by the 
 
 - Use the runner chosen in phase 2 (default: pytest, with tests mirroring the `src/` zones — `tests/core/`, `tests/database/`, `tests/agent/`).
 - Name or comment every test with the FC it verifies. Cover the deterministic paths exhaustively: each applicable validator check (FC29–FC32), plan generation invariants (FC25, FC26), the SQLite/Chroma routing split (FC33), and the FC23 confirmation gate where actions are taken on the student's behalf.
-- If a plan for a UI-only feature yields no backend logic, state that no unit tests apply — UI verification is Storybook review — and get the user's acknowledgment before phase 4.
+- If a plan for a UI-only feature yields no backend logic, state that no unit tests apply. UI verification is Storybook review plus the phase 4 wireframe check. Get the user's acknowledgment before phase 4.
 - Run the new tests and confirm they fail for the right reason (feature not yet built) — not because of import/syntax errors in existing code. Report the baseline to the user.
 
 ## Phase 4 — Build until green, then update docs
@@ -61,5 +61,6 @@ Encode the agreed spec as executable tests before implementing, **scoped by the 
 1. Implement the plan file by file, citing FC IDs in code where requirements are implemented, and applying each loaded skill's conventions to the files it governs (component anatomy/CSS/stories; routers/controllers/services/DI/schemas; nodes/edges/tools/interrupts).
 2. Run the full test suite after each meaningful change. On failures: read them, fix the code, re-run. If a test itself was wrong, correct it — but only when it contradicts the agreed spec, and call that out explicitly. Never weaken a test just to make it pass.
 3. Repeat until every test passes.
-4. **Docs stay current** (repo rule): re-assess what the change affected — the FR document, the domain model, `AGENTS.md` repo map, and any dated proposals — and update anything now stale.
-5. Finish with a short summary: spec FCs implemented, files changed, final test output, docs updated — and suggest `git diff` review before committing.
+4. **Wireframe check (any frontend visual change):** green tests don't verify the UI. For every page or component the change affects visually, follow the `react-component` skill's *Wireframe check*: screenshot the story with Playwright, open it next to its `docs/wireframes/*.png` using `read`, and fix and re-screenshot until they match. List any differences you leave on purpose (for example, wireframe data the API doesn't have). Skip this step only when the change touches no `src/frontend/` visuals, and say so.
+5. **Docs stay current** (repo rule): re-assess what the change affected — the FR document, the domain model, `AGENTS.md` repo map, and any dated proposals — and update anything now stale.
+6. Finish with a short summary: spec FCs implemented, files changed, final test output, wireframe-check result (screenshots compared, differences left on purpose), docs updated — and suggest `git diff` review before committing.

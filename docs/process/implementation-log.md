@@ -166,3 +166,18 @@ brings up api + web for testing (spec: new FC38 in FR section 7).
 **Verified** `pytest`: 237 passed (unchanged by this pass). Compose YAML structure-checked; container run mode (`python -m server.app` with `ADVISOR_HOST/PORT`) smoke-proven locally: seeds, serves `/health` → 200 ok. Docker wasn't available in the build shell — first real `docker compose up --build` happens on the user's machine.
 
 **Follow-ups.** None required; revisit only if the frontend gains runtime env needs or the api gains new ports.
+
+## 2026-10-22 — Agent access to the active degree plan (FC22/FC24/FC27, FC3 via FC23)
+
+**Scope.** `/build` pass: the assistant had no plan context (`AdvisorToolkit.active_plan` was never called, and returned the *newest* plan rather than the active one).
+
+**Modified**
+- `src/agent/tools/schedule_tools.py` — `active_plan` now `sql.get_active_plan` (FC6); new `plan_context` (full semester roadmap, titles, credit totals, progress; `None` when no plan is active). `tools/__init__.py` exposes it.
+- `src/agent/llm/graph.py` — `exact` node returns `plan` for `params.topic == "plan"`; progress audits carry `plan`; recommendations exclude planned courses (`already_planned` reported); classifier gets `{student_id, major, has_active_plan}`.
+- `src/agent/tools/plan_tools.py` — FC23 actions `plan_add_course`, `plan_remove_course`, `plan_move_course`, `activate_plan`: prechecked by `DegreePlanGenerator.review_plan_semesters` (only NEW blocking FC30/FC32 verdicts refuse), executed on confirm as a new plan version (FC4).
+- `classify.py`/`prompts.py`/`summarize.py` — routing rules, prompt contract, plan rendering ("no active plan" is stated plainly).
+- Docs: FR FC22/FC23 notes, `AGENTS.md`, domain model §3 note.
+
+**Tests.** `tests/agent/test_plan_context.py`, `tests/agent/test_plan_edits.py`; full suite 254 passed.
+
+**Decisions.** Plans stay in SQLite (not Chroma). The demo seed has no plan (plans are user-owned and persist across reseeds) — generate one in chat, then "make my plan active".

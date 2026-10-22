@@ -19,9 +19,8 @@
 }
 
 .badge--neutral {
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
 }
 
 .badge--primary {

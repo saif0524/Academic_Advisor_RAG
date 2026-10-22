@@ -1,18 +1,24 @@
-/* One semester card of the "My semesters" grid (FC25). */
+/* One semester card of the "My semesters" grid (FC25, wireframe 01). */
 
 .semester-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: var(--space-2);
+  gap: 10px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1);
 }
 
-.semester-card--summer {
-  border-style: dashed;
+.semester-card--optional {
+  border: 1.5px dashed var(--color-border);
+  justify-content: center;
+  min-height: 200px;
+}
+
+.semester-card--optional .button--ghost {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
 }
 
 .semester-card-header {
@@ -24,8 +30,21 @@
 
 .semester-card-term {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.semester-card-edit {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .semester-card-meta {
@@ -33,19 +52,14 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
-}
-
-.semester-card-credits {
-  font-weight: 600;
 }
 
 .semester-card-empty {
   margin: 0;
   font-size: 0.9rem;
   color: var(--color-text-muted);
-  font-style: italic;
 }
 
 .semester-card-list {
@@ -54,17 +68,12 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .semester-card-chip {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 6px 8px;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  flex-direction: column;
 }
 
 .semester-card-chip--unknown {
@@ -73,11 +82,10 @@
 
 .semester-card-chip-id {
   font-weight: 700;
-  font-size: 0.8rem;
-  color: var(--color-primary);
-  min-width: 64px;
+  font-size: 0.9rem;
 }
 
 .semester-card-chip-title {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
 }

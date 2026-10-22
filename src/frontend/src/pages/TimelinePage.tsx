@@ -51,6 +51,9 @@ interface TimelinePageProps {
   /** DI seam for the FC29–FC32 draft review (stories inject deterministic
       fixture verdicts; the live default posts to POST /plans/review). */
   reviewFn?: (semesters: Array<Pick<Semester, 'id' | 'term' | 'year' | 'courseIds' | 'credits'>>) => Promise<PlanReview>;
+  /** DI seam for add-course candidates (FC8; stories inject fixtures, the
+      live default is GET /courses). */
+  searchCourses?: (semesterId: string, alreadyPlannedIds: string[], query: string) => Promise<CourseSuggestion[]>;
 }
 
 /** Live defaults (FC6 list + FC3 view + FC8 catalog; the active plan wins,
@@ -98,9 +101,11 @@ export default function TimelinePage({
   chatSlot = null,
   loadDependencies,
   reviewFn,
+  searchCourses,
 }: TimelinePageProps) {
   const loadData = loadDependencies ?? defaultLoadDependencies;
   const review = reviewFn ?? reviewPlanDraft;
+  const fetchCandidates = searchCourses ?? getCourseSuggestions;
   const [plans, setPlans] = useState<PlanListItem[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
@@ -247,6 +252,8 @@ export default function TimelinePage({
     [draft, check],
   );
 
+  const selectedIndex = summaries.findIndex((semester) => semester.id === selectedId);
+
   const dirty = useMemo(() => {
     if (!plan || !draft) return false;
     const planKey = JSON.stringify(plan.semesters.map(({ id, courseIds, credits }) => ({ id, courseIds, credits })));
@@ -272,7 +279,7 @@ export default function TimelinePage({
     let cancelled = false;
     const run = async () => {
       try {
-        const suggestions = await getCourseSuggestions(selectedId, selected?.courseIds ?? [], searchTerm);
+        const suggestions = await fetchCandidates(selectedId, selected?.courseIds ?? [], searchTerm);
         if (!cancelled) {
           setCandidates(suggestions);
           setCandidatesLoading(false);
@@ -288,7 +295,7 @@ export default function TimelinePage({
     return () => {
       cancelled = true;
     };
-  }, [selectedId, selectedIsEditable, selected, searchTerm]);
+  }, [selectedId, selectedIsEditable, selected, searchTerm, fetchCandidates]);
 
   /* FC3 mutations stage a draft only; Save persists via the api seam. */
   const stageSemester = (mutate: (courseIds: string[]) => string[] | null) => {
@@ -395,12 +402,12 @@ export default function TimelinePage({
     <AppShell active={active} onNavigate={onNavigate} chatOpen={chatOpen} onToggleChat={onToggleChat} chatSlot={chatSlot}>
       <main className="timeline-page">
         <header className="timeline-page-header">
-          <h1 className="timeline-page-title">Timeline</h1>
           {plan ? (
             <p className="timeline-page-program">
-              {plan.program.majorName.replace('BS in ', 'BS ')} — {plan.program.concentration}
+              {plan.program.majorName.replace('BS in ', 'BS ')} · {plan.program.concentration}
             </p>
           ) : null}
+          <h1 className="timeline-page-title">Timeline</h1>
         </header>
         {loadError ? (
           <p className="timeline-page-error" role="alert">
@@ -463,6 +470,12 @@ export default function TimelinePage({
               candidatesLoading={showCandidatesLoading}
               candidatesError={selectedIsEditable ? candidatesError : null}
               loading={loading}
+              onPrev={selectedIndex > 0 ? () => handleSelectSemester(summaries[selectedIndex - 1].id) : undefined}
+              onNext={
+                selectedIndex >= 0 && selectedIndex < summaries.length - 1
+                  ? () => handleSelectSemester(summaries[selectedIndex + 1].id)
+                  : undefined
+              }
             />
           </>
         )}

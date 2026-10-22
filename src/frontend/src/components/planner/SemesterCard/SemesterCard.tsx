@@ -1,7 +1,6 @@
 import Badge from '../../shared/Badge/Badge';
 import Button from '../../shared/Button/Button';
-import Icon from '../../shared/Icon/Icon';
-import { toTitleCase } from '../../shared/textCase';
+import { formatCourseCode, toTitleCase } from '../../shared/textCase';
 import type { CourseCatalog, SemesterStatus } from '../../../api/types';
 import './SemesterCard.css';
 
@@ -15,7 +14,7 @@ const STATUS_LABELS: Record<SemesterStatus, string> = {
 const STATUS_VARIANTS: Record<SemesterStatus, 'success' | 'info' | 'primary' | 'neutral'> = {
   completed: 'success',
   'in-progress': 'info',
-  planned: 'primary',
+  planned: 'neutral',
   optional: 'neutral',
 };
 
@@ -37,7 +36,9 @@ interface SemesterCardProps {
  * grid (wireframe 01). Renders the term/year header with an optional status
  * badge (FC14/FC21 lifecycle), the semester credit total (kept under the
  * degree's per-semester cap by the deterministic engine — FC32), the Edit
- * action (FC3) when provided, and one chip per planned course.
+ * action (FC3) when provided, and one code/title line per planned course.
+ * Optional semesters (e.g. summer, not in the plan) render as a dashed card
+ * with an "Add <term>" button wired to the same FC3 edit entry point.
  */
 export default function SemesterCard({
   semester,
@@ -48,20 +49,35 @@ export default function SemesterCard({
   emptyNote,
 }: SemesterCardProps) {
   const { term, year, courses = [], credits } = semester ?? {};
-  const isSummer = term === 'Summer';
+  const isOptional = status === 'optional';
+  if (isOptional) {
+    return (
+      <article className="semester-card semester-card--optional">
+        <h3 className="semester-card-term">{term} {year}</h3>
+        <p className="semester-card-empty">{emptyNote ?? 'Optional · not in your plan'}</p>
+        {onEdit ? (
+          <div>
+            <Button variant="ghost" onClick={onEdit}>
+              Add {term.toLowerCase()}
+            </Button>
+          </div>
+        ) : null}
+      </article>
+    );
+  }
   return (
-    <article className={`semester-card${isSummer ? ' semester-card--summer' : ''}`}>
+    <article className="semester-card">
       <header className="semester-card-header">
         <h3 className="semester-card-term">{term} {year}</h3>
         {onEdit && (
-          <Button variant="ghost" onClick={onEdit}>
-            <Icon name="edit" size={14} /> {onEditLabel}
-          </Button>
+          <button type="button" className="semester-card-edit" onClick={onEdit}>
+            {onEditLabel}
+          </button>
         )}
       </header>
       <p className="semester-card-meta">
         {status ? (
-          <Badge variant={STATUS_VARIANTS[status]} dot>
+          <Badge variant={STATUS_VARIANTS[status]}>
             {STATUS_LABELS[status]}
           </Badge>
         ) : null}
@@ -78,7 +94,7 @@ export default function SemesterCard({
                 key={id}
                 className={`semester-card-chip${course ? '' : ' semester-card-chip--unknown'}`}
               >
-                <span className="semester-card-chip-id">{id}</span>
+                <span className="semester-card-chip-id">{formatCourseCode(id)}</span>
                 <span className="semester-card-chip-title">
                   {course ? toTitleCase(course.title) : 'Course details unavailable'}
                 </span>

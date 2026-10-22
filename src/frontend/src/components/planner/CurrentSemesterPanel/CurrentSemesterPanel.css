@@ -1,58 +1,71 @@
-/* Home "This semester" schedule list (wireframe 01, FC14/FC21 display). */
+/* Home "This semester" block (wireframe 01, FC14/FC21 display). */
 
 .current-semester-panel {
-  padding: var(--space-2);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.current-semester-panel-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: 12px var(--space-3);
+  background: var(--color-accent-strip);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.current-semester-panel-body {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-}
-
-.current-semester-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3) var(--space-3);
 }
 
 .current-semester-panel-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
 }
 
 .current-semester-panel-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .current-semester-panel-row {
   display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 8px 10px;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .current-semester-panel-code {
   font-weight: 700;
-  font-size: 0.8rem;
-  color: var(--color-primary);
-  min-width: 64px;
+  white-space: nowrap;
 }
 
 .current-semester-panel-name {
   flex: 1;
+}
+
+.current-semester-panel-hours {
+  color: var(--color-text-muted);
   font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.current-semester-panel-actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.current-semester-panel-actions .button--secondary {
+  border-color: transparent;
 }
 
 .current-semester-panel-state {

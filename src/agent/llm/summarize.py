@@ -76,6 +76,8 @@ class StubSummarizer:
                 lines.append("Sections: " + "; ".join(rendered))
             else:
                 lines.append("No sections on record for this course.")
+        elif "plan" in payload:
+            return self._render_plan(payload.get("plan"))
         elif payload.get("profile"):
             profile = payload["profile"]
             major = profile.get("current_major") or "no major set"
@@ -89,6 +91,28 @@ class StubSummarizer:
             lines.append(
                 "I couldn't find that on record — try a course code or ask about your classes.")
         return " ".join(lines)
+
+    @staticmethod
+    def _render_plan(plan: Optional[dict]) -> str:
+        """FC22/FC27: the student's ACTIVE plan, semester by semester — only
+        what the payload carries (no invented courses)."""
+        if not plan:
+            return ("You have no active plan yet (FC6) — I can generate one for you "
+                    "and you can make it active.")
+        titles = plan.get("course_titles") or {}
+        lines = [f"Your active plan ({plan.get('target_major') or plan.get('degree_id')}"
+                 + (f" — {plan['concentration']}" if plan.get("concentration") else "")
+                 + f"), {plan.get('total_planned_credits')} planned credit hours:"]
+        for sem in plan.get("semesters") or []:
+            courses = ", ".join(
+                f"{cid} ({titles[cid]})" if cid in titles else cid
+                for cid in sem["courses"]) or "no courses"
+            credits = f" — {sem['credits']} hrs" if sem.get("credits") else ""
+            lines.append(f"• {sem['term']} {sem['year']}: {courses}{credits}")
+        progress = plan.get("progress")
+        if progress and progress.get("completion_percent") is not None:
+            lines.append(f"Degree progress so far: {progress['completion_percent']:g}% complete.")
+        return "\n".join(lines)
 
     def _render_semantic(self, payload: dict, user_input: str) -> str:
         catalog_hits = payload.get("catalog_hits") or []
@@ -114,6 +138,7 @@ class StubSummarizer:
         if not candidates:
             return ("I couldn't build a candidate list — no matching courses and no "
                     "selected degree on record.")
+        planned = payload.get("already_planned") or []
         eligible = [c for c in candidates if c["eligible"] is True]
         unknown = [c for c in candidates if c["eligible"] is None]
         blocked = [c for c in candidates if c["eligible"] is False]
@@ -128,6 +153,9 @@ class StubSummarizer:
             lines.append(f"Can't verify yet — {course['course_id']}: {unknown_reason}")
         for course in blocked:
             lines.append(f"Not eligible — {course['course_id']}: {course['reason']}")
+        if planned:
+            lines.append("Already in your active plan (not re-suggested): "
+                         + ", ".join(planned) + ".")
         return "\n".join(lines)
 
     def _render_audit(self, payload: dict, user_input: str) -> str:
@@ -141,6 +169,8 @@ class StubSummarizer:
                 lines.append(f"• {line}")
             if payload.get("misses"):
                 lines.append(f"(not found: {', '.join(payload['misses'])})")
+            if payload.get("plan"):
+                lines.append(self._render_plan(payload["plan"]))
             return "\n".join(lines)
         course = payload.get("course")
         result = payload.get("result")

@@ -2,6 +2,15 @@
 
 ---
 
+**Implementation notes (2026-10-22, agent plan context):** §3 student context
+now includes the student's ACTIVE plan (FC6) — read from SQLite via
+`AdvisorToolkit.plan_context` (not Chroma, FC33) in the `exact` route
+(`params.topic="plan"`) and progress audits; recommendations skip planned
+courses; the classifier receives `{major, has_active_plan}` as routing hints
+(the §3 `context_state`, FC27). FC23 gained `plan_add_course` /
+`plan_remove_course` / `plan_move_course` / `activate_plan`, prechecked by
+`DegreePlanGenerator.review_plan_semesters` and saved as new plan versions.
+
 **Implementation notes (2026-10-22, plan/account/dashboard end-to-end build):**
 the §2 engine is COMPLETE — `DegreePlanGenerator` lives in
 `src/core/engine/generator.py` (pure, entity-passed). Implemented adjustments

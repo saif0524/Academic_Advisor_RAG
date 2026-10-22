@@ -1,4 +1,4 @@
-import Badge from '../../shared/Badge/Badge';
+import Icon from '../../shared/Icon/Icon';
 import ProgressBar from '../../shared/ProgressBar/ProgressBar';
 import AddCourseSearch from '../AddCourseSearch/AddCourseSearch';
 import PlanCheckBanner from '../PlanCheckBanner/PlanCheckBanner';
@@ -28,6 +28,9 @@ interface SemesterDetailProps {
   candidatesError?: string | null;
   loading?: boolean;
   error?: string | null;
+  /** ‹ › semester stepping; a button renders only when its handler is given. */
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 /**
@@ -52,6 +55,8 @@ export default function SemesterDetail({
   candidatesError = null,
   loading = false,
   error = null,
+  onPrev,
+  onNext,
 }: SemesterDetailProps) {
   if (loading) {
     return (
@@ -85,46 +90,64 @@ export default function SemesterDetail({
     <section className="semester-detail" aria-label={`Semester detail — ${term} ${year}`}>
       <header className="semester-detail-header">
         <div>
+          {status ? <p className="semester-detail-kicker">{STATUS_LABELS[status]}</p> : null}
           <h2 className="semester-detail-title">
             {term} {year}
           </h2>
-          {status ? (
-            <Badge variant="neutral" dot>
-              {STATUS_LABELS[status]}
-            </Badge>
-          ) : null}
         </div>
-        <p className="semester-detail-credits">
-          {credits ?? 0} of {creditCap} credit hours
-        </p>
+        {onPrev || onNext ? (
+          <div className="semester-detail-nav">
+            <button type="button" className="semester-detail-nav-button" onClick={onPrev} disabled={!onPrev} aria-label="Previous semester">
+              <Icon name="chevronLeft" size={18} />
+            </button>
+            <button type="button" className="semester-detail-nav-button" onClick={onNext} disabled={!onNext} aria-label="Next semester">
+              <Icon name="chevronRight" size={18} />
+            </button>
+          </div>
+        ) : null}
       </header>
-      <ProgressBar value={credits ?? 0} max={creditCap} label={`Semester credits of the ${creditCap}-hour cap`} />
-      <p className="semester-detail-count">
-        {courses.length} course{courses.length === 1 ? '' : 's'}
-      </p>
-      {check ? <PlanCheckBanner status={semesterIssues.length > 0 ? 'issues' : 'ok'} issues={issueTexts} /> : null}
-      {courses.length === 0 ? (
-        <p className="semester-detail-empty">No courses planned for this term — add one below.</p>
-      ) : (
-        <ul className="semester-detail-list">
-          {courses.map((course) => (
-            <PlannedCourseRow
-              key={course.id}
-              course={course}
-              warning={course.warning ?? null}
-              onRemove={status === 'in-progress' ? undefined : onRemoveCourse}
-            />
-          ))}
-        </ul>
-      )}
-      <AddCourseSearch
-        value={searchTerm}
-        onChange={(next) => onSearchChange?.(next)}
-        candidates={candidates}
-        onPick={onPickCourse}
-        loading={candidatesLoading}
-        error={candidatesError}
-      />
+      <div className="semester-detail-credits">
+        <div className="semester-detail-credits-row">
+          <strong>
+            {credits ?? 0} of {creditCap} credit hours
+          </strong>
+          <span>
+            {courses.length} course{courses.length === 1 ? '' : 's'}
+          </span>
+        </div>
+        <ProgressBar value={credits ?? 0} max={creditCap} label={`Semester credits of the ${creditCap}-hour cap`} />
+      </div>
+      <div className="semester-detail-columns">
+        <div className="semester-detail-card">
+          <h3 className="semester-detail-card-title">Courses</h3>
+          {check && semesterIssues.length > 0 ? <PlanCheckBanner status="issues" issues={issueTexts} /> : null}
+          {courses.length === 0 ? (
+            <p className="semester-detail-empty">No courses planned for this term — add one.</p>
+          ) : (
+            <ul className="semester-detail-list">
+              {courses.map((course) => (
+                <PlannedCourseRow
+                  key={course.id}
+                  course={course}
+                  warning={course.warning ?? null}
+                  onRemove={status === 'in-progress' ? undefined : onRemoveCourse}
+                />
+              ))}
+            </ul>
+          )}
+          {check && semesterIssues.length === 0 ? <PlanCheckBanner status="ok" /> : null}
+        </div>
+        <div className="semester-detail-card">
+          <AddCourseSearch
+            value={searchTerm}
+            onChange={(next) => onSearchChange?.(next)}
+            candidates={candidates}
+            onPick={onPickCourse}
+            loading={candidatesLoading}
+            error={candidatesError}
+          />
+        </div>
+      </div>
     </section>
   );
 }
