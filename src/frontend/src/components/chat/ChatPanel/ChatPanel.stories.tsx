@@ -89,6 +89,40 @@ export const SendMessage: StoryObj<typeof ChatPanel> = {
   },
 };
 
+/** Export: the Markdown transcript carries each advisor turn's check statuses
+    (✅ passed · ❌ failed · ❔ skipped). The spy replaces the browser download. */
+export const ExportTranscript: StoryObj<typeof ChatPanel> = {
+  args: {
+    loadMessages: () => Promise.resolve<ChatMessage[]>([
+      { id: 'e1', role: 'user', text: 'Can I take CSE 4308 next semester?' },
+      {
+        id: 'e2',
+        role: 'advisor',
+        text: 'Not yet — CSE 3318 is a prerequisite you have not completed.',
+        checks: [
+          { kind: 'step', course: null, checkId: '', description: 'Looked up CSE 4308 in SQLite', passed: null, reason: null },
+          { kind: 'check', course: '4308', checkId: 'FC29', description: 'Prerequisites satisfied', passed: false, reason: 'Not satisfied: 3318' },
+          { kind: 'check', course: '4308', checkId: 'FC30', description: 'Not already passed', passed: true, reason: 'No passing record' },
+          { kind: 'check', course: '4308', checkId: 'FC31', description: 'No schedule conflict', passed: null, reason: 'Skipped: no specific section was given' },
+        ],
+      },
+    ]),
+    saveExport: (filename: string, markdown: string) => {
+      document.body.dataset.exportName = filename;
+      document.body.dataset.exportBody = markdown;
+    },
+  },
+  play: async ({ canvas }) => {
+    await userEvent.click(await canvas.findByRole('button', { name: /export this chat/i }));
+    await expect(document.body.dataset.exportName).toMatch(/^advisor-chat-.*\.md$/);
+    const body = document.body.dataset.exportBody ?? '';
+    await expect(body).toContain('❌ failed');
+    await expect(body).toContain('✅ passed');
+    await expect(body).toContain('❔ skipped');
+    await expect(body).toContain('Not satisfied: 3318');
+  },
+};
+
 export const LoadError: StoryObj<typeof ChatPanel> = {
   args: {
     loadMessages: () => Promise.reject(new Error('advisor API unreachable')),

@@ -22,6 +22,7 @@ from database.ingest.degree_requirements_loader import (
     load_degree_requirements,
 )
 from database.ingest.demo_seed_loader import load_sections_mock, load_student_demo
+from database.ingest.prerequisite_loader import load_prerequisites
 from database.sql.sqlite_manager import SQLDatabaseManager
 from database.vector.chroma_manager import (
     CATALOG_COLLECTION,
@@ -52,7 +53,7 @@ def seed_sqlite(sql_manager: SQLDatabaseManager, data_dir: Path = DATA_DIR) -> N
     corpus_ids = {c.course_id for c in corpus}
     for course in corpus:
         hours = next((d.credit_hours for d in derived if d.course_id == course.course_id and d.credit_hours), None)
-        course.credit_hours = hours
+        course.credit_hours = hours or course.credit_hours  # tables win; corpus hours fill the gaps
         sql_manager.upsert_course(course, source="corpus")
     for course in derived:
         if course.course_id not in corpus_ids:
@@ -62,8 +63,20 @@ def seed_sqlite(sql_manager: SQLDatabaseManager, data_dir: Path = DATA_DIR) -> N
     for degree in degrees:
         sql_manager.upsert_degree(degree, source_file=f"degrees/{degree.degree_id}.json")
 
-    # mock sections (labeled demo data; validated against the course catalog)
+    # prerequisite graph (FC11/FC29) — both ends must be real catalog courses
     known_ids = corpus_ids | {c.course_id for c in derived}
+    prereq_count = 0
+    for course_id, edges in load_prerequisites(data_dir).items():
+        for kind, required_ids in edges.items():
+            for required_id in required_ids:
+                if course_id not in known_ids or required_id not in known_ids:
+                    raise ValueError(
+                        f"Prerequisite {required_id!r} -> {course_id!r} references an unknown "
+                        "course — seeds must not invent courses")
+                sql_manager.add_prerequisite(course_id, required_id, kind)
+                prereq_count += 1
+
+    # mock sections (labeled demo data; validated against the course catalog)
     for section in load_sections_mock(data_dir):
         if section.course_id not in known_ids:
             raise ValueError(
@@ -103,8 +116,8 @@ def seed_sqlite(sql_manager: SQLDatabaseManager, data_dir: Path = DATA_DIR) -> N
             active=False,
         )
     _logger.info(
-        "seed_sqlite: %d corpus + %d derived courses, %d degrees, %d sections, demo student %s",
-        len(corpus), len([c for c in derived if c.course_id not in corpus_ids]), len(degrees),
+        "seed_sqlite: %d corpus + %d derived courses, %d degrees, %d prerequisite edges, %d sections, demo student %s",
+        len(corpus), len([c for c in derived if c.course_id not in corpus_ids]), len(degrees), prereq_count,
         len(load_sections_mock(data_dir)), student["student_id"],
     )
 

@@ -4,6 +4,7 @@
  * Backed by the FastAPI chat surface (src/server/routers/chat.py):
  *   getConversations()          → GET  /chat/sessions
  *   getMessages(id)             → GET  /chat/messages?session_id={id}
+ *   deleteConversation(id)      → DELETE /chat/sessions/{id}
  *   sendMessage(text, session)  → POST /chat/messages
  *   respondToProposal(id, dec)  → POST /chat/messages (+confirmed/cancelled)
  *
@@ -30,7 +31,16 @@ interface ChatSessionsResponse {
 interface ChatHistoryResponse {
   session_id: string;
   student_id: string;
-  messages: { role: 'user' | 'assistant'; content: string; created_at: string | null }[];
+  messages: {
+    role: 'user' | 'assistant';
+    content: string;
+    created_at: string | null;
+    /** Checks that ran for this advisor turn (FC39), when the server recorded them. */
+    checks?: {
+      type: 'check' | 'step'; course: string | null; check_id: string | null;
+      description: string; passed: boolean | null; reason: string | null;
+    }[] | null;
+  }[];
 }
 interface PendingActionDto {
   action_id: string;
@@ -48,6 +58,11 @@ interface ChatMessageReplyDto {
     server continues the student's active session when omitted (FC27/FC34)). */
 let activeSessionId: string | null = null;
 
+/** The session the drawer is conversing in (used to label exports), or null. */
+export function getActiveSessionId(): string | null {
+  return activeSessionId;
+}
+
 /** Conversation list grouped by date in the UI (FC34). */
 export async function getConversations(): Promise<Conversation[]> {
   const response = await request<ChatSessionsResponse>('/chat/sessions');
@@ -57,6 +72,12 @@ export async function getConversations(): Promise<Conversation[]> {
     date: (row.last_active_at ?? row.created_at ?? '').slice(0, 10),
     snippet: undefined,
   }));
+}
+
+/** Permanently delete one conversation (DELETE /chat/sessions/{id}, FC41). */
+export async function deleteConversation(conversationId: string): Promise<void> {
+  await request<void>(`/chat/sessions/${encodeURIComponent(conversationId)}`, { method: 'DELETE' });
+  if (activeSessionId === conversationId) activeSessionId = null;
 }
 
 /** Start a new empty conversation and make it the send target (POST /chat/sessions). */
@@ -80,6 +101,13 @@ export async function getMessages(conversationId: string): Promise<ChatMessage[]
     id: `m${index}`,
     role: row.role === 'user' ? 'user' : 'advisor',
     text: row.content,
+    createdAt: row.created_at ?? undefined,
+    checks: row.checks?.length
+      ? row.checks.map((c) => ({
+          kind: c.type, course: c.course, checkId: c.check_id ?? '',
+          description: c.description, passed: c.passed, reason: c.reason,
+        }))
+      : undefined,
   }));
   if (response.pending_action) {
     const pending: ChatMessage['action'] = {

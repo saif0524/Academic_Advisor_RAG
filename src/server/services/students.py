@@ -80,6 +80,7 @@ class StudentService:
             return DegreeProgressResponse()  # no degree selected — honest Nones
 
         degree = self._sql_db_manager.get_degree(student.selected_degree_id)  # raises 404 if unknown
+        degree = degree.for_concentration(student.concentration)  # FC1: the student's track counts
 
         classes = self._sql_db_manager.list_student_classes(student_id)
         hours_by_id = {c.course_id: c.credit_hours for c in self._sql_db_manager.list_courses()

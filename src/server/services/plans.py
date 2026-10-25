@@ -28,6 +28,7 @@ from server.schemas.plans import (
     PlanUpdateRequest,
     PlanVersionListResponse,
     PlanVersionSummary,
+    ProfileUpdate,
     RevertPlanRequest,
     SemesterEntry,
 )
@@ -36,7 +37,7 @@ from server.schemas.plans import (
 class PlanService:
     """Wiring: `sql_db_manager` (catalog/degrees/plans, FC33) + core engine."""
 
-    # Concentrations aren't in the degree data yet, so "General" is the only option offered.
+    # Always offered: the degree without a concentration track (FC1).
     GENERAL_CONCENTRATION = "General"
 
     def __init__(self, sql_db_manager: Any) -> None:
@@ -74,10 +75,12 @@ class PlanService:
         return self._to_detail(row)
 
     def activate_plan(self, student_id: str, plan_id: str) -> PlanDetail:
-        """Make a plan active — the explicit 'make active' step (FC6)."""
+        """Make a plan active — the explicit "make active" step (FC6); the
+        profile follows it (FC1/FC17)."""
         if not self._sql_db_manager.activate_plan(student_id, plan_id):
             raise RecordNotFoundError(f"Plan {plan_id!r} not found for student {student_id!r}")
-        return self.get_plan(student_id, plan_id)
+        changed = self._sql_db_manager.sync_profile_to_plan(student_id, plan_id)
+        return self._detail_with_profile(student_id, plan_id, changed)
 
     def list_options(self) -> PlanOptionsResponse:
         """Generate-form inputs (FC1): majors from the degrees table."""
@@ -89,7 +92,7 @@ class PlanService:
             seen.add(degree.major_name)
             majors.append(PlanOption(
                 name=degree.major_name,
-                concentrations=[self.GENERAL_CONCENTRATION],
+                concentrations=[*degree.concentrations, self.GENERAL_CONCENTRATION],
             ))
         return PlanOptionsResponse(majors=majors)
 
@@ -111,9 +114,11 @@ class PlanService:
 
     def generate_plan(self, student_id: str, request: GeneratePlanRequest) -> PlanDetail:
         """Generate a semester roadmap (FC2, FC25) via DegreePlanGenerator;
-        persists as a NEW versioned plan. Preview → user edits → activates;
-        no FC23 gate applies (creating plans is not an on-behalf action)."""
+        persists as a NEW versioned plan and makes it the ACTIVE plan (FC6:
+        any plan change activates the changed plan by default); no FC23 gate
+        applies (creating plans is not an on-behalf action)."""
         degree = self._resolve_degree(request.major_name)
+        concentration = self._resolve_concentration(degree, request.concentration)
         student = self._student(student_id)
         prefs = self._sql_db_manager.get_student_preferences(student_id) or {}
         cap = request.max_credits_per_semester or prefs.get("max_credits_per_semester")
@@ -123,16 +128,17 @@ class PlanService:
         result = DegreePlanGenerator.generate_multi_year_plan(
             student, degree, catalog,
             include_summer=include_summer, max_credits_per_sem=cap,
+            concentration=concentration,
         )
         plan = result.plan
-        plan.concentration = (request.concentration or "").strip() or None
+        plan.concentration = concentration
         plan.plan_id = f"plan-{uuid.uuid4().hex[:10]}"
         self._sql_db_manager.save_degree_plan(plan, payload={
             "semesters": semesters_payload(plan.semesters, catalog),
             "includes_summer": plan.includes_summer,
             "notes": list(result.notes),
         })
-        return self.get_plan(student_id, plan.plan_id)
+        return self._activate(student_id, plan.plan_id)  # FC6: changed plan → active
 
     def update_plan(
         self, student_id: str, plan_id: str, request: PlanUpdateRequest
@@ -173,7 +179,7 @@ class PlanService:
         self._sql_db_manager.create_plan_version(plan_id, payload, note="edited plan (FC3)")
         if request.includes_summer is not None:
             self._sql_db_manager.update_plan_meta(plan_id, includes_summer=includes_summer)
-        return self.get_plan(student_id, plan_id)
+        return self._activate(student_id, plan_id)  # FC6: changed plan → active
 
     def revert_plan(self, student_id: str, plan_id: str, request: RevertPlanRequest) -> PlanDetail:
         """Revert to a previous version (FC5) — history-style: the restored
@@ -195,7 +201,7 @@ class PlanService:
         if "includes_summer" in payload:
             self._sql_db_manager.update_plan_meta(
                 plan_id, includes_summer=bool(payload["includes_summer"]))
-        return self.get_plan(student_id, plan_id)
+        return self._activate(student_id, plan_id)  # FC6: changed plan → active
 
     def compare_plans(
         self, student_id: str, existing_plan_id: str, target_major: str,
@@ -205,11 +211,12 @@ class PlanService:
         target major/concentration — engine-generated and diffed, never LLM."""
         row = self._sql_db_manager.get_plan(student_id, existing_plan_id)  # 404 grounded
         degree = self._resolve_degree(target_major)
+        concentration = self._resolve_concentration(degree, target_concentration)
         student = self._student(student_id)
         catalog = self._sql_db_manager.get_catalog()
 
         new_result = DegreePlanGenerator.simulate_major_switch(
-            student, degree, catalog)
+            student, degree, catalog, concentration=concentration)
         existing_sems = [
             SemesterPlan(term=s["term"], year=s["year"],
                          course_ids=list(s.get("courses") or []))
@@ -220,7 +227,7 @@ class PlanService:
         return PlanComparisonResponse(
             existing_plan_id=existing_plan_id,
             target_major=target_major,
-            target_concentration=target_concentration or self.GENERAL_CONCENTRATION,
+            target_concentration=concentration,
             advantages=comparison.advantages,
             disadvantages=comparison.disadvantages,
             retained_courses=comparison.retained,
@@ -260,6 +267,22 @@ class PlanService:
                 return degree
         raise RecordNotFoundError(f"No degree on record for major {major_name!r}")
 
+    def _resolve_concentration(self, degree: DegreeRequirement, requested: Optional[str]) -> str:
+        """Match a requested track against the degree's offered concentrations
+        (case-insensitive). 'General'/empty means no track; anything else that
+        isn't offered is a 422 listing the real options — never guessed."""
+        wanted = (requested or "").strip()
+        if wanted.lower() in ("", self.GENERAL_CONCENTRATION.lower()):
+            return self.GENERAL_CONCENTRATION
+        match = next((n for n in degree.concentrations if n.lower() == wanted.lower()), None)
+        if match is None:
+            offered = ", ".join([*degree.concentrations, self.GENERAL_CONCENTRATION])
+            raise InvalidRequestError(
+                f"{degree.major_name} has no {wanted!r} concentration",
+                details=[f"offered concentrations: {offered}"],
+            )
+        return match
+
     def _degree_cap(self, degree_id: Optional[str]) -> Optional[int]:
         if not degree_id:
             return None
@@ -285,6 +308,20 @@ class PlanService:
                 term, year, courses = entry.term, entry.year, list(entry.courses)
             tuples.append((str(term), int(year), courses))
         return tuples
+
+    def _activate(self, student_id: str, plan_id: str) -> PlanDetail:
+        """FC6: make the plan active AND make the profile follow it (major,
+        concentration FC1, tracked degree FC17) — the one activation path
+        every plan write uses, so plan and profile never disagree."""
+        self._sql_db_manager.activate_plan(student_id, plan_id)
+        changed = self._sql_db_manager.sync_profile_to_plan(student_id, plan_id)
+        return self._detail_with_profile(student_id, plan_id, changed)
+
+    def _detail_with_profile(self, student_id: str, plan_id: str, changed) -> PlanDetail:
+        detail = self.get_plan(student_id, plan_id)
+        if changed:
+            detail.profile_updated = ProfileUpdate(**changed)
+        return detail
 
     def _to_detail(self, row: dict) -> PlanDetail:
         return PlanDetail(

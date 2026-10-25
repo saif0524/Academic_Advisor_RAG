@@ -30,8 +30,23 @@ class PlanSummary(BaseModel):
     created_at: Optional[datetime] = None
 
 
+class ProfileUpdate(BaseModel):
+    """The profile fields a plan activation changed (FC6: the profile follows
+    the active plan — major/concentration FC1, tracked degree FC17)."""
+
+    major_name: str
+    concentration: Optional[str] = None
+    degree_id: Optional[str] = None
+
+
 class PlanDetail(PlanSummary):
     """Full plan: summary fields + the semester-by-semester roadmap (FC25)."""
+
+    profile_updated: Optional[ProfileUpdate] = Field(
+        default=None,
+        description="Set on activating writes (generate/activate/edit/revert) when the "
+        "student's major, concentration or tracked degree changed to match this plan (FC6).",
+    )
 
     semesters: List[SemesterEntry] = Field(default_factory=list)
     notes: List[str] = Field(

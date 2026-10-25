@@ -2,6 +2,19 @@
 
 ---
 
+**Implementation notes (2026-10-25, active-by-default plans):** FC6 — any
+plan change activates the changed plan: `PlanService.generate_plan` /
+`update_plan` / `revert_plan` and `EngineTools.generate_plan` call
+`SQLDatabaseManager.activate_plan` after writing (the manager's
+`save_degree_plan` still inserts inactive; activation is a service decision).
+Confirmed `change_concentration` / `change_major` (FC23) regenerate the plan
+for the new track via `DegreePlanGenerator` (`ActionTools._replan`), so the
+active plan never lags the profile. Graph routing: a `propose_action` (or
+`clarify`) classification whose required params are present
+(`ACTION_REQUIRED_PARAMS` / `action_ready`) skips the yes/no clarification and
+proposes directly — the durable FC23 card replaces "would you like me to…?".
+Supersedes the "generate → edit → make active" decision below.
+
 **Implementation notes (2026-10-22, agent plan context):** §3 student context
 now includes the student's ACTIVE plan (FC6) — read from SQLite via
 `AdvisorToolkit.plan_context` (not Chroma, FC33) in the `exact` route
@@ -30,9 +43,11 @@ re-planned). Server: plan write endpoints (generate/update/revert/compare)
 plus `GET /plans/active`, `PATCH /plans/{id}/activate`, `POST /plans/review`,
 `GET /plans/options` are wired — no more 501s in the plan zone; new plans
 deactivate-then-activate (generate → edit → make active, per product
-decision). Concentrations are not modeled in the degrees seed, so plan
-options offer 'General' per major (honest default; requested values persist
-as stored text). Planning preferences (FC25 summer toggle, FC32 cap input)
+decision — superseded 2026-10-25: changed plans are active by default). Concentrations are modeled in the degree JSON (`concentrations`) as
+`kind="concentration"` requirement blocks owned by a track
+(`DegreeBlock.concentration`, migration 0003); `DegreeRequirement.for_concentration`
+scopes a degree to one track (its hours replace technical-elective hours), and
+plan options offer each degree's tracks plus 'General'. Planning preferences (FC25 summer toggle, FC32 cap input)
 persist in `student_preferences` (migration 0002) and feed generation. The
 agent gained the `plan_generation` intent: stub/LLM classifier routes
 "generate a plan" phrasing to a plan node that calls
@@ -41,7 +56,7 @@ from the message or the student's record; honest refusal when unresolved).
 Frontend swap complete: plans/students/catalog/candidate mocks are now live
 HTTP calls (`planDetailToActive` maps server detail → UI shape); pages gained
 real loading/empty/error states; AccountPage's confirm path applies major
-changes + auto-generates an inactive plan (FC23-style UI gate), and the
+changes + auto-generates a plan (now active by default, 2026-10-25), and the
 timeline saves engine-validated drafts (PATCH) with version history + revert.
 Stories keep deterministic DI fixtures (`reviewFn` seam) and never hit HTTP.
 
@@ -284,10 +299,15 @@ feature needs them (FC34 persistence is SQL-side). The §2 engine
 
 **Functions:**
 - `process_query(student_id: String, user_input: String) -> String` (Main entry point)
-- `classify_query_intent(user_input: String) -> String` (Routes between exact SQL query, semantic RAG query, or degree generation - Req 3)
+- `classify_query_intent(user_input: String) -> String` (Routes between exact SQL query, semantic RAG query, degree/concentration requirements lookup (SQLite, FC18/FC22), or degree generation - Req 3)
 - `handle_exact_query(query: String) -> String` (Uses SQL Agent/Tools for schedules, status - Req 3)
 - `handle_semantic_query(query: String) -> String` (Uses Vector DB for course content, career alignment, major pros/cons - Req 3 & 5b)
 - `handle_plan_generation_request(student: Student, parameters: Dict) -> String` (Calls `DegreePlanGenerator` and summarizes with LLM - Req 2 & 5c)
+- `handle_exploration(query: String, history: List<String>) -> String` (**FC42**, `explore` intent → graph node `explore_agent`: open-ended/brainstorming questions and short follow-up replies to the advisor's own offers. An `Explorer` (`agent/llm/explore.py`: `LLMExplorer` tool-calling loop | `StubExplorer` deterministic) may call the **read-only** tools in `agent/tools/explore.py` (`list_programs`, `degree_requirements`, `search_courses`, `search_catalog`, `course_details`, `my_record`, `my_active_plan`, `degree_progress`, `check_eligibility`) at most `MAX_TOOL_CALLS` = 6 times per turn. Wording is non-deterministic by design; the deterministic guard `ground_answer` then removes course ids not in the catalog from the answer and runs every real one through `CourseRecommendationValidator` (FC29–FC32), streaming the checks (FC39). No action tools exist on this path — account changes still go through the FC23 card.)
+
+> **Note (2026-10-25, FC6/FC23):** the profile follows the active plan — every activation (`PlanService._activate`, `EngineTools.generate_plan`, `ActionTools._do_activate_plan`) calls `SQLDatabaseManager.sync_profile_to_plan` (major + concentration with FC7 history, tracked degree FC17). In chat, `EngineTools.plan_program_change` turns a plan request for a different major/track into the FC23 `change_major`/`change_concentration` proposal instead of generating directly; `resolve_plan_target` reads the full degree record (not the track-narrowed `selected_degree`).
+
+> **Note (2026-10-25, FC42):** the LLM classifier recovers non-JSON (YAML-ish / fenced) structured output from the parser error instead of silently degrading to the regex rules; a short affirmation ("yes please") after an advisor turn is never classified as an `exact` lookup. Prompt history keeps the head and tail of long turns so the advisor's closing offer survives trimming.
 
 ---
 

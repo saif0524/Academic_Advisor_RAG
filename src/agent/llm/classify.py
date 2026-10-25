@@ -14,8 +14,42 @@ from agent.tools.course_ids import course_mentions
 
 _logger = logging.getLogger("agent.classify")
 
-INTENTS = ("exact", "semantic", "recommend", "audit", "propose_action",
-           "plan_generation", "clarify", "chitchat")
+INTENTS = ("exact", "semantic", "requirements", "recommend", "audit", "propose_action",
+           "plan_generation", "explore", "clarify", "chitchat")
+
+_FOLLOWUP = re.compile(
+    r"^\s*(yes|yeah|yep|yup|sure|ok(ay)?|please|go ahead|do it|sounds good|let'?s do it"
+    r"|that would be (great|helpful)|absolutely|definitely|of course|tell me more"
+    r"|go on|continue)\b[\w\s,!.']*$", re.I)
+
+# FC42: open-ended exploration / brainstorming (stub routing contract).
+_EXPLORE = re.compile(
+    r"\b(BRAINSTORM|EXPLORE|IDEAS?|OPTIONS|COMPARE|HELP ME (THINK|DECIDE|CHOOSE|PICK)"
+    r"|INTERESTED IN|\bI (REALLY )?(LIKE|ENJOY|LOVE)\b|WHAT (COULD|CAN) I DO"
+    r"|WHAT (MAJORS|DEGREES|PROGRAMS|CONCENTRATIONS|TRACKS)"
+    r"|(MAJORS|DEGREES|PROGRAMS|CONCENTRATIONS|TRACKS)\b.*\b(AVAILABLE|OFFERED|EXIST|ARE THERE))")
+
+
+def _lenient_parse(text: Optional[str]) -> Optional[dict]:
+    """Parse a classifier reply that isn't strict JSON (YAML-ish or ```json
+    fenced). YAML is a JSON superset, so one loader covers both."""
+    if not text:
+        return None
+    import yaml
+
+    body = re.sub(r"^\s*```[a-zA-Z]*\s*|\s*```\s*$", "", str(text))
+    try:
+        data = yaml.safe_load(body)
+    except yaml.YAMLError:
+        return None
+    return data if isinstance(data, dict) and data.get("intent") else None
+
+
+def is_followup_reply(text: str) -> bool:
+    """FC42/FC27: a short conversational reply ("yes please", "sure") that
+    only makes sense against the advisor's previous turn."""
+    text = (text or "").strip()
+    return len(text.split()) <= 6 and bool(_FOLLOWUP.match(text))
 
 
 @dataclass
@@ -67,9 +101,16 @@ class LLMClassifier:
                 HumanMessage(content="\n".join(context)),
             ])
         except Exception as exc:
-            _logger.warning("LLM classification unavailable (%s) — rule-based routing", exc)
-            return _rules_fallback(user_input, history, student_context)
+            # The model often answers the schema in YAML-ish / fenced text; the
+            # parser error carries that raw output — recover it before degrading.
+            raw = _lenient_parse(getattr(exc, "llm_output", None))
+            if raw is None:
+                _logger.warning("LLM classification unavailable (%s) — rule-based routing", exc)
+                return _rules_fallback(user_input, history, student_context)
 
+        if isinstance(raw, dict):
+            from types import SimpleNamespace
+            raw = SimpleNamespace(**{k: raw.get(k) for k in ("intent", "params", "clarification_question")})
         intent = (getattr(raw, "intent", None) or "").strip().lower()
         if intent not in INTENTS:
             # The model answered, but not in the contract — degrade to rules.
@@ -79,6 +120,9 @@ class LLMClassifier:
         if intent == "clarify":
             followup = followup or "Could you tell me a bit more about what you'd like to do?"
         params = self._normalize_params(dict(getattr(raw, "params", None) or {}), user_input)
+        if history and is_followup_reply(user_input) and intent in ("exact", "semantic", "chitchat"):
+            # FC42: "yes please" to the advisor's offer is never a course lookup.
+            return Classification(intent="explore", params={"query": user_input})
         return Classification(intent=intent, params=params, followup=followup)
 
     @staticmethod
@@ -117,6 +161,9 @@ class StubClassifier:
         upper = text.upper()
         mentions = course_mentions(upper)
 
+        if history and is_followup_reply(text):
+            return Classification("explore", {"query": text})  # FC42/FC27 follow-up
+
         def in_original(match) -> str:
             """Slice from the original text so extracted names keep case."""
             return text[match.start(1):match.end(1)].strip()
@@ -153,6 +200,20 @@ class StubClassifier:
             return Classification("propose_action", {
                 "action_type": "plan_move_course", "course_id": plan_mentions[0],
                 "semester_term": term_text})
+
+        # ----- degree / concentration requirements (FC18/FC22; SQLite record).
+        # Exploratory ("considering… what classes would I need") is a question,
+        # never a FC23 proposal.
+        if re.search(r"\b(DEGREE|MAJOR|CONCENTRATION|TRACK)\b", upper) and re.search(
+                r"\bREQUIREMENTS?\b|\bREQUIRED\b|\b(CLASSES|COURSES)\s+(I'?LL|I WOULD|WOULD I|DO I|I WILL|WILL I)\s+NEED"
+                r"|\bWHAT\s+(DO|WOULD|WILL)\s+I\s+NEED\b|\bNEED TO TAKE\b", upper):
+            params: Dict = {"query": text}
+            track = (re.search(r"\b(?:CONCENTRATION|TRACK)\s+TO\s+(.+?)\s*(?:[.?!]|$)", text, re.I)
+                     or re.search(r"\b(?:THE|FOR|IN)\s+(?!MY\b|A\b|AN\b|OUR\b|THIS\b)([A-Za-z][A-Za-z &\-]*?)\s+(?:CONCENTRATION|TRACK)\b",
+                                  text, re.I))
+            if track:
+                params["concentration"] = track.group(1).strip()
+            return Classification("requirements", params)
 
         # ----- FC23 proposals (actions need explicit confirmation later)
         change_status = re.search(
@@ -199,7 +260,15 @@ class StubClassifier:
                 "me", "my", "it", "this", "that"}
             if target and not filler:
                 params["target_major"] = in_original(target).strip(" .!?")
+            else:
+                track = re.search(r"\b(?:CONCENTRATION|TRACK|SPECIALIZATION)\s+(?:IN|OF|ON)\s+(.+)$", upper)
+                if track:  # "plan with a concentration in X" → own major, track X (FC1)
+                    params["concentration"] = in_original(track).strip(" .!?")
             return Classification("plan_generation", params)
+
+        # ----- open-ended exploration / brainstorming (FC42)
+        if _EXPLORE.search(upper):
+            return Classification("explore", {"query": text})
 
         # ----- exact facts (FC33 SQLite side)
         if mentions and re.search(

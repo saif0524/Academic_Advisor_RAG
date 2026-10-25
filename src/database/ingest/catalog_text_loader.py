@@ -35,4 +35,23 @@ def load_catalog_documents(data_dir: Path = DATA_DIR) -> List[Dict[str, str]]:
                 "text": json.dumps(record, indent=2, ensure_ascii=False),
                 "metadata": {"kind": kind, "source": path.name},
             })
+            # Each concentration track also gets its own short chunk so semantic
+            # questions ("what is the Cybersecurity concentration?") retrieve it
+            # whole instead of a truncated slice of the big degree record.
+            for track in record.get("concentrations", []) if kind == "degree_requirements" else []:
+                documents.append({
+                    "id": f"catalog:{path.stem}:concentration:{_slug(track['name'])}",
+                    "text": (
+                        f"{record['major_name']} ({record['degree_id']}) — concentration: {track['name']}. "
+                        f"{track.get('description', '')} Requires {track.get('credits_required')} credit hours "
+                        "(taken in place of technical-elective hours):\n"
+                        + json.dumps(track["courses"], indent=2, ensure_ascii=False)
+                    ),
+                    "metadata": {"kind": "concentration", "source": path.name,
+                                 "degree_id": record["degree_id"], "concentration": track["name"]},
+                })
     return documents
+
+
+def _slug(name: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "-" for ch in name).strip("-")

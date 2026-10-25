@@ -12,11 +12,14 @@ which is why no checkpointer is installed — divergence from the skill's dev
 MemorySaver default, documented in the domain-model notes."""
 from __future__ import annotations
 
+import re
 from typing import Annotated, Dict, List, Optional, TypedDict
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+
+from agent.tools.explore import ground_answer
 
 
 def emit(event: dict) -> None:
@@ -68,12 +71,39 @@ INTENT_ROUTES: Dict[str, str] = {
     # Explicit routing map — named route functions read only state fields.
     "exact": "exact_tools",
     "semantic": "semantic_tools",
+    "requirements": "requirements_tools",
     "recommend": "recommend_tools",
     "audit": "audit_tools",
     "propose_action": "propose_action",
     "plan_generation": "plan_tools",
+    "explore": "explore_agent",
     "chitchat": "summarize",
 }
+
+
+# FC23/FC28: the parameters each action needs before it can be proposed.
+ACTION_REQUIRED_PARAMS: Dict[str, tuple] = {
+    "add_class": ("course_id",),
+    "change_class_status": ("course_id", "status"),
+    "change_major": ("major_name",),
+    "change_concentration": ("concentration",),
+    "change_degree": ("degree_id",),
+    "plan_add_course": ("course_id", "semester_term"),
+    "plan_remove_course": ("course_id",),
+    "plan_move_course": ("course_id", "semester_term"),
+    "activate_plan": (),
+}
+
+
+def action_ready(params: Optional[Dict]) -> bool:
+    """True when the classified action carries every required parameter.
+    A "would you like me to...?" clarification for a ready action is skipped:
+    the FC23 confirmation card is that question, and it survives the next turn
+    durably (`chat_pending_actions`) instead of relying on the model to
+    re-derive the request from a bare "yes" (FC27)."""
+    params = params or {}
+    required = ACTION_REQUIRED_PARAMS.get(params.get("action_type") or "")
+    return required is not None and all(params.get(key) for key in required)
 
 
 def _student_context(toolkit, student_id: str) -> dict:
@@ -86,8 +116,11 @@ def _student_context(toolkit, student_id: str) -> dict:
     }
 
 
-def build_advisor_graph(toolkit, classifier, summarizer):
+def build_advisor_graph(toolkit, classifier, summarizer, explorer=None):
     """Build the advisor StateGraph over the injected toolkit + LLM parts."""
+    if explorer is None:
+        from agent.llm.explore import StubExplorer
+        explorer = StubExplorer()
 
     # ------------------------------------------------------------- nodes
 
@@ -182,6 +215,14 @@ def build_advisor_graph(toolkit, classifier, summarizer):
             payload["catalog_hits"] = toolkit.catalog_search(query, k=3)
         return {"tool_payload": payload}
 
+    def requirements_tools_node(state: AdvisorState) -> dict:
+        """FC18/FC22 — degree/concentration requirements from the structured
+        SQLite record (FC33: structured → SQLite, not a Chroma search)."""
+        emit_step("SQLite: read degree requirements")
+        payload = toolkit.degree_requirements(
+            state["student_id"], state["user_input"], state.get("params") or {})
+        return {"tool_payload": payload}
+
     def recommend_tools_node(state: AdvisorState) -> dict:
         """FC22 suggestions — every candidate validated by the engine
         (FC29–FC32) inside `recommend_candidates`."""
@@ -217,11 +258,42 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         (DegreePlanGenerator); this node only assembles inputs and persists
         the built plan. It can never bypass the validator or invent courses."""
         params = dict(state.get("params") or {})
+        change = toolkit.plan_program_change(state["student_id"], params)
+        if change is not None:
+            # FC6/FC23: a plan for another major/track would change the account
+            # (the profile follows the active plan) — propose that change; the
+            # confirmed action regenerates the plan for the new program.
+            session_id = state.get("session_id") or toolkit.ensure_chat_session(state["student_id"])
+            outcome = toolkit.propose_action(state["student_id"], session_id,
+                                             change.pop("action_type"), change)
+            return {"intent": "propose_action", "tool_payload": outcome,
+                    "pending_action": outcome.get("proposed"), "session_id": session_id}
         payload = toolkit.generate_plan(state["student_id"], params)
         emit({"type": "check", "course": None, "check_id": "plan_generation",
               "description": "DegreePlanGenerator (FC2/FC25) built the plan",
               "passed": payload.get("refusal") is None, "reason": payload.get("refusal")})
         return {"tool_payload": payload}
+
+    def explore_agent_node(state: AdvisorState) -> dict:
+        """FC42 — open-ended exploration: the explorer may call read-only tools
+        freely (bounded), then the deterministic guard removes unknown course
+        ids and validates every real one (FC29–FC32). Ends the turn itself:
+        the guarded text IS the reply (no second summarize pass)."""
+        session_id = state.get("session_id")
+        history = toolkit.recent_history(state["student_id"], session_id, max_chars=1500) \
+            if session_id else []
+        answer = explorer.explore(toolkit, state["student_id"], state["user_input"],
+                                  history, on_step=emit_step)
+        grounded = ground_answer(toolkit, state["student_id"], answer)
+        for check in grounded.checks:
+            emit_checks([check], check["course"])
+        if grounded.removed:
+            emit_step("Guard: removed course ids not in the catalog: " + ", ".join(grounded.removed))
+        reply = grounded.text or "I couldn't find anything on record to explore that with."
+        for chunk in re.findall(r"\S+\s*", reply):  # FC39 token stream of the guarded text
+            emit({"type": "token", "text": chunk})
+        return {"reply": reply, "messages": [AIMessage(content=reply)], "pending_action": None,
+                "tool_payload": {"checks": grounded.checks, "removed": grounded.removed}}
 
     def propose_action_node(state: AdvisorState) -> dict:
         """FC23 — deterministic prechecks, then persist the proposal. The
@@ -288,6 +360,10 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         return "classify"
 
     def route_after_classify(state: AdvisorState) -> str:
+        if state.get("intent") == "explore":
+            return "explore_agent"  # FC42: exploring never needs a clarifying question
+        if state.get("intent") in ("propose_action", "clarify") and action_ready(state.get("params")):
+            return "propose_action"  # FC23 card instead of a yes/no question
         if state.get("followup"):
             return "clarify"  # FC28: under-specified request → one question
         return INTENT_ROUTES.get(state.get("intent") or "", "summarize")
@@ -299,9 +375,11 @@ def build_advisor_graph(toolkit, classifier, summarizer):
     graph.add_node("classify", classify_node)
     graph.add_node("exact_tools", exact_tools_node)
     graph.add_node("semantic_tools", semantic_tools_node)
+    graph.add_node("requirements_tools", requirements_tools_node)
     graph.add_node("recommend_tools", recommend_tools_node)
     graph.add_node("audit_tools", audit_tools_node)
     graph.add_node("plan_tools", plan_tools_node)
+    graph.add_node("explore_agent", explore_agent_node)
     graph.add_node("propose_action", propose_action_node)
     graph.add_node("clarify", clarify_node)
     graph.add_node("confirm", confirm_node)
@@ -314,16 +392,19 @@ def build_advisor_graph(toolkit, classifier, summarizer):
         # identity map over every possible route output (explicit per skill)
         "exact_tools": "exact_tools",
         "semantic_tools": "semantic_tools",
+        "requirements_tools": "requirements_tools",
         "recommend_tools": "recommend_tools",
         "audit_tools": "audit_tools",
         "propose_action": "propose_action",
         "plan_tools": "plan_tools",
+        "explore_agent": "explore_agent",
         "clarify": "clarify",
         "summarize": "summarize",
     })
-    for node in ("exact_tools", "semantic_tools", "recommend_tools", "audit_tools",
+    for node in ("exact_tools", "semantic_tools", "requirements_tools", "recommend_tools", "audit_tools",
                  "propose_action", "plan_tools", "confirm"):
         graph.add_edge(node, "summarize")
     graph.add_edge("summarize", END)
     graph.add_edge("clarify", END)
+    graph.add_edge("explore_agent", END)
     return graph.compile()

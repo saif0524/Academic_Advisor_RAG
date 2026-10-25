@@ -6,18 +6,22 @@ import ChatMessageList from '../ChatMessageList/ChatMessageList';
 import ConversationHistory from '../ConversationHistory/ConversationHistory';
 import {
   createConversation as createConversationViaApi,
+  deleteConversation as deleteConversationViaApi,
+  getActiveSessionId,
   getConversations as getConversationsViaApi,
   getMessages as getMessagesViaApi,
   respondToProposal as respondToProposalViaApi,
   sendMessage as sendMessageViaApi,
 } from '../../../api/chat';
 import type { ChatMessage, Conversation, ProposalDecision } from '../../../api/types';
+import { chatToMarkdown, downloadTextFile, exportFilename } from './exportMarkdown';
 import './ChatPanel.css';
 
 export interface ChatSeams {
   /** DI seams defaulting to the api service (stories inject fixtures). */
   loadConversations?: () => Promise<Conversation[]>;
   createConversation?: () => Promise<string>;
+  deleteConversation?: (conversationId: string) => Promise<void>;
   loadMessages?: (conversationId: string) => Promise<ChatMessage[]>;
   sendMessage?: (
     text: string,
@@ -27,6 +31,8 @@ export interface ChatSeams {
   respondToProposal?: (
     messageId: string, decision: ProposalDecision, conversationId?: string,
   ) => Promise<{ messageId: string; decision: ProposalDecision; reply: string }>;
+  /** Saves the exported transcript (default: browser download); stories inject a spy. */
+  saveExport?: (filename: string, markdown: string) => void;
 }
 
 interface ChatPanelProps extends ChatSeams {
@@ -56,8 +62,10 @@ export default function ChatPanel({
   loadConversations = getConversationsViaApi,
   loadMessages = getMessagesViaApi,
   createConversation = createConversationViaApi,
+  deleteConversation = deleteConversationViaApi,
   sendMessage = sendMessageViaApi,
   respondToProposal = respondToProposalViaApi,
+  saveExport = downloadTextFile,
   initialConversationId = '',
 }: ChatPanelProps) {
   const [activeId, setActiveId] = useState(initialConversationId);
@@ -115,6 +123,14 @@ export default function ChatPanel({
     };
   }, [activeId, loadMessages]);
 
+  /* Export the open conversation as Markdown, deterministic-check statuses
+     included, so a grader can read the run without the app. */
+  const exportable = (thread.messages ?? []).filter((m) => m.text.trim() || m.checks?.length || m.action);
+  const handleExport = () => {
+    const markdown = chatToMarkdown(exportable, { sessionId: activeId || getActiveSessionId() });
+    saveExport(exportFilename(), markdown);
+  };
+
   /* History list loads lazily, only when opened (FC34 list view). */
   const openHistory = async () => {
     setMode('history');
@@ -138,6 +154,23 @@ export default function ChatPanel({
       setMode('conversation');
     } catch (error) {
       setThread((current) => ({ ...current, error: error instanceof Error ? error.message : String(error) }));
+    }
+  };
+
+  /* FC41: delete a conversation after a browser confirm. Deleting the open
+     one falls back to the server's active session (or a fresh one). */
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
+    try {
+      await deleteConversation(id);
+      setConversations((current) => (current ? current.filter((c) => c.id !== id) : current));
+      if (id === activeId) {
+        setActiveId('');
+        setThread({ id: '', messages: null, loading: true, error: null });
+        setProposal(null);
+      }
+    } catch (error) {
+      setConversationsError(error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -207,6 +240,14 @@ export default function ChatPanel({
           <Button variant="ghost" onClick={startNewChat} aria-label="Start a new chat">
             <Icon name="plus" size={14} /> New chat
           </Button>
+          <Button
+            variant="ghost"
+            onClick={handleExport}
+            disabled={exportable.length === 0}
+            aria-label="Export this chat as Markdown"
+          >
+            <Icon name="download" size={14} /> Export
+          </Button>
           <Button variant="ghost" onClick={mode === 'conversation' ? openHistory : () => setMode('conversation')}>
             {mode === 'conversation' ? (
               <>
@@ -226,6 +267,7 @@ export default function ChatPanel({
         <ConversationHistory
           conversations={conversations}
           activeId={activeId}
+          onDelete={handleDelete}
           onSelect={(id) => {
             if (id !== activeId) {
               setActiveId(id);

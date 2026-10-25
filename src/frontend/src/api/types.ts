@@ -170,6 +170,16 @@ export interface PlanDetail {
   created_at: string;
   semesters: PlanDetailSemester[];
   notes?: string[]; // grounded engine caveats (unfulfilled buckets, etc.)
+  /** FC6: set when activating this plan moved the profile to its major /
+      concentration / tracked degree (the profile follows the active plan). */
+  profile_updated?: ProfileUpdate | null;
+}
+
+/** Profile fields an activating plan write changed (FC1/FC6/FC17). */
+export interface ProfileUpdate {
+  major_name: string;
+  concentration: string | null;
+  degree_id: string | null;
 }
 
 /** Plan list row (GET /plans, FC6). */
@@ -237,6 +247,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'advisor';
   text: string;
+  createdAt?: string; // ISO timestamp when loaded from stored history (FC34)
   checks?: StreamCheck[]; // deterministic checks run for this reply (FC39)
   action?: ProposedAction; // FC23 proposal awaiting explicit decision
 }

@@ -50,12 +50,27 @@ class ChatMessageReply(BaseModel):
     )
 
 
+class ChatCheck(BaseModel):
+    """One deterministic check/step that ran for an advisor turn (FC39; FC29–FC32).
+    `passed` is null when the check was skipped for missing data."""
+
+    type: Literal["check", "step"] = "check"
+    course: Optional[str] = None
+    check_id: Optional[str] = None
+    description: str = ""
+    passed: Optional[bool] = None
+    reason: Optional[str] = None
+
+
 class ChatHistoryMessage(BaseModel):
     """One persisted turn (FC34 — history lives in SQLite, never app memory)."""
 
     role: Literal["user", "assistant"]
     content: str
     created_at: Optional[datetime] = None
+    checks: Optional[List[ChatCheck]] = Field(
+        default=None, description="Checks that ran for this advisor turn (FC39), when recorded."
+    )
 
 
 class ChatHistoryResponse(BaseModel):

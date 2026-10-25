@@ -17,6 +17,7 @@ const meta = {
     conversations: CONVERSATIONS_FIXTURE,
     activeId: 'conv-1',
     onSelect: () => {},
+    onDelete: () => {},
     onBack: () => {},
   },
 } satisfies Meta<typeof ConversationHistory>;

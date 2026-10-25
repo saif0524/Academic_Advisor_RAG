@@ -67,3 +67,12 @@ def get_summarizer(config: LLMConfig):
     if config.provider == "stub":
         return StubSummarizer()
     return LLMSummarizer(get_llm(config))
+
+
+def get_explorer(config: LLMConfig):
+    """FC42 exploration: tool-calling loop on the chat model, or the stub."""
+    from agent.llm.explore import LLMExplorer, StubExplorer
+
+    if config.provider == "stub":
+        return StubExplorer()
+    return LLMExplorer(get_llm(config))

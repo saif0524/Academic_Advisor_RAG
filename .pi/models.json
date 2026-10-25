@@ -3,7 +3,7 @@
     "ollama-cloud": {
       "baseUrl": "https://ollama.com/v1",
       "api": "openai-completions",
-      "apiKey": "52f5962cf41f4d679d79f32e03d750ec.2Exbhw55mnIdN1MD_5NW7Ca1",
+      "apiKey": "",
       "models": [
         { "id": "glm-5.3-flash" },
         { "id": "gemma4:31b" }

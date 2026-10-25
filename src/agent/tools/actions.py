@@ -23,6 +23,8 @@ from agent.tools.engine_tools import EngineTools
 
 _TERM_RE = re.compile(r"(Fall|Spring|Summer)\s+(\d{4})", re.IGNORECASE)
 _PLAN_EDITS = ("plan_add_course", "plan_remove_course", "plan_move_course")
+# FC23: the confirmation card states the follow-on plan regeneration up front.
+_REPLAN_NOTE = ", and generate a new active degree plan for it"
 
 
 class Refusal(Exception):
@@ -107,11 +109,21 @@ class ActionTools(EngineTools):
                 {"course_id": course_id, "status": status})
 
     def _propose_change_major(self, student_id: str, params: dict) -> Tuple[str, dict]:
-        degree = self._resolve_major(params.get("major_name", ""))
+        major_text, concentration = self._split_target(params.get("major_name", ""), params.get("concentration"))
+        degree = self._resolve_major(major_text or "")
         if degree is None:
             raise Refusal(f"I couldn't match a major to {params.get('major_name')!r}. "
                           f"Offered: {self._major_names()}.")
-        return f"Change your major to {degree.major_name}", {"major_name": degree.major_name}
+        payload = {"major_name": degree.major_name}
+        description = f"Change your major to {degree.major_name}"
+        if concentration:
+            match = next((n for n in degree.concentrations if n.lower() == concentration.lower()), None)
+            if match is None and concentration.lower() != "general":
+                raise Refusal(f"{degree.major_name} has no {concentration!r} concentration. "
+                              f"Offered: {', '.join(degree.concentrations)}, General.")
+            payload["concentration"] = match or "General"
+            description += f" with the {payload['concentration']} concentration"
+        return description + _REPLAN_NOTE, payload
 
     def _propose_change_concentration(self, student_id: str, params: dict) -> Tuple[str, dict]:
         concentration = (params.get("concentration") or "").strip()
@@ -120,8 +132,15 @@ class ActionTools(EngineTools):
             raise Refusal("Which concentration would you like to switch to?")
         if student is None or not student.current_major:
             raise Refusal("You don't have a major on record yet — set a major first (FC1).")
+        offered = self._offered_concentrations(student.current_major)
+        if offered:
+            match = next((n for n in offered if n.lower() == concentration.lower()), None)
+            if match is None and concentration.lower() != "general":
+                raise Refusal(f"{student.current_major} has no {concentration!r} concentration. "
+                              f"Offered: {', '.join(offered)}, General.")
+            concentration = match or "General"
         return (f"Change your concentration (currently {student.concentration or 'none set'}) "
-                f"to {concentration}", {"concentration": concentration})
+                f"to {concentration}{_REPLAN_NOTE}", {"concentration": concentration})
 
     def _propose_change_degree(self, student_id: str, params: dict) -> Tuple[str, dict]:
         degree = self._aligned_degree(student_id, params.get("degree_id", ""))
@@ -142,8 +161,14 @@ class ActionTools(EngineTools):
             if plan is None:
                 raise Refusal("Your latest plan is already active — nothing to change." if plans
                               else "You have no plans yet — ask me to generate one first.")
-        return (f"Make plan {plan['plan_id']} ({plan.get('target_major')}) your active plan",
-                {"plan_id": plan["plan_id"]})
+        description = f"Make plan {plan['plan_id']} ({plan.get('target_major')}) your active plan"
+        student = self.student_profile(student_id)
+        track = plan.get("concentration") or "General"
+        if student is not None and (student.current_major != plan.get("target_major")
+                                    or (student.concentration or "General").lower() != track.lower()):
+            # FC6/FC23: the profile follows the active plan — say so on the card.
+            description += f"; your profile will switch to {plan.get('target_major')} — {track}"
+        return description, {"plan_id": plan["plan_id"]}
 
     # ------------------------------------------------- step 2: confirm/cancel
 
@@ -211,12 +236,24 @@ class ActionTools(EngineTools):
     def _do_change_major(self, student_id: str, payload: dict) -> str:
         student = self._sql.update_student_major(student_id, payload["major_name"], payload.get("concentration"))
         suffix = f" — {student.concentration}" if student.concentration else ""
-        return f"Your major is now {student.current_major}{suffix}."
+        return (f"Your major is now {student.current_major}{suffix}. "
+                + self._replan(student_id, {"target_major": student.current_major}))
 
     def _do_change_concentration(self, student_id: str, payload: dict) -> str:
         current = self.student_profile(student_id)
         student = self._sql.update_student_major(student_id, current.current_major, payload["concentration"])
-        return f"Your concentration is now {student.concentration}."
+        return f"Your concentration is now {student.concentration}. " + self._replan(student_id, {})
+
+    def _replan(self, student_id: str, params: dict) -> str:
+        """FC2/FC6: after a confirmed program change, DegreePlanGenerator builds
+        a plan for the new major/track and it becomes the active plan, so the
+        plan never lags the profile. The old plans stay on record (FC4/FC6)."""
+        generated = self.generate_plan(student_id, params)
+        if generated["refusal"]:
+            return f"Your degree plan was NOT regenerated: {generated['refusal']}"
+        plan = generated["plan"]
+        return (f"A new degree plan {plan['plan_id']} ({plan['concentration']}) was generated "
+                "and is now your active plan.")
 
     def _do_change_degree(self, student_id: str, payload: dict) -> str:
         degree = self._aligned_degree(student_id, payload["degree_id"])  # re-checked: state may have changed
@@ -226,7 +263,10 @@ class ActionTools(EngineTools):
     def _do_activate_plan(self, student_id: str, payload: dict) -> str:
         if not self._sql.activate_plan(student_id, payload["plan_id"]):
             raise Refusal(f"Plan {payload['plan_id']!r} is no longer on record.")
-        return f"Plan {payload['plan_id']} is now your active plan."
+        changed = self._sql.sync_profile_to_plan(student_id, payload["plan_id"])  # FC6
+        suffix = (f" Your profile now tracks {changed['major_name']} — {changed['concentration']}."
+                  if changed else "")
+        return f"Plan {payload['plan_id']} is now your active plan.{suffix}"
 
     def _do_plan_edit(self, student_id: str, op: str, payload: dict) -> str:
         """Re-apply the edit to the current active plan and save a new version (FC3/FC4)."""
@@ -239,6 +279,11 @@ class ActionTools(EngineTools):
         return f"Done — {description[0].lower() + description[1:]}."
 
     # ------------------------------------------------------------- helpers
+
+    def _offered_concentrations(self, major_name: Optional[str]) -> list:
+        """Concentration tracks of the degree that grants `major_name` (empty if none/unknown)."""
+        degree = next((d for d in self._sql.list_degrees() if d.major_name == major_name), None)
+        return degree.concentrations if degree else []
 
     def _aligned_degree(self, student_id: str, degree_id: str):
         """The degree, if it exists and matches the student's major (FC16)."""

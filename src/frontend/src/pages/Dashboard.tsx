@@ -74,6 +74,9 @@ export default function Dashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [plannerOpen, setPlannerOpen] = useState(initialPlannerOpen);
+  /* FC6: closing the planner re-reads the active plan (a generated plan is
+     active immediately and the profile followed it). */
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     // External system: the api seam. Sync state lives for the component's
@@ -93,7 +96,7 @@ export default function Dashboard({
     return () => {
       cancelled = true;
     };
-  }, [loadData]);
+  }, [loadData, reloadToken]);
 
   // Active semester: user override of the engine-seeded current term, kept per
   // plan in localStorage (display-only; earlier semesters show completed).
@@ -204,9 +207,13 @@ export default function Dashboard({
         </section>
         {plannerOpen && (
           <PlanGenerator
-            onNavigateBack={() => setPlannerOpen(false)}
+            onNavigateBack={() => {
+              setPlannerOpen(false);
+              setReloadToken((token) => token + 1);
+            }}
             onOpenPlan={() => {
               setPlannerOpen(false);
+              setReloadToken((token) => token + 1);
               onNavigate?.('timeline');
             }}
           />

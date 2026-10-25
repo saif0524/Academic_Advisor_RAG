@@ -176,6 +176,18 @@
           "title": "PRINCIPLES OF MACROECONOMICS",
           "credit_hours": 3,
           "option_group": "select-1"
+        },
+        {
+          "course_code": "PSYC 1315",
+          "title": "PSYCHOLOGY",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "SOCI 1311",
+          "title": "INTRODUCTORY SOCIOLOGY",
+          "credit_hours": 3,
+          "option_group": "select-1"
         }
       ]
     },
@@ -332,6 +344,101 @@
       "credits_required": 12,
       "elective_bucket": "CSE 3000-level or 4000-level Technical Electives",
       "courses": []
+    }
+  ],
+  "concentrations": [
+    {
+      "name": "Artificial Intelligence",
+      "description": "Applying AI and machine learning in engineered software systems.",
+      "credits_required": 9,
+      "courses": [
+        {
+          "course_code": "CSE 4308",
+          "title": "ARTIFICIAL INTELLIGENCE",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4309",
+          "title": "FUNDAMENTALS OF MACHINE LEARNING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4311",
+          "title": "NEURAL NETWORKS AND DEEP LEARNING",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "CSE 4334",
+          "title": "DATA MINING",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        }
+      ]
+    },
+    {
+      "name": "Cybersecurity",
+      "description": "Building and testing secure software systems.",
+      "credits_required": 9,
+      "courses": [
+        {
+          "course_code": "CSE 4380",
+          "title": "INFORMATION SECURITY",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4382",
+          "title": "SECURE PROGRAMMING",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4381",
+          "title": "INFORMATION SECURITY II",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "CSE 4344",
+          "title": "COMPUTER NETWORK ORGANIZATION",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        }
+      ]
+    },
+    {
+      "name": "Cloud & Data Systems",
+      "description": "Cloud platforms, databases and data-intensive software.",
+      "credits_required": 9,
+      "courses": [
+        {
+          "course_code": "CSE 4333",
+          "title": "CLOUD COMPUTING FUNDAMENTALS AND APPLICATIONS",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4331",
+          "title": "DATABASE IMPLEMENTATION AND THEORY",
+          "credit_hours": 3,
+          "option_group": null
+        },
+        {
+          "course_code": "CSE 4334",
+          "title": "DATA MINING",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        },
+        {
+          "course_code": "CSE 4344",
+          "title": "COMPUTER NETWORK ORGANIZATION",
+          "credit_hours": 3,
+          "option_group": "select-1"
+        }
+      ]
     }
   ]
 }

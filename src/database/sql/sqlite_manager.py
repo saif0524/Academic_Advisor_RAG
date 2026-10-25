@@ -406,6 +406,29 @@ class SQLDatabaseManager(DatabaseManager):
             conn.execute("UPDATE plans SET is_active = 1 WHERE plan_id = ?", (plan_id,))
             return True
 
+    def sync_profile_to_plan(self, student_id: str, plan_id: str) -> Optional[dict]:
+        """FC6/FC1/FC17: the profile follows the ACTIVE plan — copy the plan's
+        major, concentration and degree onto the student. Returns the new
+        {major_name, concentration, degree_id} when anything changed, else None.
+        "General" and no concentration are the same track."""
+        plan = self.get_plan(student_id, plan_id)
+        student = self.get_student_record(student_id)
+        major = plan.get("target_major")
+        concentration = plan.get("concentration") or "General"
+        degree_id = plan.get("degree_id")
+        if not major:
+            return None
+        same_track = (student is not None and student.current_major == major
+                      and (student.concentration or "General").lower() == concentration.lower())
+        same_degree = student is not None and (not degree_id or student.selected_degree_id == degree_id)
+        if same_track and same_degree:
+            return None
+        if not same_track:
+            self.update_student_major(student_id, major, concentration)  # FC7 history kept
+        if degree_id and not same_degree:
+            self.set_selected_degree(student_id, degree_id)
+        return {"major_name": major, "concentration": concentration, "degree_id": degree_id}
+
     def update_plan_meta(self, plan_id: str, includes_summer: Optional[bool] = None) -> None:
         if includes_summer is not None:
             with self._connect() as conn:
@@ -496,14 +519,29 @@ class SQLDatabaseManager(DatabaseManager):
                          (session_id, student_id))
         return session_id
 
-    def append_chat_message(self, session_id: str, student_id: str, role: str, content: str) -> None:
-        """FC34: store one turn (role is 'user' or 'assistant')."""
+    def delete_chat_session(self, student_id: str, session_id: str) -> None:
+        """FC41: permanently remove one conversation — its messages, pending
+        actions and the session row. 404 if it isn't the student's."""
+        if not self.chat_session_exists(student_id, session_id):
+            raise RecordNotFoundError(f"Chat session {session_id!r} not found for student {student_id!r}")
+        with self._connect() as conn:
+            conn.execute("DELETE FROM chat_pending_actions WHERE session_id = ?", (session_id,))
+            conn.execute("DELETE FROM chat_messages WHERE session_id = ?", (session_id,))
+            conn.execute("DELETE FROM chat_sessions WHERE session_id = ?", (session_id,))
+
+    def append_chat_message(
+        self, session_id: str, student_id: str, role: str, content: str,
+        checks: Optional[List[dict]] = None,
+    ) -> None:
+        """FC34: store one turn (role is 'user' or 'assistant'). `checks` are the
+        deterministic check/step events that ran for an advisor turn (FC39)."""
         if role not in {"user", "assistant"}:
             raise ValueError(f"Invalid chat role {role!r}")
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO chat_messages (session_id, student_id, role, content) VALUES (?, ?, ?, ?)",
-                (session_id, student_id, role, content),
+                "INSERT INTO chat_messages (session_id, student_id, role, content, checks) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (session_id, student_id, role, content, json.dumps(checks) if checks else None),
             )
             _touch_session(conn, session_id)
 
@@ -511,10 +549,13 @@ class SQLDatabaseManager(DatabaseManager):
         """FC34: messages oldest-first. Raises if the session isn't the student's."""
         if not self.chat_session_exists(student_id, session_id):
             raise RecordNotFoundError(f"Chat session {session_id!r} not found for student {student_id!r}")
-        return self.execute_query(
-            "SELECT role, content, created_at FROM chat_messages WHERE session_id = ? ORDER BY id",
+        rows = self.execute_query(
+            "SELECT role, content, created_at, checks FROM chat_messages WHERE session_id = ? ORDER BY id",
             (session_id,),
         )
+        for row in rows:
+            row["checks"] = json.loads(row["checks"]) if row.get("checks") else None
+        return rows
 
     def chat_session_exists(self, student_id: str, session_id: str) -> bool:
         """True only if the session exists AND belongs to this student."""
@@ -596,6 +637,15 @@ class SQLDatabaseManager(DatabaseManager):
                  course.description, course.credit_hours, course.course_code, source),
             )
 
+    def add_prerequisite(self, course_id: str, required_course_id: str, kind: str = "prereq") -> None:
+        """FC11/FC29 seed write: one prerequisite/corequisite edge."""
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO course_prerequisites (course_id, required_course_id, kind) "
+                "VALUES (?, ?, ?)",
+                (course_id, required_course_id, kind),
+            )
+
     def upsert_section(self, section: CourseSection) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -620,9 +670,10 @@ class SQLDatabaseManager(DatabaseManager):
             for order, block in enumerate(degree.blocks):
                 block_id = conn.execute(
                     "INSERT INTO degree_requirement_blocks (degree_id, block_name, kind, "
-                    "credits_required, elective_bucket, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+                    "credits_required, elective_bucket, sort_order, concentration) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (degree.degree_id, block.name, block.kind, block.credits_required,
-                     block.elective_bucket, order),
+                     block.elective_bucket, order, block.concentration),
                 ).lastrowid
                 for row in block.courses:
                     conn.execute(
@@ -638,6 +689,7 @@ class SQLDatabaseManager(DatabaseManager):
         with self._connect() as conn:
             for table in (
                 "student_classes", "major_history", "students", "sections", "courses",
+                "course_prerequisites",
                 "degree_requirement_courses", "degree_requirement_blocks", "degrees",
             ):
                 conn.execute(f"DELETE FROM {table}")
@@ -707,7 +759,7 @@ def _require_plan(conn, plan_id: str) -> None:
 
 def _requirement_rows(conn, degree_id: str) -> List[dict]:
     blocks = conn.execute(
-        "SELECT id, block_name, kind, credits_required, elective_bucket "
+        "SELECT id, block_name, kind, credits_required, elective_bucket, concentration "
         "FROM degree_requirement_blocks WHERE degree_id = ? ORDER BY sort_order, id",
         (degree_id,),
     ).fetchall()
@@ -724,6 +776,7 @@ def _requirement_rows(conn, degree_id: str) -> List[dict]:
             "kind": block["kind"],
             "credits_required": block["credits_required"],
             "elective_bucket": block["elective_bucket"],
+            "concentration": block["concentration"],
             "courses": [dict(c) for c in courses],
         })
     return result
@@ -774,7 +827,7 @@ def _to_degree(conn, row: sqlite3.Row) -> DegreeRequirement:
     blocks = [
         DegreeBlock(
             name=b["block_name"], kind=b["kind"], credits_required=b["credits_required"],
-            elective_bucket=b["elective_bucket"],
+            elective_bucket=b["elective_bucket"], concentration=b["concentration"],
             courses=[DegreeBlockCourse(**c) for c in b["courses"]],
         )
         for b in _requirement_rows(conn, row["degree_id"])

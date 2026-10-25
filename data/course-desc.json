@@ -67,12 +67,26 @@
   {
     "id": "2312",
     "title": "COMPUTER ORGANIZATION & ASSEMBLY LANGUAGE PROGRAMMING",
-    "description": "Computer organization from the viewpoint of software, including instruction set architectures, memory addressing, integer and floating-point representation and arithmetic, instruction pipelining, cache, memory virtualization, and I/O. The relationship of higher-level programming languages to assembly language and instruction set architecture is also explored."
+    "description": "Computer organization from the viewpoint of software, including instruction set architectures, memory addressing, integer and floating-point representation and arithmetic, instruction pipelining, cache, memory virtualization, and I/O. The relationship of higher-level programming languages to assembly language and instruction set architecture is also explored.",
+    "credit_hours": 3
   },
   {
     "id": "2315",
     "title": "DISCRETE STRUCTURES",
-    "description": "Propositional and predicate logic, mathematical proof techniques, sets, combinatorics, functions and relations, graphs, and graph algorithms."
+    "description": "Propositional and predicate logic, mathematical proof techniques, sets, combinatorics, functions and relations, graphs, and graph algorithms.",
+    "credit_hours": 3
+  },
+  {
+    "id": "2320",
+    "title": "ALGORITHMS AND DATA STRUCTURES",
+    "description": "Fundamental data structures and algorithms: lists, stacks, queues, trees, hash tables, and graphs; recursion; sorting and searching; and an introduction to algorithm analysis and complexity.",
+    "credit_hours": 3
+  },
+  {
+    "id": "2381",
+    "title": "SOFTWARE ENGINEERING FOUNDATIONS",
+    "description": "Introduction to software engineering practice: requirements and user stories, version control, unit testing, code review, and teamwork on a small project built with an agile process.",
+    "credit_hours": 3
   },
   {
     "id": "2392",
@@ -97,42 +111,50 @@
   {
     "id": "3302",
     "title": "PROGRAMMING LANGUAGES",
-    "description": "Introduction, analysis, and evaluation of the important concepts found in a variety of programming languages. Formalisms useful in specifying language syntax and semantics; programming language paradigms such as algorithmic, functional, logic, and object-oriented."
+    "description": "Introduction, analysis, and evaluation of the important concepts found in a variety of programming languages. Formalisms useful in specifying language syntax and semantics; programming language paradigms such as algorithmic, functional, logic, and object-oriented.",
+    "credit_hours": 3
   },
   {
     "id": "3310",
     "title": "FUNDAMENTALS OF SOFTWARE ENGINEERING",
-    "description": "Software engineering principles, processes, and techniques; software development approaches focusing on functional analysis and functional design methods. Configuration management, implementation strategies, and testing. Team project."
+    "description": "Software engineering principles, processes, and techniques; software development approaches focusing on functional analysis and functional design methods. Configuration management, implementation strategies, and testing. Team project.",
+    "credit_hours": 3
   },
   {
     "id": "3311",
     "title": "OBJECT-ORIENTED SOFTWARE ENGINEERING",
-    "description": "Study of an agile unified methodology and its application to object-oriented software development. Topics include requirements acquisition, use case derivation, modeling and design of interaction behavior and state behavior, introduction to design patterns, derivation of design class diagrams, implementation considerations and deployment. Team project."
+    "description": "Study of an agile unified methodology and its application to object-oriented software development. Topics include requirements acquisition, use case derivation, modeling and design of interaction behavior and state behavior, introduction to design patterns, derivation of design class diagrams, implementation considerations and deployment. Team project.",
+    "credit_hours": 3
   },
   {
     "id": "3313",
     "title": "INTRODUCTION TO SIGNAL PROCESSING",
-    "description": "Examines models for presentation and processing of digital signals. Sampling theorem, correlation and convolution, time and frequency analysis of linear systems, Fourier transform, Z-transform, design of digital filters structures for discrete time systems."
+    "description": "Examines models for presentation and processing of digital signals. Sampling theorem, correlation and convolution, time and frequency analysis of linear systems, Fourier transform, Z-transform, design of digital filters structures for discrete time systems.",
+    "credit_hours": 3
   },
   {
     "id": "3314",
     "title": "PROFESSIONAL PRACTICES",
-    "description": "Ethics. Contemporary social aspects and responsibilities of computing in a global, societal context. Lifelong learning goals and resources. Entrepreneurship and intellectual property. Project involving written and oral communication."
+    "description": "Ethics. Contemporary social aspects and responsibilities of computing in a global, societal context. Lifelong learning goals and resources. Entrepreneurship and intellectual property. Project involving written and oral communication.",
+    "credit_hours": 3
   },
   {
     "id": "3315",
     "title": "THEORETICAL CONCEPTS IN COMPUTER SCIENCE AND ENGINEERING",
-    "description": "Selected theoretical concepts including regular and context free languages, finite state and pushdown automata, Turing machines, computability, and NP-completeness."
+    "description": "Selected theoretical concepts including regular and context free languages, finite state and pushdown automata, Turing machines, computability, and NP-completeness.",
+    "credit_hours": 3
   },
   {
     "id": "3318",
     "title": "ALGORITHMS & DATA STRUCTURES",
-    "description": "Design and analysis of algorithms with an emphasis on data structures. Approaches to analyzing lower bounds on problems and upper bounds on algorithms. Classical algorithm design techniques including algorithms for sorting, searching, and other operations on data structures such as hash tables, trees, graphs, strings, and advanced data structures, dynamic programming and greedy approaches."
+    "description": "Design and analysis of algorithms with an emphasis on data structures. Approaches to analyzing lower bounds on problems and upper bounds on algorithms. Classical algorithm design techniques including algorithms for sorting, searching, and other operations on data structures such as hash tables, trees, graphs, strings, and advanced data structures, dynamic programming and greedy approaches.",
+    "credit_hours": 3
   },
   {
     "id": "3320",
     "title": "OPERATING SYSTEMS",
-    "description": "Functions and components of an operating system, including process synchronization, job scheduling, memory management, file systems protection, and deadlocks. Related system software, such as loaders, linkers, assemblers, and windowing systems."
+    "description": "Functions and components of an operating system, including process synchronization, job scheduling, memory management, file systems protection, and deadlocks. Related system software, such as loaders, linkers, assemblers, and windowing systems.",
+    "credit_hours": 3
   },
   {
     "id": "3323",
@@ -142,22 +164,26 @@
   {
     "id": "3330",
     "title": "DATABASE SYSTEMS AND FILE STRUCTURES",
-    "description": "Database system architecture; file structures for databases, including indexing hashing, and B+-trees; the relational model and algebra; the SQL database language; Entity-Relationship data modeling; functional dependencies and basic normalization."
+    "description": "Database system architecture; file structures for databases, including indexing hashing, and B+-trees; the relational model and algebra; the SQL database language; Entity-Relationship data modeling; functional dependencies and basic normalization.",
+    "credit_hours": 3
   },
   {
     "id": "3340",
     "title": "INTRODUCTION TO HUMAN COMPUTER INTERACTION",
-    "description": "Introduction to the interdisciplinary field of Human-Computer Interaction. Studio-based course that bridges cognitive science, ethnography, and anthropology to provide a profound understand of user experience, while concurrently fostering frontend development skills in software, hardware, and wireless communication for the crafting of state-of-the-art user interfaces. Emphasizing a human-centered design ethos, the course encourages the design of interfaces that are not only functional but also meaningful and critically reflective."
+    "description": "Introduction to the interdisciplinary field of Human-Computer Interaction. Studio-based course that bridges cognitive science, ethnography, and anthropology to provide a profound understand of user experience, while concurrently fostering frontend development skills in software, hardware, and wireless communication for the crafting of state-of-the-art user interfaces. Emphasizing a human-centered design ethos, the course encourages the design of interfaces that are not only functional but also meaningful and critically reflective.",
+    "credit_hours": 3
   },
   {
     "id": "3341",
     "title": "DIGITAL LOGIC DESIGN II",
-    "description": "Hierarchical organization, design, simulation, implementation, and testing of digital systems. Industrial standard computer-aided design tools including hardware description languages (HDLs), field-programmable gate arrays (FPGAs), and other prototyping hardware and software will be employed. Design of arithmetic and other algorithmic processes will be covered. A term project will be required."
+    "description": "Hierarchical organization, design, simulation, implementation, and testing of digital systems. Industrial standard computer-aided design tools including hardware description languages (HDLs), field-programmable gate arrays (FPGAs), and other prototyping hardware and software will be employed. Design of arithmetic and other algorithmic processes will be covered. A term project will be required.",
+    "credit_hours": 3
   },
   {
     "id": "3380",
     "title": "LINEAR ALGEBRA FOR CSE",
-    "description": "Solving systems of equations, matrix algebra, determinants, vector spaces, orthogonality and least squares, with applications to computer science."
+    "description": "Solving systems of equations, matrix algebra, determinants, vector spaces, orthogonality and least squares, with applications to computer science.",
+    "credit_hours": 3
   },
   {
     "id": "3392",
@@ -182,42 +208,50 @@
   {
     "id": "4303",
     "title": "COMPUTER GRAPHICS",
-    "description": "Theory and practice for the visual representation of data by computers including display devices, output primitives, planes and curved surfaces, two- and three-dimensional transformations, parallel and perspective viewing, removal of hidden lines and surfaces, illumination models, ray tracing, radiosity, color models, and computer animation."
+    "description": "Theory and practice for the visual representation of data by computers including display devices, output primitives, planes and curved surfaces, two- and three-dimensional transformations, parallel and perspective viewing, removal of hidden lines and surfaces, illumination models, ray tracing, radiosity, color models, and computer animation.",
+    "credit_hours": 3
   },
   {
     "id": "4304",
     "title": "GAME DESIGN AND DEVELOPMENT",
-    "description": "Fundamentals of what it takes to create a game that is simultaneously economically attractive enough to produce as well as being fun to play. The former characteristic is objective, though often tricky to bound adequately while the latter is subjective, though easily demonstrated. This is a team-based class; each team conceives, designs, and develops a complete game through a series of exercises that build upon each other and using freely available tools."
+    "description": "Fundamentals of what it takes to create a game that is simultaneously economically attractive enough to produce as well as being fun to play. The former characteristic is objective, though often tricky to bound adequately while the latter is subjective, though easily demonstrated. This is a team-based class; each team conceives, designs, and develops a complete game through a series of exercises that build upon each other and using freely available tools.",
+    "credit_hours": 3
   },
   {
     "id": "4305",
     "title": "COMPILERS FOR ALGORITHMIC LANGUAGES",
-    "description": "Review of programming language structures, translation, and storage allocation. Theory and practice of compilers and issues in compiler construction including parsing, intermediate code generation, local optimization problems such as register allocation, data-flow analysis, and global optimization."
+    "description": "Review of programming language structures, translation, and storage allocation. Theory and practice of compilers and issues in compiler construction including parsing, intermediate code generation, local optimization problems such as register allocation, data-flow analysis, and global optimization.",
+    "credit_hours": 3
   },
   {
     "id": "4308",
     "title": "ARTIFICIAL INTELLIGENCE",
-    "description": "An introduction to the field of artificial intelligence studying basic techniques such as heuristic search, deduction, learning, problem solving, knowledge representation, uncertainty reasoning and symbolic programming languages such as LISP. Application areas may include intelligent agents, data mining, natural language, machine vision, planning and expert systems."
+    "description": "An introduction to the field of artificial intelligence studying basic techniques such as heuristic search, deduction, learning, problem solving, knowledge representation, uncertainty reasoning and symbolic programming languages such as LISP. Application areas may include intelligent agents, data mining, natural language, machine vision, planning and expert systems.",
+    "credit_hours": 3
   },
   {
     "id": "4309",
     "title": "FUNDAMENTALS OF MACHINE LEARNING",
-    "description": "This course offers an introduction to machine learning. Topics include naive Bayes classifiers, linear regression, linear classifiers, neural networks and backpropagation, kernel methods, decision trees, feature selection, clustering, and reinforcement learning. A strong programming background is assumed, as well as familiarity with linear algebra (vector and matrix operations), and knowledge of basic probability theory and statistics."
+    "description": "This course offers an introduction to machine learning. Topics include naive Bayes classifiers, linear regression, linear classifiers, neural networks and backpropagation, kernel methods, decision trees, feature selection, clustering, and reinforcement learning. A strong programming background is assumed, as well as familiarity with linear algebra (vector and matrix operations), and knowledge of basic probability theory and statistics.",
+    "credit_hours": 3
   },
   {
     "id": "4310",
     "title": "FUNDAMENTALS OF COMPUTER VISION",
-    "description": "This course introduces students to basic concepts and techniques in computer vision. The topics covered include morphological operations, connected component analysis, image filters, edge detection, feature extraction, object detection, object recognition, tracking, gesture recognition, image formation and camera models, calibration, and stereo vision. A strong programming background is assumed, as well as familiarity with linear algebra (vector and matrix operations), and knowledge of basic probability theory and statistics."
+    "description": "This course introduces students to basic concepts and techniques in computer vision. The topics covered include morphological operations, connected component analysis, image filters, edge detection, feature extraction, object detection, object recognition, tracking, gesture recognition, image formation and camera models, calibration, and stereo vision. A strong programming background is assumed, as well as familiarity with linear algebra (vector and matrix operations), and knowledge of basic probability theory and statistics.",
+    "credit_hours": 3
   },
   {
     "id": "4311",
     "title": "NEURAL NETWORKS AND DEEP LEARNING",
-    "description": "This course offers an introduction to neural networks and deep learning. Topics include perceptrons, single-layer neural networks, multi-layer neural networks, Tensorflow and Keras, convolutional neural networks, transfer learning, deep learning methods for object recognition and object detection in images, and sequential learning models for analyzing text. Auto-encoders and generative adversarial networks will be covered to some extent. A strong programming and algorithmic background is assumed, as well as familiarity with linear algebra (vector and matrix operations)."
+    "description": "This course offers an introduction to neural networks and deep learning. Topics include perceptrons, single-layer neural networks, multi-layer neural networks, Tensorflow and Keras, convolutional neural networks, transfer learning, deep learning methods for object recognition and object detection in images, and sequential learning models for analyzing text. Auto-encoders and generative adversarial networks will be covered to some extent. A strong programming and algorithmic background is assumed, as well as familiarity with linear algebra (vector and matrix operations).",
+    "credit_hours": 3
   },
   {
     "id": "4314",
     "title": "PROFESSIONAL PRACTICES",
-    "description": "Ethics. Contemporary social aspects and responsibilities of computing in a global, societal context. Lifelong learning goals and resources. Entrepreneurship and intellectual property. Project involving written and oral communication."
+    "description": "Ethics. Contemporary social aspects and responsibilities of computing in a global, societal context. Lifelong learning goals and resources. Entrepreneurship and intellectual property. Project involving written and oral communication.",
+    "credit_hours": 3
   },
   {
     "id": "4316",
@@ -232,137 +266,164 @@
   {
     "id": "4321",
     "title": "SOFTWARE TESTING & MAINTENANCE",
-    "description": "Study of software quality assurance, software testing, and software maintenance processes, methods and techniques including formal review techniques, software verification, validation, and testing, types of software maintenance, maintenance activities, and regression testing."
+    "description": "Study of software quality assurance, software testing, and software maintenance processes, methods and techniques including formal review techniques, software verification, validation, and testing, types of software maintenance, maintenance activities, and regression testing.",
+    "credit_hours": 3
   },
   {
     "id": "4322",
     "title": "SOFTWARE PROJECT MANAGEMENT",
-    "description": "Introduction to software project management. Issues include effort estimation and costing, project planning and scheduling, option analysis, software quality assurance, and formal technical reviews."
+    "description": "Introduction to software project management. Issues include effort estimation and costing, project planning and scheduling, option analysis, software quality assurance, and formal technical reviews.",
+    "credit_hours": 3
   },
   {
     "id": "4323",
     "title": "QUANTITATIVE COMPUTER ARCHITECTURE",
-    "description": "Pipelined processors, parallel processors including shared and distributed memory, multicore, Very Long Instruction Word (VLIW) and graphics processors, memory and cache design, computer peripherals, and computer clusters."
+    "description": "Pipelined processors, parallel processors including shared and distributed memory, multicore, Very Long Instruction Word (VLIW) and graphics processors, memory and cache design, computer peripherals, and computer clusters.",
+    "credit_hours": 3
   },
   {
     "id": "4331",
     "title": "DATABASE IMPLEMENTATION AND THEORY",
-    "description": "Review of the relational model and algebra; relational calculus; relational database design theory; advanced data modeling concepts; object-oriented and object-relational databases; database system implementation techniques, including concurrency control, recovery, atomic commitment, and query processing and optimization, database security; introduction to advanced concepts, such as active, deductive, spatial, temporal, multimedia and distributed databases."
+    "description": "Review of the relational model and algebra; relational calculus; relational database design theory; advanced data modeling concepts; object-oriented and object-relational databases; database system implementation techniques, including concurrency control, recovery, atomic commitment, and query processing and optimization, database security; introduction to advanced concepts, such as active, deductive, spatial, temporal, multimedia and distributed databases.",
+    "credit_hours": 3
   },
   {
     "id": "4333",
     "title": "CLOUD COMPUTING FUNDAMENTALS AND APPLICATIONS",
-    "description": "Cloud Computing has transformed the IT industry by opening the possibility for infinite or at least highly elastic scalability in the delivery of enterprise applications and software as a service (SaaS). Cloud computing is a method of computing where a shared group of resources such as file storage, web servers, data processing services, and applications are accessed via a public internet connection or a private VPN and/or direct network connection. Cloud computing gives mature enterprises and new start-ups the option to deploy their applications to systems of infinite computational power with practically no initial capital investment and with modest operating costs proportional to the actual use. Examples of cloud computing services include Amazon Web Services, Microsoft Azure, Google Cloud Platform, and IBM Softlayer. This course introduces students to the fundamental and design concepts of writing software applications for the cloud. This course will discuss tools required by an application programmer in building, deploying, and maintaining cloud applications. A combination of lectures and lab activities will expose students to the programming interface utilized in developing cloud applications."
+    "description": "Cloud Computing has transformed the IT industry by opening the possibility for infinite or at least highly elastic scalability in the delivery of enterprise applications and software as a service (SaaS). Cloud computing is a method of computing where a shared group of resources such as file storage, web servers, data processing services, and applications are accessed via a public internet connection or a private VPN and/or direct network connection. Cloud computing gives mature enterprises and new start-ups the option to deploy their applications to systems of infinite computational power with practically no initial capital investment and with modest operating costs proportional to the actual use. Examples of cloud computing services include Amazon Web Services, Microsoft Azure, Google Cloud Platform, and IBM Softlayer. This course introduces students to the fundamental and design concepts of writing software applications for the cloud. This course will discuss tools required by an application programmer in building, deploying, and maintaining cloud applications. A combination of lectures and lab activities will expose students to the programming interface utilized in developing cloud applications.",
+    "credit_hours": 3
   },
   {
     "id": "4334",
     "title": "DATA MINING",
-    "description": "Automatic discovery of patterns and knowledge from large data repositories, including databases, data warehouses, Web, document collections, and transactions. Basic topics of data mining including data preprocessing, data warehousing and online analytical processing (OLAP), data cube, frequent pattern and association rule mining, correlation analysis, classification and prediction and clustering, as well as advanced topics covering the techniques and applications of data mining on Web and text documents."
+    "description": "Automatic discovery of patterns and knowledge from large data repositories, including databases, data warehouses, Web, document collections, and transactions. Basic topics of data mining including data preprocessing, data warehousing and online analytical processing (OLAP), data cube, frequent pattern and association rule mining, correlation analysis, classification and prediction and clustering, as well as advanced topics covering the techniques and applications of data mining on Web and text documents.",
+    "credit_hours": 3
   },
   {
     "id": "4340",
     "title": "FUNDAMENTALS OF WIRELESS NETWORKS",
-    "description": "Fundamentals of wireless networks, radio spectrum, coding and modulation, multiple access techniques, antennas, noise and interference, channels, demodulation and decoding, error rates and capacity, link budgets, medium access control, rate adaption, and wireless LAN/PAN, ad-hoc, and sensor networks."
+    "description": "Fundamentals of wireless networks, radio spectrum, coding and modulation, multiple access techniques, antennas, noise and interference, channels, demodulation and decoding, error rates and capacity, link budgets, medium access control, rate adaption, and wireless LAN/PAN, ad-hoc, and sensor networks.",
+    "credit_hours": 3
   },
   {
     "id": "4342",
     "title": "EMBEDDED SYSTEMS II",
-    "description": "Advanced course in design of microcontroller-based systems. Emphasis is on the application of microcontrollers to real-time problems. Topics include the study of the differences in bare metal and embedded Linux implementations, simple Linux character device drivers, bootloader design, watchdog and supervision concepts, and developing applications such as PID controllers. Course includes significant laboratory content and a project with extensive hardware and software requirements."
+    "description": "Advanced course in design of microcontroller-based systems. Emphasis is on the application of microcontrollers to real-time problems. Topics include the study of the differences in bare metal and embedded Linux implementations, simple Linux character device drivers, bootloader design, watchdog and supervision concepts, and developing applications such as PID controllers. Course includes significant laboratory content and a project with extensive hardware and software requirements.",
+    "credit_hours": 3
   },
   {
     "id": "4344",
     "title": "COMPUTER NETWORK ORGANIZATION",
-    "description": "Design and analysis of computer networks. Emphasis on the OSI architecture but discusses other schemes (e.g., ARPAnet). Data link control, local networks, protocols/architectures, network access protocols, transport protocols, internetworking, and ISDN."
+    "description": "Design and analysis of computer networks. Emphasis on the OSI architecture but discusses other schemes (e.g., ARPAnet). Data link control, local networks, protocols/architectures, network access protocols, transport protocols, internetworking, and ISDN.",
+    "credit_hours": 3
   },
   {
     "id": "4345",
     "title": "COMPUTATIONAL METHODS",
-    "description": "Introduction to numerical methods for solving problems in computer science and computer engineering. Topics include computer arithmetic, linear and nonlinear equations, eigenvalue problems, least squares, optimization, interpolation, and simulation."
+    "description": "Introduction to numerical methods for solving problems in computer science and computer engineering. Topics include computer arithmetic, linear and nonlinear equations, eigenvalue problems, least squares, optimization, interpolation, and simulation.",
+    "credit_hours": 3
   },
   {
     "id": "4351",
     "title": "PARALLEL PROCESSING",
-    "description": "Theory and practice of parallel processing, including characterization of parallel processors, models for memory, algorithms, and interprocess synchronization. Issues in parallelizing serial computations, efficiency and speedup analysis. Programming exercises using one or more concurrent programming languages, on one of more parallel computers."
+    "description": "Theory and practice of parallel processing, including characterization of parallel processors, models for memory, algorithms, and interprocess synchronization. Issues in parallelizing serial computations, efficiency and speedup analysis. Programming exercises using one or more concurrent programming languages, on one of more parallel computers.",
+    "credit_hours": 3
   },
   {
     "id": "4352",
     "title": "IOT AND NETWORKING",
-    "description": "Study of protocol stacks and layers, implementation of an Ethernet protocol stack, and design of a basic low-latency, small footprint IoT protocol on bare metal embedded devices and embedded Linux systems. Course includes multiple projects with hardware construction and extensive software and integration requirements."
+    "description": "Study of protocol stacks and layers, implementation of an Ethernet protocol stack, and design of a basic low-latency, small footprint IoT protocol on bare metal embedded devices and embedded Linux systems. Course includes multiple projects with hardware construction and extensive software and integration requirements.",
+    "credit_hours": 3
   },
   {
     "id": "4354",
     "title": "REAL-TIME OPERATING SYSTEMS",
-    "description": "Implementation of a real-time operating system with cooperative and preemption context switching, priority scheduling, semaphores, message queues, and inter-process communications on bare metal microcontrollers. Course includes multiple projects with hardware construction and rigorous software requirements."
+    "description": "Implementation of a real-time operating system with cooperative and preemption context switching, priority scheduling, semaphores, message queues, and inter-process communications on bare metal microcontrollers. Course includes multiple projects with hardware construction and rigorous software requirements.",
+    "credit_hours": 3
   },
   {
     "id": "4355",
     "title": "ELECTROMECHANICAL SYSTEMS AND SENSORS",
-    "description": "Applications of electronics and microcontrollers to the control of electromechanical systems. Topics include driving brushless motors (including stepper motors), brushed permanent magnet motors, and other mechanical actuators; the use of the sensors including IMU,LIDAR, RADAR, GPS, capacitive/inductive sensing, laser distance, thermocouples, strain, pressure, optical encoders, and Hall devices; and control applications. Course includes significant laboratory content and a project with extensive hardware and software requirements."
+    "description": "Applications of electronics and microcontrollers to the control of electromechanical systems. Topics include driving brushless motors (including stepper motors), brushed permanent magnet motors, and other mechanical actuators; the use of the sensors including IMU,LIDAR, RADAR, GPS, capacitive/inductive sensing, laser distance, thermocouples, strain, pressure, optical encoders, and Hall devices; and control applications. Course includes significant laboratory content and a project with extensive hardware and software requirements.",
+    "credit_hours": 3
   },
   {
     "id": "4356",
     "title": "SYSTEM ON CHIP (SOC) DESIGN",
-    "description": "Design of FPGA-based system on chip solutions, including processor subsystems, FPGA fabric, processor to FPGA bridges, and Linux device drivers. Course includes a project with extensive software requirements."
+    "description": "Design of FPGA-based system on chip solutions, including processor subsystems, FPGA fabric, processor to FPGA bridges, and Linux device drivers. Course includes a project with extensive software requirements.",
+    "credit_hours": 3
   },
   {
     "id": "4358",
     "title": "MICROPROCESSOR SYSTEMS",
-    "description": "Asynchronous and synchronous memory interfacing and timing, design and implementation of DMA controllers and SDRAM controllers. Course includes a project with significant system design."
+    "description": "Asynchronous and synchronous memory interfacing and timing, design and implementation of DMA controllers and SDRAM controllers. Course includes a project with significant system design.",
+    "credit_hours": 3
   },
   {
     "id": "4360",
     "title": "AUTONOMOUS ROBOT DESIGN AND PROGRAMMING",
-    "description": "An introduction to robotics and the design and programming of autonomous robot systems. Topics include basic kinematics, dynamics, and control, as well as sensors, knowledge representation, and programming techniques. Course work includes individual and group projects involving the building and programming of simulated and real robots."
+    "description": "An introduction to robotics and the design and programming of autonomous robot systems. Topics include basic kinematics, dynamics, and control, as well as sensors, knowledge representation, and programming techniques. Course work includes individual and group projects involving the building and programming of simulated and real robots.",
+    "credit_hours": 3
   },
   {
     "id": "4361",
     "title": "SOFTWARE DESIGN PATTERNS",
-    "description": "In-depth study of software design patterns including description of patterns, design principles and techniques used by patterns as well as application of patterns to solving practical design problems. Team project."
+    "description": "In-depth study of software design patterns including description of patterns, design principles and techniques used by patterns as well as application of patterns to solving practical design problems. Team project.",
+    "credit_hours": 3
   },
   {
     "id": "4372",
     "title": "RISC PROCESSOR DESIGN",
-    "description": "Design of a RISC processor, based on RISC V and custom instruction set architectures with implementation on an FPGA target for test and verification. Course includes a project with extensive software requirements."
+    "description": "Design of a RISC processor, based on RISC V and custom instruction set architectures with implementation on an FPGA target for test and verification. Course includes a project with extensive software requirements.",
+    "credit_hours": 3
   },
   {
     "id": "4373",
     "title": "GENERAL PURPOSE GPU PROGRAMMING",
-    "description": "Study of general purpose computation on a GPU. Topics include GPU architectures, stream processing, and programming languages such as OpenCL and CUDA that realize data-parallel, high-throughput compute kernels on GPU architectures."
+    "description": "Study of general purpose computation on a GPU. Topics include GPU architectures, stream processing, and programming languages such as OpenCL and CUDA that realize data-parallel, high-throughput compute kernels on GPU architectures.",
+    "credit_hours": 3
   },
   {
     "id": "4376",
     "title": "DIGITAL COMMUNICATION SYSTEMS",
-    "description": "Study of digital communication systems including source and channel coding, digital modulation techniques, inter-symbol interference, and multi-channel combining and multiple-access methods."
+    "description": "Study of digital communication systems including source and channel coding, digital modulation techniques, inter-symbol interference, and multi-channel combining and multiple-access methods.",
+    "credit_hours": 3
   },
   {
     "id": "4377",
     "title": "WIRELESS COMMUNICATION SYSTEMS",
-    "description": "Study of wireless systems including modulation, amplification, linearization techniques, filtering, antennas, propagation, reception, and demodulation. Topics include software defined radio design, link budget, and interference analysis. Course includes significant laboratory content."
+    "description": "Study of wireless systems including modulation, amplification, linearization techniques, filtering, antennas, propagation, reception, and demodulation. Topics include software defined radio design, link budget, and interference analysis. Course includes significant laboratory content.",
+    "credit_hours": 3
   },
   {
     "id": "4378",
     "title": "INTRODUCTION TO UNMANNED VEHICLE SYSTEMS",
-    "description": "Introduction to UVS (Unmanned Vehicle Systems) such as UAS (Unmanned Aircraft Systems), UGS (Unmanned Ground System) and UMS (Unmanned Maritime System), their history, missions, capabilities, types, configurations, subsystems, and the disciplines needed for UVS development and operation. UVS missions could include student competitions sponsored by various technical organizations. This course is team-taught by engineering faculty."
+    "description": "Introduction to UVS (Unmanned Vehicle Systems) such as UAS (Unmanned Aircraft Systems), UGS (Unmanned Ground System) and UMS (Unmanned Maritime System), their history, missions, capabilities, types, configurations, subsystems, and the disciplines needed for UVS development and operation. UVS missions could include student competitions sponsored by various technical organizations. This course is team-taught by engineering faculty.",
+    "credit_hours": 3
   },
   {
     "id": "4379",
     "title": "UNMANNED VEHICLE SYSTEM DEVELOPMENT",
-    "description": "Introduction to the technologies needed to create an UVS (Unmanned Vehicle System). Integration of these technologies (embodied as a set of sensors, actuators, computing and mobility platform sub-systems) into a functioning UVS through team work. UVS could be designed to compete in a student competition sponsored by various technical organizations or to support a specific mission or function defined by the instructors. This course is team-taught by engineering faculty."
+    "description": "Introduction to the technologies needed to create an UVS (Unmanned Vehicle System). Integration of these technologies (embodied as a set of sensors, actuators, computing and mobility platform sub-systems) into a functioning UVS through team work. UVS could be designed to compete in a student competition sponsored by various technical organizations or to support a specific mission or function defined by the instructors. This course is team-taught by engineering faculty.",
+    "credit_hours": 3
   },
   {
     "id": "4380",
     "title": "INFORMATION SECURITY",
-    "description": "Hands-on introduction to the basics of security. Includes system security, buffer overflows, a high-level overview of cryptography, firewalls and intrusion detection/prevention, malware, penetration testing, forensics, and system administration."
+    "description": "Hands-on introduction to the basics of security. Includes system security, buffer overflows, a high-level overview of cryptography, firewalls and intrusion detection/prevention, malware, penetration testing, forensics, and system administration.",
+    "credit_hours": 3
   },
   {
     "id": "4381",
     "title": "INFORMATION SECURITY II",
-    "description": "Deeper study of the fundamentals of security, including symmetric key cryptography, public key cryptography, cryptographic protocols, malware design, network attacks and defenses, data security, privacy, and wireless security."
+    "description": "Deeper study of the fundamentals of security, including symmetric key cryptography, public key cryptography, cryptographic protocols, malware design, network attacks and defenses, data security, privacy, and wireless security.",
+    "credit_hours": 3
   },
   {
     "id": "4382",
     "title": "SECURE PROGRAMMING",
-    "description": "This course is an introduction to methods of secure software design and development. Students will learn about the major security problems found in software today. Using this knowledge, they will work in teams to find these bugs in software, fix the bugs, and design software so that it has fewer security problems. Static analysis tools will be a core part of the class, but students will also be exposed to black box testing tools. Topics will include input validation, buffer overflow prevention, error handling, web application issues, and XML."
+    "description": "This course is an introduction to methods of secure software design and development. Students will learn about the major security problems found in software today. Using this knowledge, they will work in teams to find these bugs in software, fix the bugs, and design software so that it has fewer security problems. Static analysis tools will be a core part of the class, but students will also be exposed to black box testing tools. Topics will include input validation, buffer overflow prevention, error handling, web application issues, and XML.",
+    "credit_hours": 3
   },
   {
     "id": "4391",

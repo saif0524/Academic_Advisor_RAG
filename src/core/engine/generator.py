@@ -80,8 +80,12 @@ class DegreePlanGenerator:
         include_summer: bool = False,
         max_credits_per_sem: Optional[int] = None,
         current_term: Optional[Tuple[str, int]] = None,
+        concentration: Optional[str] = None,
     ) -> PlanGenerationResult:
         """Semester-by-semester roadmap from the current term (FC2, FC25).
+
+        `concentration` picks the degree's track (FC1); when omitted, an
+        already-specialized degree keeps its track, else the student's own.
 
         Honors: FC30 (completed courses excluded), FC29 (prereqs placed in
         earlier semesters when prerequisite data exists), FC32 (per-semester
@@ -90,6 +94,17 @@ class DegreePlanGenerator:
         `notes` — never filled with invented courses.
         """
         notes: List[str] = []
+        requested = concentration
+        if requested is None:
+            requested = target_degree.concentration_name or getattr(student, "concentration", None)
+        target_degree = target_degree.for_concentration(requested)
+        if (requested or "").strip().lower() not in ("", "general") and not target_degree.concentration_name:
+            offered = ", ".join(target_degree.concentrations) or "none"
+            notes.append(
+                f"{target_degree.degree_id} has no {requested!r} concentration on record "
+                f"(offered: {offered}) — planned as a general degree.")
+        elif target_degree.concentration_name:
+            notes.append(f"Concentration applied: {target_degree.concentration_name}.")
         records = student.completed_courses if student else []
         completed = {
             r.course_id for r in records if r.status in _COMPLETED_STATUSES
@@ -142,7 +157,11 @@ class DegreePlanGenerator:
         # 2. elective buckets filled from the grounded catalog pool.
         electives = DegreePlanGenerator._elective_picks(
             target_degree, courses_by_id, completed, set(required), hours_for, notes)
-        placement_order = DegreePlanGenerator._order_courses(required + electives)
+        # FC29: a planned course whose prerequisite isn't done, underway or already
+        # planned pulls that prerequisite into the plan (noted, never silent).
+        prerequisites_added = DegreePlanGenerator._missing_prerequisites(
+            required + electives, courses_by_id, completed, set(in_progress), notes)
+        placement_order = DegreePlanGenerator._order_courses(required + electives + prerequisites_added)
 
         # 3. Place courses semester by semester from the current term onwards.
         # FC29: a course goes in a semester only once all its prerequisites are
@@ -154,7 +173,7 @@ class DegreePlanGenerator:
             student_id=student.student_id if student else "",
             degree_id=target_degree.degree_id,
             target_major=target_degree.major_name,
-            concentration=getattr(student, "concentration", None),
+            concentration=target_degree.concentration_name or requested,
             includes_summer=bool(include_summer),
         )
         semesters: List[SemesterPlan] = []
@@ -277,12 +296,13 @@ class DegreePlanGenerator:
         include_summer: bool = False,
         max_credits_per_sem: Optional[int] = None,
         current_term: Optional[Tuple[str, int]] = None,
+        concentration: Optional[str] = None,
     ) -> PlanGenerationResult:
         """§2 Req 5a–c fuel: generate the would-be plan for a new degree (FC26)."""
         return DegreePlanGenerator.generate_multi_year_plan(
             student, new_degree, courses_by_id,
             include_summer=include_summer, max_credits_per_sem=max_credits_per_sem,
-            current_term=current_term)
+            current_term=current_term, concentration=concentration)
 
     # ---------------------------------------------------- draft review API
 
@@ -349,6 +369,26 @@ class DegreePlanGenerator:
         return PlanReviewResult(status=status, issues=issues, semester_issues=semester_issues)
 
     # ------------------------------------------------------------ internals
+
+    @staticmethod
+    def _missing_prerequisites(planned, courses_by_id, completed, in_progress, notes) -> List[str]:
+        """Transitive prerequisites that are neither done, underway nor planned yet."""
+        planned_set = set(planned)
+        added: List[str] = []
+        queue = list(planned)
+        while queue:
+            cid = queue.pop(0)
+            course = courses_by_id.get(cid)
+            for prereq in (course.prerequisites if course else []):
+                if prereq in completed or prereq in in_progress or prereq in planned_set:
+                    continue
+                if prereq not in courses_by_id:
+                    continue  # not in the catalog — can't be planned, nothing invented
+                planned_set.add(prereq)
+                added.append(prereq)
+                queue.append(prereq)
+                notes.append(f"{prereq} added to the plan because {cid} requires it first (FC29).")
+        return added
 
     @staticmethod
     def _require_single(cid, completed, in_progress, required, block_name, notes) -> List[str]:

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from agent.llm.config import LLMConfig, get_classifier, get_summarizer
+from agent.llm.config import LLMConfig, get_classifier, get_explorer, get_summarizer
 from agent.llm.graph import build_advisor_graph
 from agent.tools import AdvisorToolkit
 
@@ -25,7 +25,7 @@ class AIAdvisorAgent:
         toolkit = AdvisorToolkit(sql_db_manager, vector_db_manager)
         graph = build_advisor_graph(
             toolkit=toolkit, classifier=get_classifier(config),
-            summarizer=get_summarizer(config))
+            summarizer=get_summarizer(config), explorer=get_explorer(config))
         return cls(graph, sql_db_manager)
 
     # ------------------------------------------------------------ contract

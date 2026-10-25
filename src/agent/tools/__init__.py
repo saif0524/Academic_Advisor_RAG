@@ -16,8 +16,18 @@ class AdvisorToolkit(ActionTools):
         """Continue the student's latest chat session or start one (FC27/FC34)."""
         return self._sql.ensure_chat_session(student_id)
 
-    def recent_history(self, student_id: str, session_id: str) -> List[str]:
+    def recent_history(self, student_id: str, session_id: str,
+                       max_chars: int = 320) -> List[str]:
         """Last 12 turns, trimmed, as context for the LLM (FC27). Raises
         RecordNotFoundError for an unknown session (→ HTTP 404)."""
         rows = self._sql.get_chat_history(student_id, session_id)
-        return [f"{row['role']}: {str(row['content'])[:220]}" for row in rows[-12:]]
+        # Long turns keep head AND tail: an advisor's closing offer ("want me
+        # to walk you through it?") is what a bare "yes please" answers (FC42).
+        return [f"{row['role']}: {_trim(str(row['content']), max_chars)}" for row in rows[-12:]]
+
+
+def _trim(text: str, max_chars: int) -> str:
+    if len(text) <= max_chars:
+        return text
+    head = max_chars // 3
+    return text[:head] + " … " + text[-(max_chars - head):]

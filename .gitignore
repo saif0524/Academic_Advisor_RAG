@@ -10,3 +10,6 @@ __pycache__/
 .ruff_cache/
 # Runtime stores (rebuilt from data/ by database.seed on startup)
 .runtime/
+
+# TA2 submission bundle (generated artifact — zip and submit)
+submission/

@@ -1,17 +1,1093 @@
 {
-  "_comment": "MOCK demo course sections for FC12/FC31-style planning demos — NOT real registrar data. Term Fall 2026, schedules for CSE corpus courses; '1105-002' is deliberately full, and '1311-001' deliberately overlaps the demo student's in-progress '1325-501' in time (Tu/Th 14:00–15:20) for FC31 demos.",
+  "_comment": "MOCK demo course sections for FC12/FC31-style planning demos \u2014 NOT real registrar data. Terms Fall 2026 and Spring 2027. '1105-002' and '4380-002' are deliberately full; '1311-001' and '2441-001' deliberately overlap the demo student's in-progress '1325-501' (Tu/Th 14:00\u201315:20) for FC31 demos. Every other Fall 2026 section avoids the student's in-progress classes.",
   "sections": [
-    { "section_id": "1105-001", "course_id": "1105", "term": "Fall 2026", "instructor": "Dr. Alex Rivera", "meeting_days": ["Monday", "Wednesday"], "start_time": "09:00", "end_time": "09:50", "room_capacity": 40, "enrolled_count": 31 },
-    { "section_id": "1105-002", "course_id": "1105", "term": "Fall 2026", "instructor": "Dr. Alex Rivera", "meeting_days": ["Tuesday", "Thursday"], "start_time": "10:00", "end_time": "10:50", "room_capacity": 40, "enrolled_count": 40 },
-    { "section_id": "1106-001", "course_id": "1106", "term": "Fall 2026", "instructor": "Dr. Dana Okafor", "meeting_days": ["Friday"], "start_time": "13:00", "end_time": "15:50", "room_capacity": 24, "enrolled_count": 12 },
-    { "section_id": "1310-001", "course_id": "1310", "term": "Fall 2026", "instructor": "Dr. Priya Nathan", "meeting_days": ["Tuesday", "Thursday"], "start_time": "09:30", "end_time": "10:50", "room_capacity": 60, "enrolled_count": 44 },
-    { "section_id": "1310-002", "course_id": "1310", "term": "Fall 2026", "instructor": "Dr. Priya Nathan", "meeting_days": ["Monday", "Wednesday", "Friday"], "start_time": "11:00", "end_time": "11:50", "room_capacity": 60, "enrolled_count": 58 },
-    { "section_id": "1311-001", "course_id": "1311", "term": "Fall 2026", "instructor": "Dr. Sam Patel", "meeting_days": ["Tuesday", "Thursday"], "start_time": "14:00", "end_time": "15:20", "room_capacity": 45, "enrolled_count": 20 },
-    { "section_id": "1320-501", "course_id": "1320", "term": "Fall 2026", "instructor": "Dr. Wei Chen", "meeting_days": ["Monday", "Wednesday"], "start_time": "14:00", "end_time": "15:20", "room_capacity": 50, "enrolled_count": 35 },
-    { "section_id": "1325-501", "course_id": "1325", "term": "Fall 2026", "instructor": "Dr. Wei Chen", "meeting_days": ["Tuesday", "Thursday"], "start_time": "14:00", "end_time": "15:20", "room_capacity": 50, "enrolled_count": 41 },
-    { "section_id": "2315-001", "course_id": "2315", "term": "Fall 2026", "instructor": "Dr. Ines Kowalski", "meeting_days": ["Monday", "Wednesday"], "start_time": "12:00", "end_time": "13:20", "room_capacity": 55, "enrolled_count": 39 },
-    { "section_id": "3310-001", "course_id": "3310", "term": "Fall 2026", "instructor": "Dr. Sofia Marino", "meeting_days": ["Monday", "Wednesday"], "start_time": "10:00", "end_time": "11:20", "room_capacity": 45, "enrolled_count": 28 },
-    { "section_id": "3330-001", "course_id": "3330", "term": "Fall 2026", "instructor": "Dr. Hana Sato", "meeting_days": ["Tuesday", "Thursday"], "start_time": "11:00", "end_time": "12:20", "room_capacity": 40, "enrolled_count": 33 },
-    { "section_id": "4308-001", "course_id": "4308", "term": "Fall 2026", "instructor": "Dr. Kwame Boateng", "meeting_days": ["Monday", "Wednesday"], "start_time": "15:30", "end_time": "16:50", "room_capacity": 35, "enrolled_count": 30 }
+    {
+      "section_id": "1105-001",
+      "course_id": "1105",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "09:00",
+      "end_time": "09:50",
+      "room_capacity": 40,
+      "enrolled_count": 31
+    },
+    {
+      "section_id": "1105-002",
+      "course_id": "1105",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "10:00",
+      "end_time": "10:50",
+      "room_capacity": 40,
+      "enrolled_count": 40
+    },
+    {
+      "section_id": "1106-001",
+      "course_id": "1106",
+      "term": "Fall 2026",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "15:50",
+      "room_capacity": 24,
+      "enrolled_count": 12
+    },
+    {
+      "section_id": "1310-001",
+      "course_id": "1310",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "09:30",
+      "end_time": "10:50",
+      "room_capacity": 60,
+      "enrolled_count": 44
+    },
+    {
+      "section_id": "1310-002",
+      "course_id": "1310",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "start_time": "11:00",
+      "end_time": "11:50",
+      "room_capacity": 60,
+      "enrolled_count": 58
+    },
+    {
+      "section_id": "1311-001",
+      "course_id": "1311",
+      "term": "Fall 2026",
+      "instructor": "Dr. Sam Patel",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:20",
+      "room_capacity": 45,
+      "enrolled_count": 20
+    },
+    {
+      "section_id": "1320-501",
+      "course_id": "1320",
+      "term": "Fall 2026",
+      "instructor": "Dr. Wei Chen",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:20",
+      "room_capacity": 50,
+      "enrolled_count": 35
+    },
+    {
+      "section_id": "1325-501",
+      "course_id": "1325",
+      "term": "Fall 2026",
+      "instructor": "Dr. Wei Chen",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:20",
+      "room_capacity": 50,
+      "enrolled_count": 41
+    },
+    {
+      "section_id": "2315-001",
+      "course_id": "2315",
+      "term": "Fall 2026",
+      "instructor": "Dr. Ines Kowalski",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "12:00",
+      "end_time": "13:20",
+      "room_capacity": 55,
+      "enrolled_count": 39
+    },
+    {
+      "section_id": "3310-001",
+      "course_id": "3310",
+      "term": "Fall 2026",
+      "instructor": "Dr. Sofia Marino",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:00",
+      "end_time": "11:20",
+      "room_capacity": 45,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "3330-001",
+      "course_id": "3330",
+      "term": "Fall 2026",
+      "instructor": "Dr. Hana Sato",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "11:00",
+      "end_time": "12:20",
+      "room_capacity": 40,
+      "enrolled_count": 33
+    },
+    {
+      "section_id": "4308-001",
+      "course_id": "4308",
+      "term": "Fall 2026",
+      "instructor": "Dr. Kwame Boateng",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "15:30",
+      "end_time": "16:50",
+      "room_capacity": 35,
+      "enrolled_count": 30
+    },
+    {
+      "section_id": "MATH 2425-001",
+      "course_id": "MATH 2425",
+      "term": "Fall 2026",
+      "instructor": "Dr. Hannah Brooks",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 60,
+      "enrolled_count": 52
+    },
+    {
+      "section_id": "ENGL 1302-001",
+      "course_id": "ENGL 1302",
+      "term": "Fall 2026",
+      "instructor": "Dr. Owen Marsh",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 30,
+      "enrolled_count": 24
+    },
+    {
+      "section_id": "HIST 1301-001",
+      "course_id": "HIST 1301",
+      "term": "Fall 2026",
+      "instructor": "Dr. Ruth Calloway",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "08:00",
+      "end_time": "10:50",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "2441-001",
+      "course_id": "2441",
+      "term": "Fall 2026",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "14:30",
+      "end_time": "15:50",
+      "room_capacity": 40,
+      "enrolled_count": 29
+    },
+    {
+      "section_id": "ENGL 1301-001",
+      "course_id": "ENGL 1301",
+      "term": "Fall 2026",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "ENGL 1301-002",
+      "course_id": "ENGL 1301",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:30",
+      "end_time": "11:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "MATH 1426-001",
+      "course_id": "MATH 1426",
+      "term": "Fall 2026",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:15",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "MATH 1426-002",
+      "course_id": "MATH 1426",
+      "term": "Fall 2026",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "MATH 3330-001",
+      "course_id": "MATH 3330",
+      "term": "Fall 2026",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "11:00",
+      "end_time": "12:15",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "PHYS 1443-001",
+      "course_id": "PHYS 1443",
+      "term": "Fall 2026",
+      "instructor": "Dr. Tomas Ibarra",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "12:30",
+      "end_time": "13:45",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "PHYS 1444-001",
+      "course_id": "PHYS 1444",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "POLS 2311-001",
+      "course_id": "POLS 2311",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "15:50",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "HIST 1302-001",
+      "course_id": "HIST 1302",
+      "term": "Fall 2026",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "2320-001",
+      "course_id": "2320",
+      "term": "Fall 2026",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "09:30",
+      "end_time": "10:45",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "2320-002",
+      "course_id": "2320",
+      "term": "Fall 2026",
+      "instructor": "Dr. Tomas Ibarra",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "2381-001",
+      "course_id": "2381",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:30",
+      "end_time": "11:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "3311-001",
+      "course_id": "3311",
+      "term": "Fall 2026",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "3318-001",
+      "course_id": "3318",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "3318-002",
+      "course_id": "3318",
+      "term": "Fall 2026",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "11:00",
+      "end_time": "12:15",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "3320-001",
+      "course_id": "3320",
+      "term": "Fall 2026",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "12:30",
+      "end_time": "13:45",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "3442-001",
+      "course_id": "3442",
+      "term": "Fall 2026",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4303-001",
+      "course_id": "4303",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "15:50",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4304-001",
+      "course_id": "4304",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4309-001",
+      "course_id": "4309",
+      "term": "Fall 2026",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "09:30",
+      "end_time": "10:45",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4310-001",
+      "course_id": "4310",
+      "term": "Fall 2026",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "4311-001",
+      "course_id": "4311",
+      "term": "Fall 2026",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:30",
+      "end_time": "11:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4321-001",
+      "course_id": "4321",
+      "term": "Fall 2026",
+      "instructor": "Dr. Tomas Ibarra",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:15",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4322-001",
+      "course_id": "4322",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4331-001",
+      "course_id": "4331",
+      "term": "Fall 2026",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "11:00",
+      "end_time": "12:15",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4333-001",
+      "course_id": "4333",
+      "term": "Fall 2026",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "12:30",
+      "end_time": "13:45",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4334-001",
+      "course_id": "4334",
+      "term": "Fall 2026",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4344-001",
+      "course_id": "4344",
+      "term": "Fall 2026",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "15:50",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4361-001",
+      "course_id": "4361",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4373-001",
+      "course_id": "4373",
+      "term": "Fall 2026",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "09:30",
+      "end_time": "10:45",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "4380-001",
+      "course_id": "4380",
+      "term": "Fall 2026",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4380-002",
+      "course_id": "4380",
+      "term": "Fall 2026",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:30",
+      "end_time": "11:45",
+      "room_capacity": 30,
+      "enrolled_count": 30
+    },
+    {
+      "section_id": "4381-001",
+      "course_id": "4381",
+      "term": "Fall 2026",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "4382-001",
+      "course_id": "4382",
+      "term": "Fall 2026",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4391-001",
+      "course_id": "4391",
+      "term": "Fall 2026",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "11:00",
+      "end_time": "12:15",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4392-001",
+      "course_id": "4392",
+      "term": "Fall 2026",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "12:30",
+      "end_time": "13:45",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "2320-501",
+      "course_id": "2320",
+      "term": "Spring 2027",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "2320-502",
+      "course_id": "2320",
+      "term": "Spring 2027",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "08:00",
+      "end_time": "10:50",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "2381-501",
+      "course_id": "2381",
+      "term": "Spring 2027",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "15:50",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "3310-501",
+      "course_id": "3310",
+      "term": "Spring 2027",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "13:50",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "3311-501",
+      "course_id": "3311",
+      "term": "Spring 2027",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "3318-501",
+      "course_id": "3318",
+      "term": "Spring 2027",
+      "instructor": "Dr. Tomas Ibarra",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "09:30",
+      "end_time": "10:45",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "3318-502",
+      "course_id": "3318",
+      "term": "Spring 2027",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "start_time": "09:00",
+      "end_time": "09:50",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "3320-501",
+      "course_id": "3320",
+      "term": "Spring 2027",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "3330-501",
+      "course_id": "3330",
+      "term": "Spring 2027",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:30",
+      "end_time": "11:45",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4308-501",
+      "course_id": "4308",
+      "term": "Spring 2027",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:15",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4309-501",
+      "course_id": "4309",
+      "term": "Spring 2027",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4311-501",
+      "course_id": "4311",
+      "term": "Spring 2027",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "4333-501",
+      "course_id": "4333",
+      "term": "Spring 2027",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "11:00",
+      "end_time": "12:15",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4344-501",
+      "course_id": "4344",
+      "term": "Spring 2027",
+      "instructor": "Dr. Tomas Ibarra",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "12:30",
+      "end_time": "13:45",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4380-501",
+      "course_id": "4380",
+      "term": "Spring 2027",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4380-502",
+      "course_id": "4380",
+      "term": "Spring 2027",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "08:00",
+      "end_time": "10:50",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "4381-501",
+      "course_id": "4381",
+      "term": "Spring 2027",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "15:50",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4382-501",
+      "course_id": "4382",
+      "term": "Spring 2027",
+      "instructor": "Dr. Marcus Lindqvist",
+      "meeting_days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "start_time": "13:00",
+      "end_time": "13:50",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "4321-501",
+      "course_id": "4321",
+      "term": "Spring 2027",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "17:30",
+      "end_time": "18:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "4322-501",
+      "course_id": "4322",
+      "term": "Spring 2027",
+      "instructor": "Dr. Kenji Watanabe",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "09:30",
+      "end_time": "10:45",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "4361-501",
+      "course_id": "4361",
+      "term": "Spring 2027",
+      "instructor": "Dr. Samira Haddad",
+      "meeting_days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "start_time": "09:00",
+      "end_time": "09:50",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "4391-501",
+      "course_id": "4391",
+      "term": "Spring 2027",
+      "instructor": "Dr. Tomas Ibarra",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "08:00",
+      "end_time": "09:15",
+      "room_capacity": 50,
+      "enrolled_count": 46
+    },
+    {
+      "section_id": "ENGL 1302-501",
+      "course_id": "ENGL 1302",
+      "term": "Spring 2027",
+      "instructor": "Dr. Alex Rivera",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "10:30",
+      "end_time": "11:45",
+      "room_capacity": 30,
+      "enrolled_count": 16
+    },
+    {
+      "section_id": "MATH 2425-501",
+      "course_id": "MATH 2425",
+      "term": "Spring 2027",
+      "instructor": "Dr. Dana Okafor",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "14:00",
+      "end_time": "15:15",
+      "room_capacity": 40,
+      "enrolled_count": 28
+    },
+    {
+      "section_id": "MATH 3330-501",
+      "course_id": "MATH 3330",
+      "term": "Spring 2027",
+      "instructor": "Dr. Priya Nathan",
+      "meeting_days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "start_time": "16:00",
+      "end_time": "17:15",
+      "room_capacity": 45,
+      "enrolled_count": 38
+    },
+    {
+      "section_id": "3380-001",
+      "course_id": "3380",
+      "term": "Fall 2026",
+      "instructor": "Dr. Elena Voss",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "12:30",
+      "end_time": "13:45",
+      "room_capacity": 45,
+      "enrolled_count": 22
+    }
   ]
 }

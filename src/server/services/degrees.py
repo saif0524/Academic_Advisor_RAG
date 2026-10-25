@@ -36,6 +36,13 @@ class DegreeService:
             max_semester_credits=degree.max_semester_credits,
             core_courses=degree.core_courses,
             concentration_courses=degree.concentration_courses,
+            concentration_tracks={
+                name: [row.course_id or row.course_code
+                       for block in degree.blocks if block.concentration == name
+                       for row in block.courses]
+                for name in degree.concentrations
+            },
+            concentrations=degree.concentrations,
             elective_rules=dict(degree.elective_rules) if degree.elective_rules else None,
         )
 
@@ -45,4 +52,5 @@ class DegreeService:
             major_name=degree.major_name,
             concentration_name=degree.concentration_name,
             total_credits_required=degree.total_credits_required,
+            concentrations=degree.concentrations,
         )

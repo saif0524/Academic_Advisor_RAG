@@ -28,3 +28,13 @@
   font-size: 0.72rem;
   color: var(--color-text-muted);
 }
+.conversation-list-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.conversation-list-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}

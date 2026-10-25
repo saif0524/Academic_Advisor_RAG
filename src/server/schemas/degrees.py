@@ -18,6 +18,9 @@ class DegreeSummary(BaseModel):
         default=None, description="Specialization, e.g. 'Cybersecurity' (FC1: one per student)."
     )
     total_credits_required: Optional[int] = None
+    concentrations: List[str] = Field(
+        default_factory=list, description="Concentration tracks this degree offers (FC1/FC15)."
+    )
 
 
 class DegreeListResponse(BaseModel):
@@ -33,6 +36,10 @@ class DegreeDetail(DegreeSummary):
     )
     core_courses: List[str] = Field(default_factory=list, description="Core course ids.")
     concentration_courses: List[str] = Field(default_factory=list)
+    concentration_tracks: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="Track name → required course ids for that concentration (FC18).",
+    )
     elective_rules: Optional[Dict[str, int]] = Field(
         default=None,
         description="Elective buckets, e.g. {'Technical Electives': 9, 'General Ed': 12}.",

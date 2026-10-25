@@ -23,6 +23,8 @@ interface ConversationHistoryProps {
   conversations: Conversation[] | null;
   activeId: string | null;
   onSelect?: (id: string) => void;
+  /** Delete a conversation (FC41). */
+  onDelete?: (id: string) => void;
   loading?: boolean;
   error?: string | null;
   /** Return to the active conversation. */
@@ -38,6 +40,7 @@ export default function ConversationHistory({
   conversations,
   activeId,
   onSelect,
+  onDelete,
   loading = false,
   error = null,
   onBack,
@@ -92,7 +95,7 @@ export default function ConversationHistory({
           <h4 className="conversation-history-group-label">{label}</h4>
           <ul className="conversation-history-list">
             {items.map((item) => (
-              <ConversationListItem key={item.id} item={item} active={item.id === activeId} onSelect={onSelect} />
+              <ConversationListItem key={item.id} item={item} active={item.id === activeId} onSelect={onSelect} onDelete={onDelete} />
             ))}
           </ul>
         </section>

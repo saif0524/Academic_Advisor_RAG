@@ -6,7 +6,7 @@ classes (§2 validator/generator) are separate and NOT defined here.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -27,9 +27,10 @@ class DegreeBlock:
     """A requirement block, e.g. 'Creative Arts (3 Hours)' or an elective bucket."""
 
     name: str
-    kind: str  # general_core | math_science | major_core | electives
+    kind: str  # general_core | math_science | major_core | concentration | electives
     credits_required: Optional[int] = None
     elective_bucket: Optional[str] = None  # set when this block is an elective rule
+    concentration: Optional[str] = None  # set on kind="concentration" blocks: which track owns them
     courses: List[DegreeBlockCourse] = field(default_factory=list)
 
 
@@ -47,6 +48,54 @@ class DegreeRequirement:
     concentration_courses: List[str] = field(default_factory=list)
     elective_rules: Dict[str, int] = field(default_factory=dict)
     blocks: List[DegreeBlock] = field(default_factory=list)
+
+    @property
+    def concentrations(self) -> List[str]:
+        """Names of the concentration tracks this degree offers (FC1/FC15)."""
+        names: List[str] = []
+        for block in self.blocks:
+            if block.kind == "concentration" and block.concentration and block.concentration not in names:
+                names.append(block.concentration)
+        return names
+
+    def for_concentration(self, concentration: Optional[str]) -> "DegreeRequirement":
+        """The degree as it applies to one concentration track (FC1, FC19, FC25).
+
+        Keeps the chosen track's requirement block and drops the other tracks'.
+        The track's credit hours replace the same number of elective hours so
+        the degree total stays what the catalog says. An unknown or empty name
+        (or "General") yields the plain degree with no track attached.
+        """
+        wanted = (concentration or "").strip().lower()
+        match = next((n for n in self.concentrations if n.lower() == wanted), None)
+        base_blocks = [b for b in self.blocks if b.kind != "concentration"]
+        track_blocks = [b for b in self.blocks if b.kind == "concentration" and b.concentration == match]
+        blocks = list(base_blocks)
+        if match is not None:
+            to_replace = sum(b.credits_required or 0 for b in track_blocks)
+            blocks = []
+            for block in base_blocks:
+                if block.kind == "electives" and to_replace > 0 and block.credits_required:
+                    cut = min(to_replace, block.credits_required)
+                    to_replace -= cut
+                    if block.credits_required - cut <= 0:
+                        continue  # bucket fully covered by the track
+                    block = replace(block, credits_required=block.credits_required - cut)
+                blocks.append(block)
+            blocks.extend(track_blocks)
+        return replace(
+            self,
+            concentration_name=match,
+            concentration_courses=[
+                row.course_id or row.course_code
+                for b in track_blocks for row in b.courses if row.course_id or row.course_code
+            ],
+            elective_rules={
+                b.elective_bucket: b.credits_required or 0
+                for b in blocks if b.kind == "electives" and b.elective_bucket
+            },
+            blocks=blocks,
+        )
 
     def is_course_applicable(self, course_id: str) -> bool:
         """§1 helper: course appears in any block's course rows (canonical ids)."""

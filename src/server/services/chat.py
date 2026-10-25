@@ -68,16 +68,19 @@ class ChatService:
         self._sql_db_manager.append_chat_message(session_id, student_id, "user", request.message)
 
         def events():
+            ran_checks: List[dict] = []  # FC39: kept with the advisor turn for history/export
             try:
                 for event in self._advisor_agent.process_query_stream(
                     student_id, request.message, session_id=session_id,
                     confirmed_action_id=request.confirmed_action_id,
                     cancelled_action_id=request.cancelled_action_id,
                 ):
+                    if event.get("type") in ("check", "step"):
+                        ran_checks.append(dict(event))
                     if event.get("type") == "done":
                         reply_text = event.get("reply") or ""
                         self._sql_db_manager.append_chat_message(
-                            session_id, student_id, "assistant", reply_text)
+                            session_id, student_id, "assistant", reply_text, checks=ran_checks)
                         event["session_id"] = event.get("session_id") or session_id
                     yield event
             except Exception as exc:  # mid-stream: HTTP status is already sent
@@ -96,6 +99,10 @@ class ChatService:
         summaries = [ChatSessionSummary(**row) for row in rows]
         return ChatSessionsResponse(results=summaries, count=len(summaries))
 
+    def delete_session(self, student_id: str, session_id: str) -> None:
+        """FC41: delete one of the student's conversations (404 if not theirs)."""
+        self._sql_db_manager.delete_chat_session(student_id, session_id)
+
     def get_history(self, student_id: str, session_id: Optional[str] = None) -> ChatHistoryResponse:
         """Persisted advising history (FC34) — read from SQLite, never app memory.
 
@@ -111,7 +118,10 @@ class ChatService:
         except RecordNotFoundError:
             raise
         messages: List[ChatHistoryMessage] = [
-            ChatHistoryMessage(role=row["role"], content=row["content"], created_at=row["created_at"])
+            ChatHistoryMessage(
+                role=row["role"], content=row["content"], created_at=row["created_at"],
+                checks=row.get("checks"),
+            )
             for row in rows
         ]
         pending = self._sql_db_manager.get_open_pending_action(session_id)

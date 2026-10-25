@@ -53,7 +53,20 @@ export const GenerateFlow = {
     fireEvent.change(canvas.getByLabelText('Concentration'), { target: { value: 'Cybersecurity' } });
     await userEvent.click(canvas.getByRole('button', { name: 'Generate plan' }));
     await expect(await canvas.findByText(/semester-by-semester roadmap/i)).toBeVisible();
+    await expect(await canvas.findByText(/saved as your active plan/i)).toBeVisible();
   },
+};
+
+/** FC6: generating for a new track moves the profile — the banner says so. */
+export const GenerateUpdatesProfile = {
+  args: {
+    generatePlanFn: () =>
+      Promise.resolve({
+        ...PLAN_FIXTURE,
+        profile_updated: { major_name: 'BS in Computer Science', concentration: 'Cybersecurity', degree_id: 'BS-CS' },
+      }),
+  },
+  play: GenerateFlow.play,
 };
 
 export const LoadError = {

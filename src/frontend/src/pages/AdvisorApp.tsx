@@ -15,6 +15,7 @@ import AccountPage from './AccountPage';
  */
 export default function AdvisorApp() {
   const [page, setPage] = useState<PageId>('home');
+  const [focusPlanId, setFocusPlanId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const toggleChat = () => setChatOpen((open) => !open);
   const navigate = (next: PageId) => {
@@ -31,9 +32,18 @@ export default function AdvisorApp() {
   return (
     <>
       {page === 'home' && <Dashboard active="home" {...shellProps} />}
-      {page === 'timeline' && <TimelinePage active="timeline" {...shellProps} />}
+      {page === 'timeline' && <TimelinePage active="timeline" initialPlanId={focusPlanId} {...shellProps} />}
       {page === 'search' && <CourseSearch active="search" {...shellProps} />}
-      {page === 'account' && <AccountPage active="account" {...shellProps} />}
+      {page === 'account' && (
+        <AccountPage
+          active="account"
+          {...shellProps}
+          onProgramChanged={(planId) => {
+            setFocusPlanId(planId);
+            navigate('timeline');
+          }}
+        />
+      )}
     </>
   );
 }

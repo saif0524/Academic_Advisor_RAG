@@ -128,7 +128,7 @@ class StubSummarizer:
         what the payload carries (no invented courses)."""
         if not plan:
             return ("You have no active plan yet (FC6) — I can generate one for you "
-                    "and you can make it active.")
+                    "and it becomes your active plan.")
         titles = plan.get("course_titles") or {}
         lines = [f"Your active plan ({plan.get('target_major') or plan.get('degree_id')}"
                  + (f" — {plan['concentration']}" if plan.get("concentration") else "")
@@ -161,6 +161,34 @@ class StubSummarizer:
             label = hit.get("source") or "catalog"
             text = (hit.get("text") or "")[:220]
             lines.append(f"• {label} ({hit.get('kind')}): {text}…")
+        return "\n".join(lines)
+
+    def _render_requirements(self, payload: dict, user_input: str) -> str:
+        if not payload.get("degree_id"):
+            return ("I don't have a degree on record to read requirements from — "
+                    "pick a degree first (e.g. BS-CS).")
+        head = f"{payload['major_name']} ({payload['degree_id']})"
+        tracks = payload.get("available_tracks") or []
+        if payload.get("unknown_track"):
+            return (f"I don't have a “{payload['unknown_track']}” concentration for {head}. "
+                    "Available concentrations: " + (", ".join(tracks) or "none") + ".")
+        if payload.get("concentration"):
+            lines = [f"{head} — {payload['concentration']} concentration"
+                     + (f", {payload['credits_required']} credit hours" if payload.get("credits_required") else "")
+                     + " (counted in place of technical-elective hours):"]
+            for c in payload["courses"]:
+                hours = f", {c['credit_hours']} hrs" if c.get("credit_hours") else ""
+                group = f" [choose one: {c['option_group']}]" if c.get("option_group") else ""
+                note = f" — on your record: {c['status']}" if c.get("status") else ""
+                lines.append(f"• {c['course_code']} — {c['title']}{hours}{group}{note}")
+            return "\n".join(lines)
+        total = f", {payload['total_credits_required']} credit hours total" if payload.get("total_credits_required") else ""
+        lines = [f"{head}{total}. Requirement blocks:"]
+        for b in payload.get("blocks") or []:
+            hours = f" ({b['credits_required']} hrs)" if b.get("credits_required") else ""
+            lines.append(f"• {b['name']}{hours}")
+        if tracks:
+            lines.append("Concentrations: " + ", ".join(tracks) + ".")
         return "\n".join(lines)
 
     def _render_recommend(self, payload: dict, user_input: str) -> str:
@@ -251,8 +279,12 @@ class StubSummarizer:
         ]
         for note in payload.get("notes") or []:
             lines.append(f"• {note}")
-        lines.append("Review it in the planner, edit what you need, then make it "
-                     "active when it looks right.")
+        lines.append("✓ Done — it's saved as your active plan (FC6); review or edit it "
+                     "in the planner any time.")
+        changed = payload.get("profile_updated")
+        if changed:
+            lines.append(f"Your profile now tracks {changed['major_name']} — "
+                         f"{changed.get('concentration') or 'General'} to match it.")
         return "\n".join(lines)
 
     def _render_confirm(self, payload: dict, user_input: str) -> str:

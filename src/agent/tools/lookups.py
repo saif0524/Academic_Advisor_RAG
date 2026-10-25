@@ -50,7 +50,9 @@ class LookupTools:
         student = self.student_profile(student_id)
         if student is None or not student.selected_degree_id:
             return None
-        return self._degree_or_none(student.selected_degree_id)
+        degree = self._degree_or_none(student.selected_degree_id)
+        # the student's own concentration track decides which requirement blocks count (FC1/FC19)
+        return degree.for_concentration(student.concentration) if degree else None
 
     def hours_by_ids(self, course_ids: Sequence[str]) -> Dict[str, int]:
         """course_id → credit hours, for the ids that have hours on record."""
@@ -104,6 +106,89 @@ class LookupTools:
             "total_planned_credits": sum((s["credits"] or 0) for s in semesters),
             "progress": self.degree_progress(student_id),
         }
+
+    def list_programs(self) -> List[dict]:
+        """FC15/FC42: every degree on record with its concentration tracks
+        (SQLite) — the answer to "what majors/concentrations exist?"."""
+        return [
+            {"degree_id": d.degree_id, "major_name": d.major_name,
+             "total_credits_required": d.total_credits_required,
+             "concentrations": list(d.concentrations)}
+            for d in self._sql.list_degrees()
+        ]
+
+    def degree_requirements(self, student_id: str, user_input: str,
+                            params: Optional[dict] = None) -> dict:
+        """FC18/FC22: requirement record for a degree (and one concentration
+        track) read from SQLite — structured data, never a vector search.
+
+        Track: `params["concentration"]` (LLM/stub extracted), else any known
+        track name found in the question, else none. Degree: `params["degree_id"]`,
+        else the one that owns the named track (student's own degree first),
+        else the student's tracked degree. Misses stay misses (never invented).
+        """
+        params = params or {}
+        student = self.student_profile(student_id)
+        degrees = self._sql.list_degrees()
+        own = next((d for d in degrees if student and d.degree_id == student.selected_degree_id), None)
+        ordered = ([own] if own else []) + [d for d in degrees if d is not own]
+
+        asked = (params.get("concentration") or "").strip()
+        text = (user_input or "").lower()
+
+        def match_track(degree) -> Optional[str]:
+            for name in degree.concentrations:
+                low = name.lower()
+                if asked and (asked.lower() in low or low in asked.lower()):
+                    return name
+                if not asked and low in text:
+                    return name
+            return None
+
+        degree, track = None, None
+        wanted_id = (params.get("degree_id") or "").strip().lower()
+        if wanted_id:
+            degree = next((d for d in degrees if d.degree_id.lower() == wanted_id), None)
+        if degree is not None:
+            track = match_track(degree)
+        else:
+            for candidate in ordered:
+                track = match_track(candidate)
+                if track:
+                    degree = candidate
+                    break
+            degree = degree or own
+
+        payload: dict = {
+            "degree_id": degree.degree_id if degree else None,
+            "major_name": degree.major_name if degree else None,
+            "total_credits_required": degree.total_credits_required if degree else None,
+            "concentration": track, "unknown_track": None,
+            "credits_required": None,
+            "courses": [], "blocks": [], "available_tracks": [],
+        }
+        if degree is None:
+            return payload
+        payload["available_tracks"] = list(degree.concentrations)
+        if asked and track is None:
+            payload["unknown_track"] = asked
+        status = {r.course_id: r.status for r in self.student_classes(student_id)}
+        if track:
+            blocks = [b for b in degree.blocks if b.kind == "concentration" and b.concentration == track]
+            payload["credits_required"] = sum(b.credits_required or 0 for b in blocks) or None
+            payload["courses"] = [
+                {"course_id": row.course_id or row.course_code, "course_code": row.course_code,
+                 "title": row.title, "credit_hours": row.credit_hours,
+                 "option_group": row.option_group,
+                 "status": status.get(row.course_id or row.course_code)}
+                for b in blocks for row in b.courses
+            ]
+        else:
+            payload["blocks"] = [
+                {"name": b.name, "kind": b.kind, "credits_required": b.credits_required}
+                for b in degree.blocks if b.kind != "concentration"
+            ]
+        return payload
 
     # ------------------------------------------------------------ Chroma
 

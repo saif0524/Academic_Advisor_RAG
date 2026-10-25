@@ -41,3 +41,13 @@
   font-size: 0.85rem;
   padding-bottom: var(--space-2);
 }
+
+/* FC6: "Make active" confirmation (profile follows the active plan). */
+.timeline-page-success {
+  margin: 0;
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}

@@ -45,8 +45,11 @@ interface AccountPageProps {
   /** DI seam for the change-major comparison (FC26). */
   compareFn?: (newMajor: string, newConcentration: string) => Promise<ProgramComparison | null>;
   /** DI seam for the confirmed change: applies FC1/FC7 and auto-generates a
-      fresh (inactive) plan for the new degree. The ConfirmDialog runs first. */
-  confirmFn?: (newMajor: string, newConcentration: string) => Promise<{ applied: boolean }>;
+      fresh plan for the new degree, which becomes the active plan (FC6:
+      any changed plan is active by default). The ConfirmDialog runs first. */
+  confirmFn?: (newMajor: string, newConcentration: string) => Promise<{ applied: boolean; planId?: string | null }>;
+  /** Called after a confirmed change with the freshly generated plan id. */
+  onProgramChanged?: (planId: string | null) => void;
   savePreferencesFn?: (prefs: PlanningPreferencesData) => Promise<{ saved: boolean; savedAt: string }>;
 }
 
@@ -99,6 +102,7 @@ export default function AccountPage({
   loadDependencies,
   compareFn,
   confirmFn = confirmProgramChange,
+  onProgramChanged,
   savePreferencesFn = savePlanningPreferences,
 }: AccountPageProps) {
   const loadData = loadDependencies ?? defaultLoadDependencies;
@@ -200,12 +204,20 @@ export default function AccountPage({
   };
 
   /* FC23-style gate — the ConfirmDialog ran before this fires: applying the
-     change updates the profile AND generates a draft plan for the new degree. */
+     change updates the profile AND generates the new active plan (FC6). */
   const handleConfirmChange = async () => {
     setConfirming(true);
     try {
       const result = await confirmFn(newMajor, newConcentration);
-      if (result.applied) setApplied(true);
+      if (result.applied) {
+        setApplied(true);
+        try {
+          setProfile(await getStudentProfile());
+        } catch {
+          /* profile refresh is best-effort */
+        }
+        onProgramChanged?.(result.planId ?? null);
+      }
     } catch (error) {
       setApplied(false);
       setCompareError(error instanceof Error ? error.message : String(error));
@@ -247,7 +259,7 @@ export default function AccountPage({
                   {profile.major ?? 'Not set'} — {profile.concentration ?? 'Not set'}
                 </strong>
                 {applied ? (
-                  <Badge variant="success" dot>Program change applied — draft plan generated</Badge>
+                  <Badge variant="success" dot>Program change applied — new active plan generated</Badge>
                 ) : null}
               </p>
             </div>
@@ -309,7 +321,7 @@ export default function AccountPage({
               <>
                 Switch to <strong>{comparison.proposed.degree} — {comparison.proposed.concentration}</strong>?{' '}
                 {comparison.current.hoursThatCount}; {comparison.proposed.hoursRemaining}.
-                A fresh draft plan for the new degree will be generated.
+                A fresh plan for the new degree will be generated and made your active plan.
               </>
             ) : (
               'Apply the selected program change?'

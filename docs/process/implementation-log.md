@@ -4,6 +4,24 @@ Reverse-chronological entries for each implementation pass (what landed, which F
 
 ---
 
+## 2026-10-25 — Requirements intent: concentration questions answered from SQLite (FC18, FC22, FC33)
+
+**Problem.** Exported chat `traces/advisor/advisor-chat-2026-10-25-20-41-47.md`:
+"I'm considering changing my concentration to AI — what classes will I need?"
+got course-description search hits and a "can't tell you the requirements"
+answer. Cause: requirement questions routed to `semantic`, whose node only
+searched the Chroma `courses` collection (catalog text was a fallback on zero
+hits only), and there was no route to the structured degree record. Both the
+stub and the LLM classifier behaved this way; an old test enforced it.
+
+**Change.** New `requirements` intent → `requirements_tools` node →
+`LookupTools.degree_requirements` (track courses, hours, select-one groups,
+and the student's status per course from SQLite; no track named → degree
+blocks + available tracks; unknown track → honest miss). Stub rule precedes
+the FC23 rules so "considering changing … what would I need" is a question,
+not a proposal; the LLM prompt says the same. Tests: `tests/agent/test_requirements.py`,
+updated `test_classify.py`. Not changed: `semantic` still serves course-content questions.
+
 ## 2026-10-23 — Simplification pass for team review (no new FCs; FC19, FC37 docs touched)
 
 **Scope.** Make the code easier to read and review; keep behavior the same
@@ -248,3 +266,63 @@ brings up api + web for testing (spec: new FC38 in FR section 7).
 - Docs: `README.md`, `AGENTS.md`, `.pi/skills/react-component/SKILL.md` (screenshots → `.runtime/shots/`). Earlier log entries keep the old `var/` name as history.
 
 **Verified** `pytest`: 254 passed. Images/volumes not rebuilt.
+
+## 2026-10-25 — Concentrations, prerequisites, richer demo data, chat export (FC1, FC11, FC29, FC39, FC40)
+
+**Scope.** Close assignment gaps: concentrations wired end to end (the assignment's own "BS CS with a Cybersecurity concentration" example), a real prerequisite graph so FC29 can fail, enough sections to trigger FC31 for real, and a Markdown export of the open chat with the status of every check that ran.
+
+**Added / modified**
+- Data: `data/degrees/BS-{CS,SE}.json` gain `concentrations` (CS: AI, Cybersecurity, Data Science, Game Development & Graphics; SE: AI, Cybersecurity, Cloud & Data Systems — 9 credit hours each, replacing 9 technical-elective hours); new MOCK `data/prerequisites.json` (≈40 edges incl. MATH/PHYS/ENGL); `course-desc.json` +2 courses (CSE 2320, 2381) and optional `credit_hours` for 3000/4000-level courses (so elective buckets fill); `sections-mock.json` 12 → 78 sections across Fall 2026/Spring 2027 with deliberate FC31 overlaps (`1311-001`, `2441-001`) and a full section (`4380-002`); demo student gains ENGL 1301/MATH 1426 (passed) and MATH 2425/ENGL 1302 (in progress).
+- Core: `DegreeBlock.concentration`, `DegreeRequirement.concentrations` / `.for_concentration()`; `DegreePlanGenerator` takes `concentration`, and pulls missing prerequisites into the plan (noted, FC29).
+- Database: migrations `0003` (`degree_requirement_blocks.concentration`) and `0004` (`chat_messages.checks`); `prerequisite_loader.py`; seed loads prerequisites; one Chroma catalog chunk per concentration; corpus hours no longer overwritten with NULL.
+- Server/agent: plan options/generate/compare accept a track (422 listing real options when unknown); degrees API exposes `concentrations`/`concentration_tracks`; progress and audits count the student's own track; chat stream persists check events with the advisor turn; agent understands "…for BS in Computer Science with a concentration in Cybersecurity", validates `change_concentration`/`change_major` tracks, re-reads semantic hits from SQLite so FC29 sees prerequisites, and picks a non-conflicting section for multi-section courses.
+- Frontend: chat drawer **Export** button (`exportMarkdown.ts`, story `ExportTranscript`), history loads stored checks.
+- Docs: FC1/FC29/FC39 notes + new **FC40**, `AGENTS.md`, domain model note.
+
+**Tests.** +30 (`tests/core/test_concentrations.py`, `tests/agent/test_demo_audits.py`, plan/chat/loader/seed additions); existing expectations updated for the richer demo data. Full suite 289 passed.
+
+**Decisions / caveats.** Prerequisites, concentration course lists, sections and the added course descriptions (CSE 2320/2381) are illustrative demo data, not registrar data — verify against the catalog before presenting them as official. The demo student now carries 13 in-progress hours, so a single 3–4 hour course still fits the 18-hour cap; the FC32 cap failure is demonstrated via plan edits.
+
+## Delete chats (FC41)
+
+- `DELETE /chat/sessions/{id}` → 204 (404 for unknown/foreign sessions); `SQLDatabaseManager.delete_chat_session` removes messages, pending actions, then the session.
+- Frontend: trash button per row in the conversation history (`ConversationListItem` `onDelete`), browser confirm in `ChatPanel`; deleting the open chat falls back to the active/new session.
+- Tests: `tests/server/test_chat_endpoints.py`, `tests/database/test_sql_manager.py`.
+
+## 2026-10-25 — Active-by-default plans, plan follows program changes, no lost "yes" (FC6, FC23, FC27, FC28)
+
+**Trigger.** Exported chat `advisor-chat-2026-10-25-21-16-38.md`: the assistant asked "Would you like me to change your concentration to Data Science?" (a clarification, not a proposal), so the following "Yes please" had nothing to resume; after the change was confirmed the profile said Data Science while the active plan still said Cybersecurity.
+
+**Modified**
+- FC6: `PlanService.generate_plan` / `update_plan` / `revert_plan` and `EngineTools.generate_plan` activate the changed plan. `save_degree_plan` itself still inserts inactive.
+- FC23: confirmed `change_concentration` / `change_major` regenerate the plan for the new track through `DegreePlanGenerator` and activate it (`ActionTools._replan`). The proposal description says so up front; old plans are kept.
+- FC27/FC28: `graph.action_ready` — a fully-specified action skips the yes/no clarify node and goes to `propose_action` (durable FC23 card). Classifier prompt: never ask "would you like me to…" for a ready action; resolve short replies ("yes please") against the advisor's previous question. Summarizer prompt/stub: generated plans are described as active, not drafts.
+- Frontend: AccountPage drops the second "Make this plan active?" dialog; PlanGenerator shows "Active plan ✓" instead of a Make-active button; TimelinePage marks the plan active after save/revert.
+- Docs: FC6/FC23/FC28 notes, domain model note, `AGENTS.md`.
+
+**Tests.** +5 (`test_pending_actions.py`: replan on concentration/major change, ready-action regression; `test_plan_endpoints.py`: generated active by default, edit/revert activate). Tests that need an inactive plan now deactivate explicitly. Full suite 306 passed.
+
+## 2026-10-25 — Exploratory advising + intent-mismatch fixes (FC42, FC27, FC22)
+
+**Trigger.** "What majors and concentrations are available?" was routed to a Chroma course search and answered "I don't want to guess"; "Yes please" after the advisor's own offer was classified as an exact course lookup.
+
+**Added / modified**
+- FC42 (new): `explore` intent → `explore_agent` graph node. `agent/llm/explore.py` (`LLMExplorer` bounded tool-calling loop, `StubExplorer` fallback) over the read-only toolset in `agent/tools/explore.py` (9 tools incl. new `LookupTools.list_programs` and the validator via `check_eligibility`; `MAX_TOOL_CALLS = 6`). Deterministic `ground_answer` guard: course ids not in the catalog are removed from the answer; every real one (cap 8) runs through `CourseRecommendationValidator` and its checks stream/persist (FC39). No action tools on this path (FC23 unchanged).
+- Classification: `is_followup_reply` — a short affirmation after an advisor turn routes to `explore` (stub + correction of LLM `exact`/`semantic`/`chitchat`); stub `explore` patterns; prompt describes `explore`. The LLM classifier now recovers YAML-ish/fenced output from the parser error (glm-5.3-flash often returns non-JSON) instead of silently using the regex rules.
+- `AdvisorToolkit.recent_history` keeps head + tail of long turns (closing offers survive); explore reads up to 1500 chars/turn.
+- Docs: FC42 in the FR doc, domain model §3, `AGENTS.md`.
+
+**Tests.** +17 (`tests/agent/test_explore.py`, `test_llm_seams.py` lenient-parse cases). Full suite 323 passed.
+
+## 2026-10-25 — Profile follows the active plan + generate confirmation (FC6, FC1, FC17, FC23)
+
+**Trigger.** After generating a Game Development & Graphics plan the profile still said Artificial Intelligence (progress/audits counted the wrong track), and the planner gave no clear "done" confirmation.
+
+**Modified**
+- Database: `SQLDatabaseManager.sync_profile_to_plan` — copies the plan's major/concentration (FC7 history kept) and degree (FC17) onto the profile; returns what changed.
+- Server: `PlanService._activate` (generate / activate / edit / revert) syncs the profile; `PlanDetail.profile_updated` reports the change.
+- Agent: `EngineTools.resolve_plan_target` + `plan_program_change` — chat plan requests for another major/track become the FC23 change-major/concentration card (confirm → regenerate); own-track plans generate immediately and sync the profile. Fixed: the target was resolved against the track-narrowed degree, so another concentration of the student's own degree was always refused. "Make active" card names the profile switch. Stub classifier reads "plan with a concentration in X". Generated-plan replies open with a "Done" line and mention a profile change.
+- Frontend: PlanGenerator success banner (stays until the page is left; story `GenerateUpdatesProfile`); Timeline "Make active" confirmation; Dashboard re-reads after the planner closes.
+- Docs: FC6 notes, domain model note, `AGENTS.md`.
+
+**Tests.** +7 (`test_plan_endpoints.py` profile sync ×3, `test_plan_generation.py` ×3 + 2 rewritten for the FC23 card); `test_progress_counts_the_students_concentration_track` now pins the track first (shared module state; profile follows the plan). Full suite 329 passed.

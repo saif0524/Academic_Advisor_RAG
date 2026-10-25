@@ -8,10 +8,11 @@ import './Icon.css';
 export type IconName =
   | 'search' | 'plus' | 'close' | 'check' | 'checkCircle' | 'warning' | 'info'
   | 'edit' | 'chevronDown' | 'chevronRight' | 'chevronLeft' | 'minus' | 'calendar' | 'clock' | 'send'
-  | 'user' | 'cap' | 'chat' | 'bookOpen' | 'list';
+  | 'user' | 'cap' | 'chat' | 'bookOpen' | 'list' | 'download' | 'trash';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   search: (<><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>),
+  trash: <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />,
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   close: <path d="M18 6 6 18M6 6l12 12" />,
@@ -31,6 +32,7 @@ const GLYPHS: Record<IconName, ReactNode> = {
   chat: <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H3l2.2-2.6A8.5 8.5 0 1 1 21 11.5Z" />,
   bookOpen: (<><path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z" /><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z" /></>),
   list: <path d="M3 6h18M3 12h18M3 18h12" />,
+  download: (<><path d="M12 4v11" /><path d="m7 11 5 5 5-5" /><path d="M4 20h16" /></>),
 };
 
 interface IconProps {

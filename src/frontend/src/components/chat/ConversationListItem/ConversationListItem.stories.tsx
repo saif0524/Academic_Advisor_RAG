@@ -17,6 +17,7 @@ const meta = {
 export default meta;
 
 export const Default = {};
+export const Deletable = { args: { onDelete: () => {} } };
 export const Active = { args: { active: true } };
 export const WithoutSnippet = {
   args: { item: { id: 'x', title: 'Untitled conversation', date: 'Oct 12' } as Conversation },

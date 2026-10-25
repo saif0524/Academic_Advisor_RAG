@@ -3,7 +3,6 @@ import MajorSpecSelector from '../components/planner/MajorSpecSelector/MajorSpec
 import PlanRoadmap from '../components/planner/PlanRoadmap/PlanRoadmap';
 import Button from '../components/shared/Button/Button';
 import {
-  activatePlan,
   generatePlan as generatePlanViaApi,
   getCourseCatalog,
   getPlanOptions,
@@ -55,10 +54,10 @@ async function defaultGenerate(request: {
  * single-page state).
  *
  * Generation goes to POST /plans/generate — the deterministic engine builds
- * the roadmap and grounded caveats ride along as `plan.notes`. Generation is
- * only a preview (no FC23 gate); the generated plan is INACTIVE — make it
- * active from here or keep editing in the timeline (generate → edit →
- * make active).
+ * the roadmap and grounded caveats ride along as `plan.notes`. The student
+ * clicking Generate is the explicit action (no FC23 gate): the plan is saved
+ * as the ACTIVE plan (FC6) and the profile follows it (FC1/FC17). A success
+ * banner confirms both and stays until the page is left.
  */
 export default function PlanGenerator({
   onNavigateBack,
@@ -77,9 +76,6 @@ export default function PlanGenerator({
   const [plan, setPlan] = useState<PlanDetail | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
-  const [activating, setActivating] = useState(false);
-  const [activateError, setActivateError] = useState('');
-  const [activated, setActivated] = useState(false);
 
   const [reloadToken, setReloadToken] = useState(0);
   useEffect(() => {
@@ -113,8 +109,6 @@ export default function PlanGenerator({
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGenerateError('');
-    setActivated(false);
-    setActivateError('');
     try {
       const request = {
         majorName: major,
@@ -135,21 +129,8 @@ export default function PlanGenerator({
     }
   };
 
-  /* The explicit activation step (FC6): the plan becomes the dashboard's
-     plan only on confirmation here — generate → edit → make active. */
-  const handleMakeActive = async () => {
-    if (!plan) return;
-    setActivating(true);
-    setActivateError('');
-    try {
-      await activatePlan(plan.plan_id);
-      setActivated(true);
-    } catch (error) {
-      setActivateError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setActivating(false);
-    }
-  };
+  /* FC6: a generated plan is the active plan immediately (any changed plan
+     is active by default) — no separate make-active step. */
 
   const canGenerate = Boolean(major && concentration);
   const isLoading = !data && !loadError;
@@ -183,9 +164,22 @@ export default function PlanGenerator({
           <>
             {plan ? (
               <>
-                {activateError ? (
-                  <p className="plan-generator-alert" role="alert">{activateError}</p>
-                ) : null}
+                <div className="plan-generator-success" role="status">
+                  <p className="plan-generator-success-title">
+                    ✓ Plan generated and saved as your active plan.
+                  </p>
+                  {plan.profile_updated ? (
+                    <p className="plan-generator-success-detail">
+                      Your profile now tracks {plan.profile_updated.major_name} —{' '}
+                      {plan.profile_updated.concentration ?? 'General'}
+                      {plan.profile_updated.degree_id ? ` (${plan.profile_updated.degree_id})` : ''}.
+                    </p>
+                  ) : (
+                    <p className="plan-generator-success-detail">
+                      Your profile already matches this major and concentration.
+                    </p>
+                  )}
+                </div>
                 <PlanRoadmap
                   plan={plan}
                   catalog={data.catalog}
@@ -193,9 +187,7 @@ export default function PlanGenerator({
                   note={plan.notes?.length ? plan.notes.join(' · ') : undefined}
                   actions={
                     <>
-                      <Button onClick={handleMakeActive} disabled={activating}>
-                        {activating ? 'Activating…' : activated ? 'Active ✓' : 'Make active'}
-                      </Button>
+                      <span className="plan-generator-active-note" role="status">Active plan ✓</span>
                       {onOpenPlan ? (
                         <Button variant="secondary" onClick={onOpenPlan}>
                           Keep editing in timeline →

@@ -1,7 +1,8 @@
 """Degree-requirement JSON loading (FC15/FC18/FC32 records).
 
 Reads data/degrees/*.json — one structured record per degree:
-`degree_id`, `major_name`, credit totals, and `blocks` (kind one of
+`degree_id`, `major_name`, credit totals, optional `concentrations` (named
+tracks, each with `credits_required` and `courses`), and `blocks` (kind one of
 general_core | math_science | major_core | electives; courses carry
 `option_group` for select-one rows; elective blocks carry `elective_bucket`).
 
@@ -63,25 +64,39 @@ def derive_courses_from_requirements(
 
 # ----------------------------------------------------------------- internals
 
+def _build_courses(raw: dict, corpus_ids: set) -> List[DegreeBlockCourse]:
+    courses: List[DegreeBlockCourse] = []
+    for row in raw.get("courses", []):
+        department, number, code = _normalize_code(row["course_code"])
+        courses.append(DegreeBlockCourse(
+            course_code=code,
+            title=row.get("title"),
+            credit_hours=row.get("credit_hours"),
+            course_id=_resolve_course_id(department, number, corpus_ids),
+            option_group=row.get("option_group"),
+        ))
+    return courses
+
+
 def _build_degree(record: dict, corpus_ids: set) -> DegreeRequirement:
     blocks: List[DegreeBlock] = []
     for raw in record.get("blocks", []):
-        courses: List[DegreeBlockCourse] = []
-        for row in raw.get("courses", []):
-            department, number, code = _normalize_code(row["course_code"])
-            courses.append(DegreeBlockCourse(
-                course_code=code,
-                title=row.get("title"),
-                credit_hours=row.get("credit_hours"),
-                course_id=_resolve_course_id(department, number, corpus_ids),
-                option_group=row.get("option_group"),
-            ))
         blocks.append(DegreeBlock(
             name=raw["name"],
             kind=raw["kind"],
             credits_required=raw.get("credits_required"),
-            courses=courses,
+            courses=_build_courses(raw, corpus_ids),
             elective_bucket=raw.get("elective_bucket"),
+        ))
+    # Concentration tracks (FC1): each becomes one requirement block owned by
+    # its track; `DegreeRequirement.for_concentration` selects the one that applies.
+    for track in record.get("concentrations", []):
+        blocks.append(DegreeBlock(
+            name=f"Concentration: {track['name']}",
+            kind="concentration",
+            credits_required=track.get("credits_required"),
+            courses=_build_courses(track, corpus_ids),
+            concentration=track["name"],
         ))
     return DegreeRequirement(
         degree_id=str(record["degree_id"]),

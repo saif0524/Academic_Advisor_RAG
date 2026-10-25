@@ -3,7 +3,7 @@ from typing import Optional
 
 import json
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import StreamingResponse
 
 from server.dependencies import get_chat_service, get_current_student
@@ -67,6 +67,17 @@ def list_sessions(
 ) -> ChatSessionsResponse:
     """The student's advising conversations (FC34 view; drawer history list)."""
     return service.list_sessions(student.student_id)
+
+
+@router.delete("/sessions/{session_id}", status_code=204)
+def delete_session(
+    session_id: str,
+    student: StudentIdentity = Depends(get_current_student),
+    service: ChatService = Depends(get_chat_service),
+) -> Response:
+    """Delete one conversation and its messages (FC41); unknown/foreign → 404."""
+    service.delete_session(student.student_id, session_id)
+    return Response(status_code=204)
 
 
 @router.get("/messages")
