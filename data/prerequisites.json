@@ -1,0 +1,226 @@
+{
+  "_comment": "MOCK demo prerequisite graph for FC11/FC29 \u2014 illustrative, NOT authoritative registrar data. Course ids are canonical (4-digit CSE corpus ids; full codes otherwise). Every id must exist in the seeded catalog.",
+  "courses": {
+    "1320": {
+      "prereq": [
+        "1310"
+      ],
+      "coreq": []
+    },
+    "1325": {
+      "prereq": [
+        "1320"
+      ],
+      "coreq": []
+    },
+    "2315": {
+      "prereq": [
+        "1310"
+      ],
+      "coreq": []
+    },
+    "2320": {
+      "prereq": [
+        "1320",
+        "2315"
+      ],
+      "coreq": []
+    },
+    "2441": {
+      "prereq": [
+        "1310"
+      ],
+      "coreq": []
+    },
+    "2381": {
+      "prereq": [
+        "1325"
+      ],
+      "coreq": []
+    },
+    "3310": {
+      "prereq": [
+        "1325",
+        "2320"
+      ],
+      "coreq": []
+    },
+    "3311": {
+      "prereq": [
+        "3310"
+      ],
+      "coreq": []
+    },
+    "3318": {
+      "prereq": [
+        "2320"
+      ],
+      "coreq": []
+    },
+    "3320": {
+      "prereq": [
+        "3318"
+      ],
+      "coreq": []
+    },
+    "3330": {
+      "prereq": [
+        "2320"
+      ],
+      "coreq": []
+    },
+    "3442": {
+      "prereq": [
+        "2441",
+        "1320"
+      ],
+      "coreq": []
+    },
+    "4308": {
+      "prereq": [
+        "3318"
+      ],
+      "coreq": []
+    },
+    "4309": {
+      "prereq": [
+        "3318",
+        "MATH 3330"
+      ],
+      "coreq": []
+    },
+    "4310": {
+      "prereq": [
+        "3318"
+      ],
+      "coreq": []
+    },
+    "4311": {
+      "prereq": [
+        "4309"
+      ],
+      "coreq": []
+    },
+    "4334": {
+      "prereq": [
+        "3330"
+      ],
+      "coreq": []
+    },
+    "4331": {
+      "prereq": [
+        "3330"
+      ],
+      "coreq": []
+    },
+    "4333": {
+      "prereq": [
+        "3320"
+      ],
+      "coreq": []
+    },
+    "4344": {
+      "prereq": [
+        "3320"
+      ],
+      "coreq": []
+    },
+    "4380": {
+      "prereq": [
+        "3320"
+      ],
+      "coreq": []
+    },
+    "4381": {
+      "prereq": [
+        "4380"
+      ],
+      "coreq": []
+    },
+    "4382": {
+      "prereq": [
+        "3318",
+        "4380"
+      ],
+      "coreq": []
+    },
+    "4303": {
+      "prereq": [
+        "3318"
+      ],
+      "coreq": []
+    },
+    "4304": {
+      "prereq": [
+        "3318"
+      ],
+      "coreq": []
+    },
+    "4373": {
+      "prereq": [
+        "3318"
+      ],
+      "coreq": []
+    },
+    "4321": {
+      "prereq": [
+        "3310"
+      ],
+      "coreq": []
+    },
+    "4322": {
+      "prereq": [
+        "3310"
+      ],
+      "coreq": []
+    },
+    "4361": {
+      "prereq": [
+        "3311"
+      ],
+      "coreq": []
+    },
+    "4391": {
+      "prereq": [
+        "3310"
+      ],
+      "coreq": []
+    },
+    "ENGL 1302": {
+      "prereq": [
+        "ENGL 1301"
+      ],
+      "coreq": []
+    },
+    "MATH 2425": {
+      "prereq": [
+        "MATH 1426"
+      ],
+      "coreq": []
+    },
+    "MATH 3330": {
+      "prereq": [
+        "MATH 2425"
+      ],
+      "coreq": []
+    },
+    "MATH 3313": {
+      "prereq": [
+        "MATH 2425"
+      ],
+      "coreq": []
+    },
+    "PHYS 1444": {
+      "prereq": [
+        "PHYS 1443"
+      ],
+      "coreq": []
+    },
+    "4392": {
+      "prereq": [],
+      "coreq": [
+        "4391"
+      ]
+    }
+  }
+}
